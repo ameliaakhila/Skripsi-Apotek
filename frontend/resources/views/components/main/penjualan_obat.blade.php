@@ -1,4 +1,4 @@
-<x-layout title="Penjualan Obat | Apotek Sena Farma">
+<x-layout title="Penjualan Obat">
     <div class="content-body">
         <!-- row -->
         <div class="container-fluid">
@@ -10,8 +10,7 @@
                             <h4 class="card-title">Penjualan Obat</h4>
                         </div>
 
-                        <div class="card-body">
-
+                        <div class="mx-4">
                             <form id="formObat" action="{{ url('/penjualan-obat-tambah') }}" method="POST">
                                 @csrf
                                 <select id="id_obat_masuk" name="id_obat" class="js-example-data-array" required>
@@ -28,7 +27,9 @@
                                     @endforeach
                                 </select>
                             </form>
-                            <div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
                                 @if(session('success'))
                                     <div class="alert alert-success solid alert-dismissible fade show">
                                         <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor"
@@ -61,15 +62,16 @@
                                         </button>
                                     </div>
                                 @endif
-                                <table id="example3" class="table table-borderd">
+
+                                <table id="example3" class="display">
                                     <thead>
                                         <tr>
                                             <th>No</th>
                                             <th>Nama obat</th>
                                             <th>Jumlah</th>
                                             <th>Satuan</th>
+                                            {{-- <th>Keterangan Keluar</th> --}}
                                             <th>Harga</th>
-                                            <th>Total</th>
                                             <th>Opsi</th>
                                         </tr>
                                     </thead>
@@ -82,7 +84,7 @@
                                                 <td> {{ $d->Obat->nama_obat }} </td>
                                                 <td> {{ $d->stok_keluar }} </td>
                                                 <td> {{ $d->satuan_obat }} </td>
-                                                <td>Rp {{ $d->harga_obat_formatted }}</td>
+                                                {{-- <td>Terju</td> --}}
                                                 <td>Rp {{ $d->harga_obat_formatted }}</td>
                                                 <td class="text-center">
                                                     <button penjualan-bs-toggle="modal"

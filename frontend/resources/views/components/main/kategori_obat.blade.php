@@ -1,4 +1,4 @@
-<x-layout title="Kategori Obat | Apotek Sena Farma">
+<x-layout title="Kelola Data Obat">
     <div class="content-body">
         <!-- row -->
         <div class="container-fluid">

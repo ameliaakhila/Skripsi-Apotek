@@ -6,14 +6,13 @@ use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
-class kategori_obat extends Component
+class DataObat extends Component
 {
     /**
      * Create a new component instance.
      */
     public function __construct()
     {
-        //
     }
 
     /**
@@ -21,6 +20,6 @@ class kategori_obat extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.kategori_obat');
+        return view('components.data_obat');
     }
 }

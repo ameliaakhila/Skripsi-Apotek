@@ -29,8 +29,6 @@
 <script src="{{ asset('assets/vendor/datatables/js/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('assets/js/plugins-init/datatables.init.js') }}"></script>
 
-<!-- Modal -->
-<script src="{{ asset('assets/vendor/jquery-nice-select/js/jquery.nice-select.min.js') }}"></script>
 
 <!-- awal date pikcer -->
 <!-- Daterangepicker -->
@@ -59,14 +57,65 @@
 <!-- akhir datepicker -->
 
 <!-- select js awal -->
-{{--
 <script>
-    $(document).ready(function () {
-        //change selectboxes to selectize mode to be searchable
-        $("select").select2();
-    });
-</script> --}}
+    // $(document).ready(function () {
+    //     //change selectboxes to selectize mode to be searchable
+    //     $("select").select2();
+    // });
+</script>
 <!-- select js akhir -->
+
+<script>
+    document.addEventListener('submit', function (e) {
+        if (e.target.classList.contains('delete-confirm')) {
+            e.preventDefault();
+
+            const text = e.target.getAttribute('data-text');
+
+            Swal.fire({
+                title: 'Konfirmasi Hapus',
+                text: text,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Hapus',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#d33'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    e.target.submit();
+                }
+            });
+        }
+    });
+</script>
+
+{{-- Sweet alert Script Start --}}
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('.btn-delete')) {
+            let button = e.target.closest('.btn-delete');
+            let id = button.dataset.id;
+            let nama = button.dataset.nama;
+
+            Swal.fire({
+                title: `Anda yakin hapus data obat ${nama}?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('delete-form-' + id).submit();
+                }
+            });
+        }
+    });
+
+</script>
+{{-- Sweet alert Script End --}}
 
 {{-- Ajax simpan penjualan obat --}}
 <script>

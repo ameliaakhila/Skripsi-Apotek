@@ -6,14 +6,18 @@ use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
-class header_admin extends Component
+class ModalDataObat extends Component
 {
     /**
      * Create a new component instance.
      */
-    public function __construct()
+
+    public $type, $d, $kategori;
+    public function __construct($type = 'default', $d = [], $kategori = [])
     {
-        //
+        $this->type = $type;
+        $this->d = $d;
+        $this->kategori = $kategori;
     }
 
     /**
@@ -21,6 +25,6 @@ class header_admin extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.header_admin');
+        return view('components.modals.modal_data_obat');
     }
 }

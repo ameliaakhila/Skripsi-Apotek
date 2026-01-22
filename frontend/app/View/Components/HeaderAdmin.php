@@ -6,14 +6,15 @@ use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
-class data_obat extends Component
+class HeaderAdmin extends Component
 {
     /**
      * Create a new component instance.
      */
-    public function __construct()
+    public $title;
+    public function __construct($title = 'Apotek Sena Farma')
     {
-        //
+        $this->title = $title;
     }
 
     /**
@@ -21,6 +22,6 @@ class data_obat extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.data_obat');
+        return view('components.header_admin');
     }
 }

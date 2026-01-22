@@ -1,4 +1,4 @@
-<x-layout title="Obat Masuk | Apotek Sena Farma">
+<x-layout :title="'Kelola Data Obat'">
     <div class="content-body">
         <!-- row -->
         <div class="container-fluid">
@@ -73,17 +73,16 @@
                                                 <td>{{ $d->tanggal_kadaluarsa_formatted }}</td>
                                                 <td>{{ $d->stok_masuk }}</td>
                                                 <td class="text-center d-flex justify-content-center align-items-center">
-                                                    <!-- Tombol Detail -->
+                                                    {{-- ! READ --}}
                                                     <button type="button" class="btn btn-info shadow btn-xs sharp me-1"
                                                         data-bs-toggle="modal"
                                                         data-bs-target="#detail{{ $d->id_obat_masuk }}">
                                                         <i class="fas fa-eye"></i>
                                                     </button>
 
-                                                    <!-- Tombol Edit -->
+                                                    {{-- ! UPDATE --}}
                                                     <button type="button" class="btn btn-primary shadow btn-xs sharp me-1"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#edit{{ $d->id_obat_masuk }}">
+                                                        data-bs-toggle="modal" data-bs-target="#edit{{ $d->id_obat_masuk }}">
                                                         <i class="fas fa-pencil-alt"></i>
                                                     </button>
 
@@ -103,7 +102,7 @@
                                     </tbody>
                                 </table>
 
-                                {{-- ! Loop Edit / Detail --}}
+                                {{-- ! Modal Tambah, Edit & Detail --}}
                                 @foreach($data as $d)
                                     <x-modal-obat-masuk type="tambah" :d="$d" :obat="$obat"
                                         :satuanList="$satuanList" :kategori="$kategori" :kodeObat="$kodeObat" />

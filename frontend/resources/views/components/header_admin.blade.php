@@ -18,20 +18,19 @@
 {{-- ? Admin Header End --}}
 
 
-{{-- ? Header Dashboard End --}}
+{{-- ? Header Dashboard Start --}}
 <div class="header border-bottom">
     <div class="header-content">
         <nav class="navbar navbar-expand">
-            <div class="collapse navbar-collapse justify-content-between">
+            <div class="navbar-collapse justify-content-between">
                 <div class="header-left">
                     <div class="dashboard_bar text-primary">
-                        Dashboard
+                        {{ $title }}
                     </div>
                 </div>
                 <ul class="navbar-nav header-right">
-
                     <li class="nav-item dropdown header-profile">
-                        <a class="nav-link" href="#javascript:void(0);" role="button" data-bs-toggle="dropdown">
+                        <a class="nav-link" href="javascript:void(0);" role="button" data-bs-toggle="dropdown">
                             <img src="./assets/images/logo1.png" width="20" alt="logo-apotek" />
                             <div class="header-info ms-3">
                                 <span class="fs-18 font-w500 mb-2">
@@ -43,7 +42,7 @@
                             </div>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end">
-                            <a href="#../admin/logout.php" class="dropdown-item ai-icon">
+                            <a href="/" class="dropdown-item ai-icon">
                                 <svg id="icon-logout" xmlns="http://www.w3.org/2000/svg" class="text-danger" width="18"
                                     height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round">
@@ -56,6 +55,7 @@
                         </div>
                     </li>
                 </ul>
+
             </div>
         </nav>
     </div>
@@ -82,7 +82,7 @@
                 <ul>
                     <li><a href="/data-obat">Data Obat</a></li>
                     <li><a href="/kategori-obat">Kategori Obat</a></li>
-                    <li><a href="/obat-masuk">Stok Obat Masuk</a></li>
+                    <li><a href="/obat-masuk">Obat Masuk</a></li>
                 </ul>
             </li>
 

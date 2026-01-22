@@ -1,4 +1,4 @@
-<x-layout :title="'Apotek Sena Farma - Obat Kadaluarsa'">
+<x-layout :title="'Obat Kadaluarsa'">
     <div class="content-body">
         <!-- row -->
         <div class="container-fluid">
@@ -19,7 +19,7 @@
                                             <th style="text-align:center;">Jumlah</th>
                                             <th style="text-align:center;">Kadaluarsa</th>
                                             <th style="text-align:center;">Status</th>
-                                            {{-- <th style="text-align:ce.nter;">Kondisi</th> --}}
+                                            <th style="text-align:ce.nter;">Opsi</th>
                                         </tr>
                                     </thead>
 
@@ -45,10 +45,24 @@
                                                                 <span class="badge badge-sm badge-primary">Belum Terjual</span>
                                                             </div>
                                                         @endif
-                                                        @else
+                                                    @else
                                                         <div class="bootstrap-badge">
                                                             <span class="badge badge-sm badge-primary">Belum Terjual</span>
                                                         </div>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if(isset($d['status_terjual']))
+                                                        @if ($d['status_terjual'] == "Belum Terjual")
+                                                            <button class="bootstrap-badge">
+                                                                <span class="badge badge-sm badge-danger">Musnahkan!</span>
+                                                            </button>
+                                                        @elseif($d['status_terjual'] == "Terjual")
+                                                            <div class="bootstrap-badge">
+                                                                <span class="badge badge-sm badge-success">Aman</span>
+                                                            </div>
+                                                        @else
+                                                        @endif
                                                     @endif
                                                 </td>
                                             </tr>

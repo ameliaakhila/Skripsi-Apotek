@@ -1,4 +1,4 @@
-<x-layout>
+<x-layout title="Prediksi Obat">
     <div class="content-body">
         <div class="container-fluid">
             <div class="row">
@@ -9,19 +9,37 @@
                             <h4 class="card-title">Data Prediksi Obat</h4>
                         </div>
 
+                        <div class="mx-4 d-flex justify-content-between">
+                            <form action="{{-- route('prediksi.stok') --}}" method="GET">
+                                <div class="basic-dropdown">
+                                    <div class="dropdown">
+                                        <button type="button" class="btn btn-primary dropdown-toggle"
+                                            data-bs-toggle="dropdown">
+                                            <i class="bi bi-gear-fill fs-5"></i>
+                                            Prediksi Berdasarkan
+                                        </button>
+                                        <div class="dropdown-menu">
+                                            <button class="dropdown-item active" type="submit" name="periode"
+                                                value="bulan">
+                                                Januari 2026
+                                            </button>
+                                            <button class="dropdown-item" type="submit" name="periode" value="tahun">
+                                                Desember 2025
+                                            </button>
+                                            <button class="dropdown-item" type="submit" name="periode" value="tahun">
+                                                November 2025
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <button class="btn btn-success"><i class="fas fa-file-excel fs-6"></i> Cetak
+                                Laporan</button>
+                        </div>
 
                         <div class="card-body">
                             <div class="table-responsive">
-                                <div class="basic-form custom_file_input w-50">
-                                    <form action="#">
-                                        <div class="input-group mb-3">
-                                            <span class="input-group-text bg-primary">Upload</span>
-                                            <div class="form-file">
-                                                <input type="file" class="form-file-input form-control">
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
                                 <table id="example3" class="display">
                                     <thead>
                                         <tr>
@@ -29,9 +47,10 @@
                                             <th>Nama Obat</th>
                                             <th style="text-align: center;">Stok Awal</th>
                                             <th style="text-align: center;">Stok Terjual</th>
-                                            <th style="text-align: center;">Stok Prediksi</th>
+                                            <th style="text-align: center;">Stok Sisa</th>
                                             <th>Status</th>
-                                            <th style="text-align: center;">Opsi</th>
+                                            <th style="text-align: center;">Stok Prediksi</th>
+                                            {{-- <th style="text-align: center;">Rekomendasi Sistem</th> --}}
                                         </tr>
                                     </thead>
 
@@ -43,7 +62,7 @@
                                                 <td>{{ $d['nama_obat'] }}</td>
                                                 <td style="text-align: center;">{{ $d['stok_awal'] }}</td>
                                                 <td style="text-align: center;">{{ $d['stok_terjual'] }}</td>
-                                                <td style="text-align: center;">{{ $d['stok_prediksi'] }}</td>
+                                                <td style="text-align: center;">{{ $d['stok_sisa'] }}</td>
                                                 <td>
                                                     @if ($d['status'] == 'menipis')
                                                         <span class="badge badge-sm badge-warning">Menipis</span>
@@ -59,33 +78,15 @@
                                                     @endif
                                                 </td>
 
+                                                <td style="text-align: center;">{{ $d['stok_prediksi'] }}</td>
+
                                                 <td class="d-flex justify-content-center align-items-center gap-0">
-                                                    <a href="{{-- url('permintaan_obat_hapus/' . $d->id_permintaan_obat) --}}"
-                                                        onclick="return confirm('Anda yakin Hapus data permintaan obat {{-- $d->nama_obat --}} ?')"
-                                                        class="btn btn-danger shadow btn-xs sharp me-1">
-                                                        <i class="fas fa-trash-alt"></i>
-                                                    </a>
-
-                                                    <button data-bs-toggle="modal"
-                                                        data-bs-target="#detail{{-- $d->id_permintaan_obat --}}"
-                                                        class="btn btn-primary shadow btn-xs sharp me-1" title="Detail">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-
-                                                    <button data-bs-toggle="modal"
-                                                        data-bs-target="#konfirmasi{{-- $d->id_permintaan_obat --}}"
-                                                        class="btn btn-info shadow btn-xs sharp me-1" title="Konfirmasi">
-                                                        <i class="fas fa-location-arrow"></i>
-                                                    </button>
-
-                                                    {{---- @include('permintaan_obat_modal') ----}}
 
                                                 </td>
 
                                             </tr>
                                         @endforeach
                                     </tbody>
-
                                 </table>
                             </div>
                         </div>

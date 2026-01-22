@@ -1,4 +1,4 @@
-{{-- <x-head />
+<x-head />
 <div class="authincation  d-flex justify-content-center align-items-center h-100">
     <div class="container ">
         <div class="row justify-content-center">
@@ -33,4 +33,4 @@
             </div>
         </div>
     </div>
-</div> --}}
+</div>

@@ -14,7 +14,7 @@
 
     {{-- ? Header --}}
     <div id="main-wrapper">
-        <x-header_admin />
+        <x-header-admin />
 
         {{-- ? Slot --}}
         {{ $slot }}

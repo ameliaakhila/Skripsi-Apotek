@@ -104,7 +104,6 @@ class ObatMasukController extends Controller
         try {
             // Ambil data ObatMasuk
             $obatMasuk = ObatMasuk::findOrFail($id_obat_masuk);
-            // dd("DEBUG OBATMASUK BEFORE", $obatMasuk);
 
             // Ambil data id_obat dan id_kategori_obat dari tabel terkait berdasarkan nama
             $obat = Obat::findOrFail($request->id_obat);
@@ -130,14 +129,10 @@ class ObatMasukController extends Controller
                 'harga_obat' => $request->harga_obat,
             ]);
 
-            // dd("DEBUG OBATMASUK AFTER", $obatMasuk);
             $obat->update([
                 'satuan_obat' => $request->satuan_obat,
                 'id_kategori_obat' => $request->id_kategori_obat ?? $obat->id_kategori_obat,
             ]);
-
-            // session()->flash('success', 'Data berhasil diupdate');
-            // dd(session()->all());
 
             // ? jika berhasil alert sukses akan muncul
             return redirect('/obat-masuk')->with('success', 'Data berhasil diupdate');

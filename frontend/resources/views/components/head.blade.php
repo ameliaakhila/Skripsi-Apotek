@@ -12,9 +12,7 @@
     <meta name="format-detection" content="telephone=no">
     <meta name="description" content="Sistem Apotek Sena Farma" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
-
-    <title>{{ $title ?? 'Apotek Sena Farma' }}</title>
+    <title>{{ $title === 'Apotek Sena Farma' ? $title : $title . ' | Apotek Sena Farma' }}</title>
     <link rel="icon" type="image/png" href="./assets/images/logosf.png">
 
     {{-- ! CSS LINK --}}
@@ -49,6 +47,7 @@
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
         {{-- Realtime Ui Package --}}
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         {{-- ! CSS LINK END --}}
 </head>

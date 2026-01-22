@@ -6,12 +6,11 @@ use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
-class obat_masuk extends Component
+class PrediksiObat extends Component
 {
     /**
      * Create a new component instance.
      */
-    
     public function __construct()
     {
         //
@@ -22,6 +21,6 @@ class obat_masuk extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.obat_masuk');
+        return view('components.prediksi_obat');
     }
 }

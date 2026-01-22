@@ -6,14 +6,16 @@ use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
-class penjualan_obat extends Component
+class Head extends Component
 {
     /**
      * Create a new component instance.
      */
-    public function __construct()
+
+    public $title;
+    public function __construct($title = 'Apotek Sena Farma')
     {
-        //
+        $this->title = $title;
     }
 
     /**
@@ -21,6 +23,6 @@ class penjualan_obat extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.penjualan_obat');
+        return view('components.head');
     }
 }
