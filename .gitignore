@@ -1,0 +1,7 @@
+*.log
+.env
+/xhtml
+.prettierrc
+composer.json
+composer.lock
+README.md

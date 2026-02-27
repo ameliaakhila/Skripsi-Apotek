@@ -3,71 +3,74 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\ObatMasuk;
-use App\Models\KategoriObat;
-use App\Models\Obat;
-use Illuminate\Support\Facades\DB;
+use App\Models\Admin\ObatMasuk;
+use App\Models\Admin\DataKategori;
+use App\Models\Admin\DataSatuan;
+use App\Models\Admin\Obat;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-
 
 class ObatMasukController extends Controller
 {
     public function index()
     {
-        $data = ObatMasuk::all();
-        $obat = Obat::all();
-        $kategori = KategoriObat::all();
-        $satuanList = Obat::select('satuan_obat')->distinct()->get();
+        $data = ObatMasuk::with([
+            'Obat:id_obat,nama_obat,id_satuan',
+            'DataSatuan:id_satuan,nama_satuan',
+            'DataKategori:id_kategori,nama_kategori'
+        ])->simplePaginate(10);
 
-        $obatMasukList = ObatMasuk::with('Obat')
-            ->select('id_obat')
-            ->distinct()
-            ->get();
+        $kodeObat = 'SF' . uniqid();
 
-        // Buat kode obat otomatis
-        $tanggal_hari_ini = date('ymd');
-        $nomor_urut_terakhir = DB::table('tb_obat_masuk')->max('id_obat_masuk') ?? 0;
-        $nomor_urut_terakhir++;
-        $nomor_urut_format = str_pad($nomor_urut_terakhir, 2, '1');
-        $kodeObat = 'SF' . $tanggal_hari_ini . $nomor_urut_format;
-        $type = 'tambah';
-        return view('components.main.obat_masuk', compact('data', 'obatMasukList', 'obat', 'satuanList', 'kategori', 'kodeObat', 'type'));
+        // gunakan cache untuk master data untuk mengurangi query ke database
+        $masterData = Cache::remember('master_data', now()->addHour(), function () {
+            return [
+                'obat' => Obat::select('id_obat', 'nama_obat')->get(),
+                'kategori' => DataKategori::select('id_kategori', 'nama_kategori')->get(),
+                'satuan' => DataSatuan::select('id_satuan', 'nama_satuan')->get(),
+            ];
+        });
+        $obat = $masterData['obat'];
+        $kategori = $masterData['kategori'];
+        $satuan = $masterData['satuan'];
+
+        $tanggal_hari_ini = date('dy');
+        $nomor_urut_terakhir = Obat::latest('id_obat')->value('id_obat') ?? 0;
+        $kodeBatch = 'BAC' . now()->format('dm') . 'SF' . str_pad($nomor_urut_terakhir, 3, '0');
+        $title = "Obat Masuk";
+        return view('components.admin.main.obat-masuk', compact('data', 'obat', 'satuan', 'kategori', 'kodeObat', 'kodeBatch', 'title'));
     }
 
     // ! ====================== CREATE =========================
     public function insert(Request $request)
     {
         try {
-            // dd($request->all());
+
             // ? validasi apakah obat sesuai dengan type tabel
-            $request->validate([
+            $validated = $request->validate([
                 'kode_obat' => 'required|string|unique:tb_obat_masuk,kode_obat',
-                'id_obat' => 'required|exists:tb_obat,id_obat',
-                'id_kategori_obat' => 'required|exists:tb_kategori_obat,id_kategori_obat',
+                'kode_batch' => 'required|string',
                 'tanggal_masuk' => 'required|date',
-                'tanggal_kadaluarsa' => 'required|date|after:tanggal_masuk',
-                'tanggal_keluar' => 'required|date|before:tanggal_kadaluarsa',
-                'satuan_obat' => 'required|string|max:50',
+                'tanggal_kedaluwarsa' => 'required|date|after:tanggal_masuk',
                 'stok_masuk' => 'required|integer|min:1',
+                'stok_keluar' => 'nullable|integer|min:0',
                 'harga_obat' => 'required|integer|min:1',
+                'id_obat' => 'required|exists:tb_obat,id_obat',
+                'id_satuan' => 'required|exists:tb_satuan,id_satuan',
+                'id_kategori' => 'required|exists:tb_kategori,id_kategori',
             ]);
             // dd($request->all());
 
-            // ? Hitung stok sisa obat dari (stok_masuk - stok_keluar)
-            $stok_sisa = $request->stok_masuk - $request->stok_keluar;
+            // set default 0 kalau kosong
+            $validated['stok_keluar'] = $validated['stok_keluar'] ?? 0;
 
-            ObatMasuk::create([
-                'kode_obat' => $request->kode_obat,
-                'id_obat' => $request->id_obat,
-                'id_kategori_obat' => $request->id_kategori_obat,
-                'tanggal_masuk' => $request->tanggal_masuk,
-                'tanggal_kadaluarsa' => $request->tanggal_kadaluarsa,
-                'tanggal_keluar' => $request->tanggal_keluar,
-                'satuan_obat' => $request->satuan_obat,
-                'stok_masuk' => $request->stok_masuk,
-                'stok_sisa' => $stok_sisa,
-                'harga_obat' => $request->harga_obat,
-            ]);
+            // hitung stok sisa
+            $validated['stok_sisa'] = $validated['stok_masuk'] - $validated['stok_keluar'];
+
+            // dd("MASUK INSERT", $validated);
+
+            // ? simpan data ke database
+            ObatMasuk::create($validated);
 
 
             return redirect('/obat-masuk')->with([
@@ -88,29 +91,27 @@ class ObatMasukController extends Controller
         // dd($request->all());
         // Validasi input sebelum update
         $request->validate([
-            'id_obat' => 'required|exists:tb_obat,id_obat',
-            'id_kategori_obat' => 'required|exists:tb_kategori_obat,id_kategori_obat',
-            'kode_obat' => 'required|string|max:10',
+            'kode_obat' => 'required',
+            'kode_batch' => 'required|string',
             'tanggal_masuk' => 'required|date',
-            'tanggal_kadaluarsa' => 'required|date',
-            'tanggal_keluar' => 'required|date',
-            'satuan_obat' => 'required|string|max:50',
+            'tanggal_kedaluwarsa' => 'required|date|after:tanggal_masuk',
             'stok_masuk' => 'required|integer|min:1',
-            'stok_keluar' => 'required|integer|min:0',
+            'stok_keluar' => 'nullable|integer|min:0',
             'harga_obat' => 'required|integer|min:1',
+            'id_obat' => 'required|exists:tb_obat,id_obat',
+            'id_satuan' => 'required|exists:tb_satuan,id_satuan',
+            'id_kategori' => 'required|exists:tb_kategori,id_kategori',
         ]);
 
-        // dd("MASUK UPDATE", $id_obat_masuk, $request->all());
+        // dd("Data valudasi", $request->all());
         try {
             // Ambil data ObatMasuk
             $obatMasuk = ObatMasuk::findOrFail($id_obat_masuk);
-
-            // Ambil data id_obat dan id_kategori_obat dari tabel terkait berdasarkan nama
             $obat = Obat::findOrFail($request->id_obat);
-            $kategori = KategoriObat::findOrFail($request->id_kategori_obat);
-
-
             $stok_sisa = $request->stok_masuk - $request->stok_keluar;
+
+            // dd( $obatMasuk, $obat, $stok_sisa);
+
             if ($stok_sisa < 0) {
                 return back()->with('error', 'Stok keluar tidak boleh lebih besar dari stok masuk!');
             }
@@ -118,11 +119,10 @@ class ObatMasukController extends Controller
             $obatMasuk->update([
                 'id_obat' => $request->id_obat,
                 'kode_obat' => $request->kode_obat,
-                'satuan_obat' => $request->satuan_obat,
-                'id_kategori_obat' => $request->id_kategori_obat ?? $kategori->id_kategori_obat,
+                'id_kategori' => $request->id_kategori,
+                'id_satuan' => $request->id_satuan,
                 'tanggal_masuk' => $request->tanggal_masuk,
-                'tanggal_kadaluarsa' => $request->tanggal_kadaluarsa,
-                'tanggal_keluar' => $request->tanggal_keluar,
+                'tanggal_kedaluwarsa' => $request->tanggal_kedaluwarsa,
                 'stok_masuk' => $request->stok_masuk,
                 'stok_keluar' => $request->stok_keluar,
                 'stok_sisa' => $stok_sisa,
@@ -130,12 +130,12 @@ class ObatMasukController extends Controller
             ]);
 
             $obat->update([
-                'satuan_obat' => $request->satuan_obat,
-                'id_kategori_obat' => $request->id_kategori_obat ?? $obat->id_kategori_obat,
+                'id_satuan' => $request->id_satuan,
+                'id_kategori' => $request->id_kategori ?? $obat->id_kategori,
             ]);
 
             // ? jika berhasil alert sukses akan muncul
-            return redirect('/obat-masuk')->with('success', 'Data berhasil diupdate');
+            return redirect('/obat-masuk')->with('success', 'Data ' . $obatMasuk->nama_obat . ' berhasil diupdate');
 
         } catch (\Exception $e) {
             Log::error('Update Obat Masuk Gagal', [

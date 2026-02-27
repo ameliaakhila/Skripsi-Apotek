@@ -71,8 +71,10 @@
 
 
 /* ? Style Card Penjualan Obat */
-.card .bg-primaryl {
+.card .bg-primaryl,
+.bg-primaryl {
     background-color: #b1d6fd !important;
 }
+
 /* ? Style Card Penjualan Obat */
 /* ? ubah */

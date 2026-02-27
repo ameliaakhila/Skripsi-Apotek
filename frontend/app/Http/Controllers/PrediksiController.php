@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Pembelian;
+use App\Models\Admin\Pembelian;
 use Phpml\Classification\DecisionTree;
 use Phpml\ModelManager;
 use Carbon\Carbon;
@@ -36,7 +36,7 @@ class PrediksiController extends Controller
             ["nama_obat" => "ACTIFED MERAH SYP K", "stok_awal" => 198, "stok_terjual" => 167, "stok_prediksi" => 250, "stok_sisa" => 31, "status" => "menipis"],
             ["nama_obat" => "ACYCLOVIR 200 MG TAB NOVELL", "stok_awal" => 176, "stok_terjual" => 170, "stok_prediksi" => 250, "stok_sisa" => 6, "status" => "habis"]
         ];
-        return view('components.admin.prediksi_obat', compact('data'));
+        return view('components.components.admin.prediksi_obat', compact('data'));
     }
 
     public function dashboard()
@@ -64,7 +64,7 @@ class PrediksiController extends Controller
             ["nama_obat" => "Diazepam", "status" => "aman", "stok" => 45],
             ["nama_obat" => "Amphicillin", "status" => "habis", "stok" => 0]
         ];
-        return view('components.admin.dashboard', compact('chartData', 'prediksi'));
+        return view('components.components.admin.dashboard', compact('chartData', 'prediksi'));
     }
 
     public function upload(Request $request)
@@ -84,50 +84,50 @@ class PrediksiController extends Controller
             }
             fclose($handle);
         }
-        return view('components.admin.prediksi_obat', compact('data'));
+        return view('components.components.admin.prediksi_obat', compact('data'));
     }
 
-    public function obat_kadaluarsa()
+    public function obat_kedaluwarsa()
     {
         $data = [
             [
                 "nama_obat" => "Paracetamol 500mg",
                 "jumlah_obat" => 20,
-                "tanggal_kadaluarsa" => "1 Januari 2027",
+                "tanggal_kedaluwarsa" => "1 Januari 2027",
                 "status_terjual" => "Belum Terjual",
                 "kondisi" => "Baik"
             ],
             [
                 "nama_obat" => "Amoxicillin 250mg",
                 "jumlah_obat" => 15,
-                "tanggal_kadaluarsa" => "15 Desember 2025",
+                "tanggal_kedaluwarsa" => "15 Desember 2025",
                 "status_terjual" => "Terjual",
                 "kondisi" => "Baik"
             ],
             [
                 "nama_obat" => "Vitamin C 1000mg",
                 "jumlah_obat" => 30,
-                "tanggal_kadaluarsa" => "12 Januari 2027",
+                "tanggal_kedaluwarsa" => "12 Januari 2027",
                 "status_terjual" => "Belum Terjual",
                 "kondisi" => "Baik"
             ],
             [
                 "nama_obat" => "Ibuprofen 400mg",
                 "jumlah_obat" => 25,
-                "tanggal_kadaluarsa" => "10 Januari 2026",
+                "tanggal_kedaluwarsa" => "10 Januari 2026",
                 "status_terjual" => "Terjual",
                 "kondisi" => "Baik"
             ],
             [
                 "nama_obat" => "Cetirizine 10mg",
                 "jumlah_obat" => 10,
-                "tanggal_kadaluarsa" => "22 Januari 2027",
+                "tanggal_kedaluwarsa" => "22 Januari 2027",
                 "status_terjual" => "Belum Terjual",
                 "kondisi" => "Kurang Baik"
             ]
         ];
 
 
-        return view('components.admin.obat_kadaluarsa', compact('data'));
+        return view('components.admin.obat_kedaluwarsa', compact('data'));
     }
 }

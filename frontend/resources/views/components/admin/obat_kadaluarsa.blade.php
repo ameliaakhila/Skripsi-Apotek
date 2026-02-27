@@ -1,4 +1,4 @@
-<x-layout :title="'Obat Kadaluarsa'">
+<x-layout :title="'Obat kedaluwarsa'">
     <div class="content-body">
         <!-- row -->
         <div class="container-fluid">
@@ -7,7 +7,7 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <h4 class="card-title">Obat Kadaluarsa</h4>
+                            <h4 class="card-title">Obat kedaluwarsa</h4>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
@@ -17,7 +17,7 @@
                                             <th>No</th>
                                             <th>Nama Obat</th>
                                             <th style="text-align:center;">Jumlah</th>
-                                            <th style="text-align:center;">Kadaluarsa</th>
+                                            <th style="text-align:center;">kedaluwarsa</th>
                                             <th style="text-align:center;">Status</th>
                                             <th style="text-align:ce.nter;">Opsi</th>
                                         </tr>
@@ -29,7 +29,7 @@
                                                 <td>{{ $loop->iteration }}</td>
                                                 <td>{{ $d['nama_obat'] }}</td>
                                                 <td style="text-align:center;">{{ $d['jumlah_obat'] }}</td>
-                                                <td style="text-align:center;">{{ $d['tanggal_kadaluarsa'] }}</td>
+                                                <td style="text-align:center;">{{ $d['tanggal_kedaluwarsa'] }}</td>
                                                 <td style="text-align:center;">
                                                     @if(isset($d['status_terjual']))
                                                         @if($d['status_terjual'] == "Belum Terjual")

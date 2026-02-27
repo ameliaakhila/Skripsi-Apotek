@@ -3,7 +3,8 @@
 <script src="{{ asset('assets/vendor/global/global.min.js') }}"></script>
 <script src="{{ asset('assets/vendor/chart.js/Chart.bundle.min.js') }}"></script>
 <script src="{{ asset('assets/vendor/jquery-nice-select/js/jquery.nice-select.min.js') }}"></script>
-
+<script src="{{ asset('assets/vendor/select2/js/select2.full.min.js')}}"></script>
+<script src="{{ asset('assets/js/plugins-init/select2-init.js')}}"></script>
 <!-- Apex Chart -->
 {{--
 <script src="{{ asset('assets/vendor/apexchart/apexchart.js') }}"></script> --}}
@@ -15,8 +16,6 @@
 <script src="{{ asset('assets/vendor/peity/jquery.peity.min.js') }}"></script>
 
 <!-- Dashboard 1 -->
-{{--
-<script src="{{ asset('assets/js/dashboard/dashboard-1.js') }}"></script> --}}
 
 <script src="{{ asset('assets/vendor/owl-carousel/owl.carousel.js') }}"></script>
 
@@ -93,25 +92,30 @@
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('click', function (e) {
-        if (e.target.closest('.btn-delete')) {
-            let button = e.target.closest('.btn-delete');
-            let id = button.dataset.id;
-            let nama = button.dataset.nama;
+        const button = e.target.closest('.btn-delete');
+        if (!button) return;
 
-            Swal.fire({
-                title: `Anda yakin hapus data obat ${nama}?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Ya, Hapus!',
-                cancelButtonText: 'Batal',
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById('delete-form-' + id).submit();
-                }
-            });
-        }
+        e.preventDefault();
+
+        const id = button.dataset.id;
+        const nama = button.dataset.nama || '';
+        const entity = button.dataset.entity || 'data';
+
+        Swal.fire({
+            title: `Yakin hapus ${entity} ini?`,
+            html: `<strong>${nama}</strong> akan dihapus permanen.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.getElementById('delete-form-' + id);
+                if (form) form.submit();
+            }
+        });
     });
 
 </script>
@@ -239,3 +243,45 @@
 </script>
 
 {{-- ! JAVA SCRIPT LINK END --}}
+
+{{-- ! SCRIPT MODAL START --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        document.querySelectorAll('.modal-dynamic').forEach(function (modal) {
+
+            modal.addEventListener('show.bs.modal', function (event) {
+
+                var button = event.relatedTarget;
+                if (!button) return;
+
+                // isi semua input
+                modal.querySelectorAll('[data-field]').forEach(function (element) {
+
+                    let field = element.dataset.field;
+                    let value = button.dataset[field] ?? '';
+
+                    // Kalau input atau select
+                    if (element.tagName === 'INPUT' || element.tagName === 'SELECT' || element.tagName === 'TEXTAREA') {
+                        element.value = value;
+                    }
+                    // Kalau span / div / td (detail mode)
+                    else {
+                        element.textContent = value;
+                    }
+
+                });
+
+                // Set form action (khusus edit)
+                let form = modal.querySelector('form');
+                if (form && button.dataset.action) {
+                    form.action = button.dataset.action;
+                }
+
+            });
+
+        });
+
+    });
+</script>
+{{-- ! SCRIPT MODAL END --}}

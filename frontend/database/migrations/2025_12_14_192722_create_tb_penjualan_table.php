@@ -10,17 +10,15 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('tb_penjualan_obat', function (Blueprint $table) {
-            $table->id('id_penjualan_obat');
-            $table->string('kode_obat');
-            $table->integer('stok_keluar');
-            $table->string('satuan_obat');
-            $table->integer('harga_obat');
+        Schema::create('tb_penjualan', function (Blueprint $table) {
+            $table->id('id_penjualan');
+            $table->integer('jumlah_penjualan');
             $table->timestamps();
 
+            $table->foreignId('id_cabang')->constrained('tb_cabang', 'id_cabang')->onDelete('cascade');
             $table->foreignId('id_obat')->constrained('tb_obat_masuk', 'id_obat')->onDelete('cascade');
             $table->foreignId('id_obat_masuk')->constrained('tb_obat_masuk', 'id_obat_masuk')->onDelete('cascade');
-            $table->foreignId('id_kategori_obat')->constrained('tb_kategori_obat', 'id_kategori_obat')->onDelete('cascade');
+            $table->foreignId('id_kategori')->constrained('tb_kategori', 'id_kategori')->onDelete('cascade');
         });
     }
 
@@ -29,6 +27,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('tb_penjualan_obat');
+        Schema::dropIfExists('tb_penjualan');
     }
 };

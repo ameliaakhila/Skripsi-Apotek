@@ -1,7 +1,7 @@
 {{-- ? Admin Header Start--}}
 <div class="nav-header">
     <a href="/" class="brand-logo">
-        <img src="./assets/images/logo1.png" alt="logo-apotek" class="w-25">
+        <img src="./assets/images/logosf.png" alt="logo-apotek" class="w-25">
         <div class="brand-title">
             <h2 class="">Sistem</h2>
             <span class="brand-sub-title fs-4">Apotek Sena Farma</span>
@@ -31,7 +31,7 @@
                 <ul class="navbar-nav header-right">
                     <li class="nav-item dropdown header-profile">
                         <a class="nav-link" href="javascript:void(0);" role="button" data-bs-toggle="dropdown">
-                            <img src="./assets/images/logo1.png" width="20" alt="logo-apotek" />
+                            <img src="./assets/images/logosf.png" width="20" alt="logo-apotek" />
                             <div class="header-info ms-3">
                                 <span class="fs-18 font-w500 mb-2">
                                     Admin
@@ -67,67 +67,43 @@
     <div class="dlabnav-scroll">
         <ul class="metismenu" id="menu">
 
-            <li>
-                <a href="/dashboard" aria-expanded="false">
-                    <i class="fas fa-home"></i>
-                    <span class="nav-text">Dashboard</span>
-                </a>
-            </li>
+            <x-link.nav-link route="dashboard" icon="fas fa-home" label="Dashboard" />
 
-            <li>
-                <a class="has-arrow" href="#javascript:void(0)" aria-expanded="false">
-                    <i class="fas fa-pills"></i>
-                    <span class="nav-text">Kelola Obat</span>
-                </a>
-                <ul>
-                    <li><a href="/data-obat">Data Obat</a></li>
-                    <li><a href="/kategori-obat">Kategori Obat</a></li>
-                    <li><a href="/obat-masuk">Obat Masuk</a></li>
-                </ul>
-            </li>
+            <x-link.nav-group icon="fas fa-database" label="Master Data">
+                <x-link.nav-link route="data-obat" label="Data Obat" />
+                <x-link.nav-link route="data-satuan" label="Data Satuan" />
+                <x-link.nav-link route="data-kategori" label="Data Kategori" />
+                <x-link.nav-link route="data-supplier" label="Data Supplier" />
+                <x-link.nav-link route="data-cabang" label="Data Cabang" />
+            </x-link.nav-group>
 
-            <li>
-                <a href="/penjualan-obat">
-                    <i class="fas fa-wallet"></i>
-                    <span class="nav-text">Penjualan Obat</span>
-                </a>
-            </li>
+            <x-link.nav-group icon="fas fa-boxes" label="Manajemen Stok">
+                <x-link.nav-link route="obat-masuk" label="Obat Masuk" />
+                <x-link.nav-link route="stok-opname" label="Stok Opname" />
+                <x-link.nav-link route="mutasi" label="Mutasi Cabang" />
+                <x-link.nav-link route="stok-cabang" label="Stok Cabang" />
+                <x-link.nav-link route="stok-batch-kedaluwarsa" label="Batch & Kedaluwarsa" />
+                <x-link.nav-link route="minimum-stok" label="Minimum Stok" />
+            </x-link.nav-group>
+            <x-link.nav-group icon="fas fa-shopping-cart" label="Transaksi">
+                <x-link.nav-link route="pembelian-obat" label="Pembelian Obat" />
+                <x-link.nav-link route="detail-pembelian-obat" label="Detail Pembelian Obat" />
+                <x-link.nav-link route="penjualan-obat" label="Penjualan Obat" />
+                <x-link.nav-link route="detail-penjualan-obat" label="Detail Penjualan Obat" />
+            </x-link.nav-group>
 
-            <li>
-                <a href="/prediksi">
-                    <i class="fas fa-location-arrow"></i>
-                    <span class="nav-text">Prediksi Obat</span>
-                </a>
-            </li>
+            <x-link.nav-link route="prediksi" icon="fas fa-location-arrow" label="Prediksi Obat" />
 
-            <li>
-                <a href="/obat-kadaluarsa">
-                    <i class="fa fa-exclamation-circle"></i>
-                    <span class="nav-text">Obat Kadaluarsa</span>
-                </a>
-            </li>
+            <x-link.nav-link route="obat-kedaluwarsa" icon="fas fa-exclamation-circle" label="Obat Kedaluwarsa" />
 
-            <li>
-                <a class="has-arrow" href="#javascript:void(0)" aria-expanded="false">
-                    <i class="fas fa-file-medical"></i>
-                    <span class="nav-text">Laporan</span>
-                </a>
-                <ul>
-                    <li><a href="/laporan">Laporan</a></li>
-                    <li><a href="/laporan-obat">Laporan Obat</a></li>
-                    <li><a href="/laporan-penjualan">Laporan penjualan</a></li>
-                    <li><a href="/laporan-prediksi">Laporan Prediksi</a></li>
-                </ul>
-            </li>
+            <x-link.nav-group icon="fas fa-file-medical" label="Laporan">
+                <x-link.nav-link route="laporan" label="Laporan Full" />
+                <x-link.nav-link route="laporan-obat" label="Detail Laporan Obat" />
+                <x-link.nav-link route="laporan-penjualan" label="Laporan Penjualan" />
+                <x-link.nav-link route="laporan-prediksi" label="Laporan Prediksi" />
+            </x-link.nav-group>
 
-
-            <li>
-                <a href="/kelola-akun">
-                    <i class="fas fa-users"></i>
-                    <span class="nav-text">Kelola Akun</span>
-                </a>
-            </li>
-
+            <x-link.nav-link route="/kelola-akun" icon="fas fa-users" label="Kelola Akun" />
         </ul>
     </div>
 </div>
