@@ -12,18 +12,12 @@ return new class extends Migration {
     {
         Schema::create('tb_obat_masuk', function (Blueprint $table) {
             $table->id('id_obat_masuk');
-            $table->string('kode_obat')->unique();
             $table->string('kode_batch');
             $table->date('tanggal_masuk');
             $table->date('tanggal_kedaluwarsa');
             $table->integer('stok_masuk');
-            $table->integer('stok_keluar')->default(0);
-            $table->integer('stok_sisa');
-            $table->integer('harga_obat');
 
-            $table->foreignId('id_satuan')->constrained('tb_satuan', 'id_satuan')->onDelete('cascade');
             $table->foreignId('id_obat')->constrained('tb_obat', 'id_obat')->onDelete('cascade');
-            $table->foreignId('id_kategori')->constrained('tb_kategori', 'id_kategori')->onDelete('cascade');
             $table->timestamps();
         });
     }

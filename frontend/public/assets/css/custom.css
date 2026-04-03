@@ -1,3 +1,41 @@
+/* ============================================
+   ! COLOR PALETTE & THEME DEFINITION
+   ============================================ */
+
+:root {
+    /* Primary Theme Colors */
+    --theme-primary: #5cc93a;
+    --theme-primary-dark: #49ad2a;
+    --theme-primary-soft: #dff4d8;
+    --theme-primary-border: #a8df9a;
+    /* Login Page Colors */
+        --login-white: #ffffff;
+        --login-black: #1a1a1a;
+        --login-light-gray: #f8f9fa;
+        --login-border-light: #e9ecef;
+        --login-text-dark: #2c3e50;
+        --login-text-light: #6c757d;
+    
+        /* Shadows */
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+        --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+        --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary,
+.badge-primary,
+.bg-primary,
+.bg-primaryl {
+    background-color: var(--theme-primary) !important;
+    border-color: var(--theme-primary) !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+    background-color: var(--theme-primary-dark) !important;
+    border-color: var(--theme-primary-dark) !important;
+}
 /* Untuk mengubah warna modal header */
 .modal-content {
     border-radius: 0.75rem;
@@ -5,7 +43,7 @@
 }
 
 .modal-content .custom-modal-header {
-    background-color: #4ba2ff;
+    background-color: var(--theme-primary);
 }
 
 .modal-content .custom-modal-header .modal-title {
@@ -13,40 +51,203 @@
     font-weight: bold;
 }
 
+/* ============================================
+   ! MODAL DYNAMIC LAYERING & POSITION FIX
+   ============================================ */
 
+.modal-dynamic {
+    position: fixed !important;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 1rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    transform: translate(-50%, -50%);
+    z-index: 1050 !important;
+}
+
+.modal-dynamic .modal-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: calc(100vw - 2rem);
+    max-width: 600px;
+    margin: 0;
+    transform: translate(-50%, -50%);
+}
+
+.modal-dynamic .modal-dialog.modal-lg {
+    max-width: 800px;
+}
+
+.modal-dynamic .modal-dialog.modal-xl {
+    max-width: 1000px;
+}
+
+.modal-dynamic.fade .modal-dialog {
+    opacity: 0;
+    transform: translate(-50%, -52%);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.modal-dynamic.fade.show .modal-dialog {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+}
+
+.modal-dynamic .modal-content {
+    max-height: calc(100vh - 2rem);
+}
+
+.modal-dynamic .modal-body {
+    overflow-y: auto;
+}
+
+.modal-backdrop.modal-dynamic-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1040 !important;
+}
+
+body.modal-active {
+    overflow: hidden;
+}
+
+@media (max-width: 575.98px) {
+    .modal-dynamic {
+        padding: 0.5rem;
+    }
+
+    .modal-dynamic .modal-dialog {
+        width: calc(100vw - 1rem);
+    }
+
+    .modal-dynamic .modal-content {
+        max-height: calc(100vh - 1rem);
+    }
+}
+
+/* ============================================
+   ! FORM CONTROLS & LABELS STYLING
+   ============================================ */
+
+/* Modal Form Label Styling */
+.modal-form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #245f18;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+/* Required Field Indicator */
+.modal-form-label.required::after {
+    content: ' *';
+    color: #dc3545;
+    font-weight: bold;
+    margin-left: 2px;
+}
+
+/* Form Control Wrapper */
+.modal-form-control-wrapper {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+/* Form Controls - Input & Select Base Styling */
+.form-control,
+.form-select,
+.modal-form-control {
+    border-color: var(--theme-primary-border) !important;
+    border-width: 1.5px;
+    border-radius: 2rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease-in-out;
+}
+
+.form-control:focus,
+.form-select:focus,
+.modal-form-control:focus {
+    border-color: var(--theme-primary-dark) !important;
+    box-shadow: 0 0 0 0.25rem rgba(92, 201, 58, 0.25) !important;
+    outline: none;
+}
+
+.form-control:hover:not(:disabled):not([readonly]),
+.form-select:hover:not(:disabled):not([readonly]),
+.modal-form-control:hover:not(:disabled):not([readonly]) {
+    border-color: var(--theme-primary) !important;
+    box-shadow: 0 0 8px rgba(92, 201, 58, 0.3) !important;
+}
+
+/* Input READONLY Styling - More User Friendly */
+.form-control[readonly],
+.modal-form-control[readonly] {
+    background-color: #f4faef !important;
+    color: #495057;
+    border-color: #d7ebcf !important;
+    cursor: not-allowed;
+    font-style: italic;
+    opacity: 0.9;
+}
+
+
+.form-control[readonly]:focus,
+.modal-form-control[readonly]:focus {
+    border-color: #d7ebcf !important;
+    box-shadow: none !important;
+    outline: none;
+}
+
+/* Form Hint Text Styling */
+.modal-form-hint {
+    display: block;
+    margin-top: 0.4rem;
+    font-size: 0.8rem;
+    color: #6c757d;
+    font-style: italic;
+}
 /* ? Custom striped untuk modal table */
 .modal-body table.table-striped tbody tr:nth-of-type(odd) {
-    background-color: #cce5ff !important;
-    color: #003366 !important;
+    background-color: #e6f7df !important;
+        color: #245f18 !important;
 }
 
 .modal-body table.table-striped tbody tr:nth-of-type(even) {
-    background-color: #e6f0ff !important;
-    color: #003366 !important;
+    background-color: #f1faed !important;
+        color: #245f18 !important;
 }
 
 /* Hover efek */
 .modal-body table.table-striped tbody tr:hover {
-    background-color: #99ccff !important;
-    color: #001a33 !important;
+    background-color: #cfeec3 !important;
+        color: #1b4d11 !important;
     transition: 0.3s;
 }
 
 /* Border untuk setiap cell */
 .modal-body table.table-striped td,
 .modal-body table.table-striped th {
-    border: 1px solid #99ccff !important;
+    border: 1px solid #c3e8b7 !important;
 }
 
 .modal-body-custom .table tr td {
     font-weight: 500;
-    color: #0d6efd !important;
+    color: #49ad2a !important;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     transition: all 0.3s ease;
 }
 
 .modal-body-custom .table tr td:hover {
-    color: #0056b3 !important;
+    color: #2f7f1a !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     cursor: pointer;
 }
@@ -54,27 +255,973 @@
 /* ? Custom striped untuk modal table */
 
 
-/* ? Untuk mengubah tampilan input */
-.form-control,
-.form-select {
-    border-color: #93c7ff !important;
-}
-
-.form-control:hover,
-.form-select:hover {
-    border-color: #007bff !important;
-    box-shadow: 0 0 5px rgba(108, 117, 125, 0.5) !important;
-    transition: all 0.3s ease-in-out !important;
-}
-
-/* ? Untuk mengubah tampilan input */
-
-
 /* ? Style Card Penjualan Obat */
 .card .bg-primaryl,
 .bg-primaryl {
-    background-color: #b1d6fd !important;
+    background-color: var(--theme-primary-soft) !important;
 }
 
 /* ? Style Card Penjualan Obat */
-/* ? ubah */
+
+/* ============================================
+   ! PHARMACY LOGIN PAGE REDESIGN - MODERN & ELEGANT
+   ============================================ */
+
+/* ---- KEYFRAME ANIMATIONS ---- */
+
+/* Floating Animation */
+@keyframes float-pharmacy {
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+/* Fade In/Out Animation */
+@keyframes fade-in-out-pharmacy {
+
+    0%,
+    100% {
+        opacity: 0.15;
+    }
+
+    50% {
+        opacity: 0.35;
+    }
+}
+
+/* Drift Animation (Horizontal Movement) */
+@keyframes drift-pharmacy {
+
+    0%,
+    100% {
+        transform: translateX(0px);
+    }
+
+    50% {
+        transform: translateX(10px);
+    }
+}
+
+/* Rotate Slow Animation */
+@keyframes rotate-slow-pharmacy {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Pulse Animation */
+@keyframes pulse-pharmacy {
+
+    0%,
+    100% {
+        opacity: 0.25;
+    }
+
+    50% {
+        opacity: 0.45;
+    }
+}
+
+/* Fade In */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* ---- LOGIN PAGE CONTAINER ---- */
+/* IMPORTANT: These styles are ONLY for login page (auth layout) */
+
+.pharmacy-login-page {
+    position: relative;
+    /* DO NOT use fixed positioning to avoid blocking other pages */
+    top: auto;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--login-black) 100%, var(--login-black) 100%) !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow-x: hidden;
+    overflow-y: auto;
+    z-index: 1;
+}
+
+/* ---- ANIMATED BACKGROUND CONTAINER ---- */
+
+.pharmacy-bg-container {
+    position: absolute;
+    /* Changed from fixed to absolute - stays within .pharmacy-login-page */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.pharmacy-animated-bg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Background Icon Base Styling */
+.bg-icon {
+    position: absolute;
+    font-size: 60px;
+    color: var(--theme-primary);
+    opacity: 0.5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Positioned Background Icons - Desktop and Mobile Layout */
+.bg-icon-1 {
+    top: 10%;
+    left: 5%;
+    animation: float-pharmacy 6s ease-in-out infinite;
+}
+
+.bg-icon-2 {
+    top: 15%;
+    right: 8%;
+    font-size: 50px;
+    animation: drift-pharmacy 7s ease-in-out infinite;
+}
+
+.bg-icon-3 {
+    top: 40%;
+    left: 3%;
+    font-size: 45px;
+    animation: fade-in-out-pharmacy 8s ease-in-out infinite;
+}
+
+.bg-icon-4 {
+    top: 50%;
+    right: 5%;
+    font-size: 70px;
+    animation: float-pharmacy 5s ease-in-out infinite 1s;
+}
+
+.bg-icon-5 {
+    bottom: 20%;
+    left: 8%;
+    font-size: 55px;
+    animation: drift-pharmacy 9s ease-in-out infinite;
+}
+
+.bg-icon-6 {
+    bottom: 15%;
+    right: 10%;
+    font-size: 50px;
+    animation: float-pharmacy 7s ease-in-out infinite 0.5s;
+}
+
+.bg-icon-7 {
+    top: 70%;
+    left: 15%;
+    font-size: 48px;
+    animation: pulse-pharmacy 6s ease-in-out infinite;
+}
+
+.bg-icon-8 {
+    bottom: 25%;
+    right: 15%;
+    font-size: 52px;
+    animation: fade-in-out-pharmacy 7s ease-in-out infinite 1s;
+}
+
+/* Overlay untuk subtle darkening */
+.pharmacy-bg-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(41, 41, 41, 0.3);
+    /* Changed from black 0.5 to white 0.3 for lighter overlay effect */
+    z-index: 1;
+}
+
+/* ---- LOGIN WRAPPER ---- */
+
+.pharmacy-login-wrapper {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 1200px;
+    min-height: 100vh;
+    /* Changed from height: 100vh to min-height: 100vh */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* ---- BRAND SECTION (Desktop Only) ---- */
+
+.pharmacy-brand-section {
+    display: none;
+    flex: 1;
+    padding: 40px;
+    align-items: center;
+    justify-content: center;
+    min-height: auto;
+    /* Changed from min-height: 100vh to auto */
+}
+
+.brand-content {
+    text-align: center;
+    color: var(--login-black);
+    animation: fade-in 0.8s ease-in-out;
+}
+
+.brand-icon-wrapper {
+    font-size: 80px;
+    color: var(--theme-primary);
+    margin-bottom: 30px;
+    display: inline-block;
+    animation: float-pharmacy 4s ease-in-out infinite;
+}
+
+.brand-title {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--login-black);
+    margin-bottom: 10px;
+    letter-spacing: -0.5px;
+}
+
+.brand-subtitle {
+    font-size: 16px;
+    color: var(--login-text-light);
+    margin-bottom: 40px;
+    font-weight: 400;
+}
+
+.brand-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 40px 0;
+    text-align: left;
+}
+
+.brand-features li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    font-size: 15px;
+    font-weight: 600 !important;
+    color: var(--login-text-light);
+    transition: all 0.3s ease;
+}
+
+.brand-features li i {
+    color: var(--theme-primary);
+    margin-right: 15px;
+    font-size: 18px;
+}
+
+.brand-features li:hover {
+    transform: translateX(5px);
+    color: var(--theme-primary-dark);
+}
+
+.brand-features li:hover i {
+    color: var(--theme-primary-dark);
+    transform: scale(1.2);
+}
+
+.brand-illustration {
+    font-size: 100px;
+    color: var(--theme-primary);
+    opacity: 0.1;
+    margin-top: 40px;
+    animation: rotate-slow-pharmacy 20s linear infinite;
+}
+
+/* ---- FORM SECTION ---- */
+
+.pharmacy-form-section {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: auto;
+    /* Changed from min-height: 100vh to auto */
+    max-width: 450px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* ---- FORM CARD ---- */
+
+.form-card {
+    background: var(--login-white) !important;
+    padding: 50px 40px;
+    border-radius: 16px;
+    box-shadow: var(--login-border-light) !important;
+    border: 1px solid rgba(92, 201, 58, 0.1);
+    width: 100%;
+    animation: fade-in 0.6s ease-in-out;
+    transition: all 0.3s ease;
+}
+
+.form-card:hover {
+    box-shadow: var(--login-border-light) !important;
+    transform: translateY(-2px);
+}
+
+/* ---- FORM LOGO ---- */
+
+.form-logo {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.form-logo img {
+    max-width: 100px;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+/* ---- FORM HEADER ---- */
+
+.form-header {
+    text-align: center;
+    margin-bottom: 35px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--login-light-gray);
+}
+
+.form-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--login-black) !important;
+    margin: 0 0 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.form-title i {
+    color: var(--theme-primary);
+    font-size: 26px;
+}
+
+.form-description {
+    font-size: 14px;
+    color: var(--login-text-light);
+    margin: 0;
+    font-weight: 400;
+}
+
+/* ---- ERROR ALERT STYLING ---- */
+
+.alert-pharmacy {
+    padding: 14px 16px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    border: 1px solid transparent;
+    animation: fade-in 0.4s ease-in-out;
+}
+
+.alert-danger-pharmacy {
+    background-color: #ffe6e6;
+    border-color: #ffcccc;
+}
+
+.alert-pharmacy .alert-icon {
+    font-size: 18px;
+    color: #dc3545;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.alert-pharmacy .alert-message {
+    flex: 1;
+}
+
+.alert-pharmacy .alert-message strong {
+    display: block;
+    color: #dc3545;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.alert-pharmacy .error-item {
+    font-size: 13px;
+    color: #c82333;
+    margin-bottom: 3px;
+    line-height: 1.4;
+}
+
+.alert-pharmacy .error-item:last-child {
+    margin-bottom: 0;
+}
+
+.alert-pharmacy .alert-close {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #dc3545;
+    cursor: pointer;
+    font-size: 16px;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.alert-pharmacy .alert-close:hover {
+    color: #c82333;
+}
+
+/* ---- FORM STYLING ---- */
+
+.pharmacy-form {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ---- FORM GROUP ---- */
+
+.form-group-pharmacy {
+    margin-bottom: 24px;
+    position: relative;
+}
+
+/* ---- INPUT GROUP ---- */
+
+.input-group-pharmacy {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon-left {
+    position: absolute;
+    left: 16px;
+    font-size: 16px;
+    color: var(--theme-primary);
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+.input-pharmacy {
+    width: 100%;
+    padding: 14px 16px 14px 45px;
+    border: 2px solid var(--theme-primary-border) !important;
+    border-radius: 10px;
+    font-size: 14px;
+    color: var(--login-text-dark) !important;
+    background-color: var(--login-white) !important;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.input-pharmacy::placeholder {
+    color: #adb5bd;
+}
+
+.input-pharmacy:focus {
+    outline: none;
+    border-color: var(--theme-primary);
+    box-shadow: 0 0 0 3px rgba(92, 201, 58, 0.15);
+    background-color: rgba(92, 201, 58, 0.02);
+}
+
+.input-pharmacy:hover:not(:focus) {
+    border-color: var(--theme-primary-border);
+    box-shadow: 0 0 0 2px rgba(92, 201, 58, 0.08);
+}
+
+.input-pharmacy.is-invalid-pharmacy {
+    border-color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.03);
+}
+
+.input-pharmacy.is-invalid-pharmacy:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+}
+
+.input-pharmacy:focus~.input-underline {
+    width: 100%;
+}
+
+/* Input Label */
+.input-label-pharmacy {
+    position: absolute;
+    left: 45px;
+    top: 14px;
+    font-size: 14px;
+    color: var(--theme-primary-dark) !important;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    background: transparent;
+}
+
+.input-pharmacy:focus~.input-label-pharmacy,
+.input-pharmacy:not(:placeholder-shown)~.input-label-pharmacy {
+    top: -20px;
+    font-size: 12px;
+    color: var(--theme-primary) !important;
+    font-weight: 700 !important;
+}
+
+/* Input Error Message */
+.input-error-pharmacy {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #dc3545 !important;
+    font-weight: 500;
+    animation: fade-in 0.3s ease;
+}
+
+.input-error-pharmacy i {
+    font-size: 12px;
+}
+
+/* ---- SUBMIT BUTTON ---- */
+
+.btn-login-pharmacy {
+    padding: 14px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
+    cursor: pointer;
+    transition: all 0.35s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(92, 201, 58, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 10px;
+}
+
+.btn-login-pharmacy:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(92, 201, 58, 0.4);
+    background: linear-gradient(135deg, var(--theme-primary-dark) 0%, #3a8a1e 100%);
+}
+
+.btn-login-pharmacy:active {
+    transform: translateY(0px);
+    box-shadow: 0 2px 8px rgba(92, 201, 58, 0.2);
+}
+
+.btn-login-pharmacy:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-text {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-loader {
+    color: white;
+}
+
+/* ---- FORM FOOTER ---- */
+
+.form-footer {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--login-border-light);
+    text-align: center;
+}
+
+.footer-info {
+    font-size: 12px;
+    color: var(--login-text-light);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.footer-info i {
+    color: var(--theme-primary);
+    font-size: 13px;
+}
+
+.footer-copyright {
+    font-size: 11px;
+    color: #adb5bd;
+    margin: 0;
+    font-weight: 400;
+}
+
+/* ============================================
+   ! RESPONSIVE DESIGN - TABLET
+   ============================================ */
+
+@media (min-width: 768px) {
+    .pharmacy-login-page {
+        min-height: 100vh;
+        position: relative;
+    }
+
+    .pharmacy-login-wrapper {
+        flex-direction: row;
+        max-width: 100%;
+        min-height: 100vh;
+        /* Removed height: auto to use min-height instead */
+    }
+
+    .pharmacy-brand-section {
+        display: flex;
+        min-height: auto;
+    }
+
+    .pharmacy-form-section {
+        max-width: none;
+        flex: 1;
+        min-height: auto;
+    }
+
+    .form-card {
+        max-width: 450px;
+        margin: 0 auto;
+    }
+}
+
+/* ============================================
+   ! RESPONSIVE DESIGN - DESKTOP
+   ============================================ */
+
+@media (min-width: 992px) {
+    .pharmacy-login-wrapper {
+        max-width: 1400px;
+    }
+
+    .brand-icon-wrapper {
+        font-size: 100px;
+    }
+
+    .brand-title {
+        font-size: 40px;
+    }
+
+    .brand-features {
+        font-size: 16px;
+    }
+
+    .brand-illustration {
+        font-size: 120px;
+    }
+
+    .form-card {
+        padding: 60px 50px;
+    }
+
+    .form-title {
+        font-size: 32px;
+    }
+
+    /* Position Background Icons untuk desktop */
+    .bg-icon {
+        font-size: 70px;
+    }
+
+    .bg-icon-1 {
+        top: 5%;
+        left: 2%;
+    }
+
+    .bg-icon-2 {
+        top: 20%;
+        right: 3%;
+        font-size: 60px;
+    }
+
+    .bg-icon-3 {
+        top: 35%;
+        left: 1%;
+        font-size: 55px;
+    }
+
+    .bg-icon-4 {
+        top: 45%;
+        right: 2%;
+        font-size: 80px;
+    }
+
+    .bg-icon-5 {
+        bottom: 15%;
+        left: 3%;
+        font-size: 65px;
+    }
+
+    .bg-icon-6 {
+        bottom: 10%;
+        right: 5%;
+        font-size: 60px;
+    }
+
+    .bg-icon-7 {
+        top: 65%;
+        left: 8%;
+        font-size: 58px;
+    }
+
+    .bg-icon-8 {
+        bottom: 20%;
+        right: 15%;
+        font-size: 62px;
+    }
+}
+
+/* ============================================
+   ! RESPONSIVE DESIGN - MOBILE (Small Devices)
+   ============================================ */
+
+@media (max-width: 480px) {
+    .pharmacy-login-page {
+        min-height: 100vh;
+        padding: 15px;
+    }
+
+    .pharmacy-login-wrapper {
+        padding: 15px;
+    }
+
+    .form-card {
+        padding: 35px 25px;
+        border-radius: 12px;
+    }
+
+    .form-logo {
+        margin-bottom: 20px;
+    }
+
+    .form-logo img {
+        max-width: 80px;
+    }
+
+    .form-header {
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+    }
+
+    .form-title {
+        font-size: 22px;
+        gap: 8px;
+    }
+
+    .form-title i {
+        font-size: 20px;
+    }
+
+    .form-description {
+        font-size: 13px;
+    }
+
+    .input-pharmacy {
+        padding: 12px 14px 12px 40px;
+        font-size: 13px;
+    }
+
+    .input-icon-left {
+        left: 12px;
+        font-size: 14px;
+    }
+
+    .btn-login-pharmacy {
+        padding: 12px 20px;
+        font-size: 14px;
+    }
+
+    /* Smaller background icons on mobile */
+    .bg-icon {
+        font-size: 40px;
+    }
+
+    .bg-icon-1 {
+        font-size: 35px;
+    }
+
+    .bg-icon-2 {
+        font-size: 32px;
+    }
+
+    .bg-icon-3 {
+        font-size: 28px;
+    }
+
+    .bg-icon-4 {
+        font-size: 45px;
+    }
+
+    .bg-icon-5 {
+        font-size: 38px;
+    }
+
+    .bg-icon-6 {
+        font-size: 32px;
+    }
+
+    .bg-icon-7 {
+        font-size: 30px;
+    }
+
+    .bg-icon-8 {
+        font-size: 35px;
+    }
+}
+
+/* ============================================
+   ! ANIMATIONS - UTILITY CLASSES
+   ============================================ */
+
+.fade-in {
+    animation: fade-in 0.6s ease-in-out;
+}
+
+/* Light Mode & Accessibility Adjustments */
+@media (prefers-reduced-motion: reduce) {
+
+    .pharmacy-login-page,
+    .form-card,
+    .brand-content,
+    .bg-icon,
+    .input-pharmacy,
+    .btn-login-pharmacy {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* Dark Mode Support (Optional) */
+@media (prefers-color-scheme: dark) {
+    .pharmacy-login-page {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    }
+
+    .form-card {
+        background: #2a2a2a;
+        border-color: rgba(92, 201, 58, 0.2);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    .input-pharmacy {
+        background-color: #3a3a3a;
+        border-color: #444;
+        color: #e0e0e0;
+    }
+
+    .input-pharmacy:focus {
+        background-color: rgba(92, 201, 58, 0.08);
+        border-color: var(--theme-primary);
+    }
+
+    .form-title,
+    .brand-title {
+        color: #ffffff;
+    }
+
+    .form-description,
+    .brand-subtitle,
+    .login-text-light {
+        color: #b0b0b0;
+    }
+
+    .form-header {
+        border-bottom-color: #444;
+    }
+}
+
+/* ============================================
+   ! PRELOADER & DASHBOARD STYLING FIX
+   ============================================ */
+/* Ensure preloader is properly hidden when dashboard loads */
+
+#preloader {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    z-index: -1 !important;
+    pointer-events: none !important;
+}
+
+/* Ensure main wrapper is visible and not blocked */
+#main-wrapper {
+    position: relative;
+    z-index: 1;
+    background: transparent;
+}
+
+#main-wrapper.show {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 1 !important;
+}
+
+/* Content body must be fully accessible */
+.content-body {
+    position: relative;
+    z-index: 1;
+    background: transparent;
+}
+
+/* ============================================
+   ! AUTH LAYOUT SPECIFIC STYLING (For auth.blade.php)
+   ============================================ */
+/* Only applies to auth pages, not dashboard pages */
+
+body .pharmacy-login-page {
+    min-height: 100vh;
+}
+
+/* Dashboard-specific: Ensure dashboard elements are not blocked */
+#main-wrapper:not(.pharmacy-login-page) {
+    z-index: 100;
+}
+
+/* Ensure form elements in dashboard are clickable */
+.content-body input,
+.content-body button,
+.content-body select,
+.content-body textarea {
+    pointer-events: auto !important;
+    z-index: auto !important;
+}

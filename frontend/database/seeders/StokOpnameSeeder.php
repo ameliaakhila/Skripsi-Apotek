@@ -29,14 +29,13 @@ class StokOpnameSeeder extends Seeder
         ];
 
         $stok_opnames = [];
-
+        $counter = 1;
 
         foreach ($obats as $obat) {
             foreach ($cabangs as $cabang_id) {
                 $stok_opnames[] = [
-                    // koe stok opname yang unik dan memiliki panjang 10 karakter, misal OPN-2109-001
-                    'kode_opname' => 'OP-' . now()->format('my') . str_pad($cabang_id, 3, '0', STR_PAD_LEFT),
-                    // outputnya : OPN-2109-001 untuk cabang_id 1, OPN-2109-002 untuk cabang_id 2, dst
+                    // Format kode opname: OP0001, OP0002, dst (6 karakter max)
+                    'kode_opname' => 'OP' . str_pad($counter, 4, '0', STR_PAD_LEFT),
                     'tanggal_opname' => now()->subDays(rand(0, 30)),
                     'stok_sistem' => rand(0, 500),
                     'stok_fisik' => rand(0, 500),
@@ -47,6 +46,7 @@ class StokOpnameSeeder extends Seeder
                     'id_obat' => $obat,
                     'id_cabang' => $cabang_id,
                 ];
+                $counter++;
             }
         }
 

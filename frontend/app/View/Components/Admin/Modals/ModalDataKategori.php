@@ -11,9 +11,10 @@ class ModalDataKategori extends Component
     /**
      * Create a new component instance.
      */
-    public function __construct()
-    {
-        //
+    public function __construct(
+        public $judul = [],
+    ) {
+        $this->judul = $judul;
     }
 
     /**

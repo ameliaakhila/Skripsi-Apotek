@@ -2,6 +2,7 @@
 
 namespace App\Models\Admin;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class StokBatch extends Model
@@ -13,9 +14,12 @@ class StokBatch extends Model
         'kode_batch',
         'tanggal_masuk',
         'tanggal_kedaluwarsa',
-        'jumlah_masuk',
-        'jumlah_sisa',
+        'stok_masuk',
+        'stok_keluar',
+        'stok_sisa',
         'status_stok',
+        'tujuan_penyesuaian',
+        'catatan',
         'id_obat',
         'id_cabang'
     ];
@@ -25,11 +29,38 @@ class StokBatch extends Model
         'tanggal_kedaluwarsa' => 'date',
     ];
 
-    public function getTanggalKedaluwarsaFormatAttribute()
+    // ! Accessor tanggal dalam bahasa Indonesia
+    private function formatTanggalIndo($tanggal)
     {
-        return $this->tanggal_kedaluwarsa
-            ? $this->tanggal_kedaluwarsa->translatedFormat('d F Y')
-            : null;
+        return Carbon::parse($tanggal)
+            ->locale('id')
+            ->isoFormat('D MMMM Y');
+    }
+
+    public function getTanggalMasukFormattedAttribute()
+    {
+        return $this->formatTanggalIndo($this->tanggal_masuk);
+    }
+
+    public function getTanggalkedaluwarsaFormattedAttribute()
+    {
+        return $this->formatTanggalIndo($this->tanggal_kedaluwarsa);
+    }
+
+    public function getStatusKedaluwarsaAttribute()
+    {
+        $today = Carbon::today();
+        $diffDays = $today->diffInDays($this->tanggal_kedaluwarsa, false);
+
+        if ($diffDays < 0) {
+            return 'Kedaluwarsa';
+        }
+
+        if ($diffDays <= 30) {
+            return 'Mendekati Kedaluwarsa';
+        }
+
+        return 'Aman';
     }
 
     public function Obat()
@@ -39,5 +70,16 @@ class StokBatch extends Model
     public function DataCabang()
     {
         return $this->belongsTo(DataCabang::class, 'id_cabang', 'id_cabang');
+    }
+
+    public function ObatMasuk()
+    {
+        return $this->hasOne(ObatMasuk::class, 'id_obat', 'id_obat')
+            ->whereColumn('tb_obat_masuk.kode_batch', 'tb_stok_batch.kode_batch');
+    }
+
+    public function StokOpname()
+    {
+        return $this->hasMany(StokOpname::class, 'id_stok_batch', 'id_stok_batch');
     }
 }

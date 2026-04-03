@@ -1,4 +1,4 @@
-<x-layout title="Kelola Stok Cabang">
+<x-app title="Kelola Stok Cabang">
     <div class="content-body">
         <!-- row -->
         <div class="container-fluid">
@@ -6,9 +6,6 @@
 
                 <div class="col-12">
                     <div class="card">
-                        <div class="card-header bg-primary">
-                            <h4 class="card-title text-white">{{ $title }}</h4>
-                        </div>
                         <div class="card-body">
                             <div class="table-responsive">
                                 @if(session('success'))
@@ -130,10 +127,10 @@
                                     </tbody>
                                 </table>
                                 {{-- ! Modal Tambah & Edit --}}
-                                @foreach($stok as $s)
+                                {{-- @foreach($stok as $s)
                                     <x-admin.modals.modal-stok-cabang type="tambah" />
                                     <x-admin.modals.modal-stok-cabang type="edit" :stok="$stok" />
-                                @endforeach
+                                @endforeach --}}
                             </div>
                         </div>
                     </div>
@@ -142,4 +139,4 @@
             </div>
         </div>
     </div>
-</x-layout>
+</x-app>

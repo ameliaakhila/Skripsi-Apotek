@@ -31,17 +31,19 @@ class AppServiceProvider extends ServiceProvider
                 'data-obat' => 'Data Obat',
                 'data-satuan' => 'Data Satuan',
                 'data-kategori' => 'Data Kategori',
-                'data-cabang' => 'Data Cabang',
                 'data-supplier' => 'Data Supplier',
+                'data-cabang' => 'Data Cabang',
 
-                // Manajemen Stok
+                // Transaksi Stok
+                'obat-masuk' => 'Obat Masuk',
+                'obat-keluar' => 'Obat Keluar',
+                'mutasi-stok' => 'Mutasi Stok',
+
+                // Monitoring Stok
                 'stok-cabang' => 'Stok Cabang',
                 'stok-batch-kedaluwarsa' => 'Batch & Kedaluwarsa',
-                'obat-masuk' => 'Obat Masuk',
+                'minimum-stok' => 'Minimum Stok',
                 'stok-opname' => 'Stok Opname',
-
-                // Transaksi
-                'penjualan-obat' => 'Penjualan Obat',
 
                 // AI & Monitoring
                 'prediksi' => 'Prediksi Obat',

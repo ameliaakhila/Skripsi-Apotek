@@ -15,22 +15,16 @@ class ModalObatMasuk extends Component
     public function __construct(
         public $type = 'default',
         public $judul = null,
-        public $obatMasukList = [],
-        public $satuan = [],
-        public $kategori = [],
+        public $kodeBatch = null,
         public $d = null,
+        public $data = [],
         public $obat = [],
-        public $kodeObat = null,
-        public $kodeBatch = null
     ) {
         $this->type = $type;
         $this->judul = $judul;
-        $this->obatMasukList = $obatMasukList;
-        $this->satuan = $satuan;
-        $this->kategori = $kategori;
-        $this->d = $d;
-        $this->kodeObat = $kodeObat;
         $this->kodeBatch = $kodeBatch;
+        $this->d = $d;
+        $this->data = $data;
         $this->obat = $obat;
     }
 

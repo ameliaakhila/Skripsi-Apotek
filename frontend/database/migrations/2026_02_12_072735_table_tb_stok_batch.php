@@ -12,17 +12,18 @@ return new class extends Migration {
     {
         Schema::create('tb_stok_batch', function (Blueprint $table) {
             $table->id('id_stok_batch');
-            $table->string('kode_batch')->unique();
+            $table->string('kode_batch');
             $table->date('tanggal_kedaluwarsa');
-            $table->integer('jumlah_masuk');
-            $table->integer('jumlah_sisa')->default(0);
+            $table->integer('stok_masuk');
+            $table->integer('stok_keluar')->default(0);
+            $table->integer('stok_sisa')->default(0);
             $table->enum('status_stok', ['Aman', 'Menipis', 'Habis']);
+            $table->string('tujuan_penyesuaian')->default('Tidak ada penyesuaian');
+            $table->text('catatan')->nullable();
             $table->timestamps();
 
-            $table->unsignedBigInteger('id_obat');
-            $table->foreign('id_obat')->references('id_obat')->on('tb_obat')->onDelete('cascade');
-            $table->unsignedBigInteger('id_cabang')->default(1);
-            $table->foreign('id_cabang')->references('id_cabang')->on('tb_cabang')->onDelete('cascade');
+            $table->foreignId('id_obat')->constrained('tb_obat')->references('id_obat')->onDelete('cascade');
+            $table->foreignId('id_cabang')->constrained('tb_cabang')->references('id_cabang')->onDelete('cascade');
         });
     }
 
@@ -32,7 +33,7 @@ return new class extends Migration {
     public function down(): void
     {
         Schema::table('tb_stok_batch', function (Blueprint $table) {
-            //
+            
         });
     }
 };

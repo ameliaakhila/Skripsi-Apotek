@@ -4,6 +4,7 @@ namespace App\Models\Admin;
 
 use App\Models\Admin\DataCabang;
 use App\Models\Admin\Obat;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -15,13 +16,14 @@ class StokOpname extends Model
     protected $fillable = [
         'kode_opname',
         'tanggal_opname',
-        'jumlah_fisik',
-        'jumlah_sistem',
+        'stok_fisik',
+        'stok_sistem',
         'selisih',
         'keterangan',
         'id_obat',
         'id_stok_batch',
-        'id_cabang'
+        'id_cabang',
+        'id_user',
     ];
 
     protected $casts = [
@@ -61,5 +63,10 @@ class StokOpname extends Model
     public function DataCabang()
     {
         return $this->belongsTo(DataCabang::class, 'id_cabang', 'id_cabang');
+    }
+
+    public function User()
+    {
+        return $this->belongsTo(User::class, 'id_user', 'id_user');
     }
 }

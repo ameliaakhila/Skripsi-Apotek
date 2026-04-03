@@ -2,6 +2,7 @@
 
 namespace App\Models\Admin;
 
+use App\Helpers\StokStatusHelper;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 use NumberFormatter;
@@ -10,17 +11,11 @@ class ObatMasuk extends Model
     protected $table = 'tb_obat_masuk';
     protected $primaryKey = 'id_obat_masuk';
     protected $fillable = [
-        'kode_obat',
         'kode_batch',
         'tanggal_masuk',
         'tanggal_kedaluwarsa',
         'stok_masuk',
-        'stok_keluar',
-        'stok_sisa',
-        'harga_obat',
-        'id_satuan',
         'id_obat',
-        'id_kategori'
     ];
 
     // ! Accessor tanggal dalam bahasa Indonesia
@@ -103,20 +98,22 @@ class ObatMasuk extends Model
     // ! Status warna untuk stok keluar dan stok sisa
     public function getStatusStokAttribute()
     {
-        if ($this->presentase_stok < 20) {
-            $status = 'Habis';
-            $warna_status = 'danger';
-        } elseif ($this->presentase_stok <= 50) {
-            $status = 'Menipis';
-            $warna_status = 'warning';
-        } else {
-            $status = 'Aman';
-            $warna_status = 'success';
-        }
-        $status_stok = ['warna' => $warna_status, 'status' => $status];
-        return $status_stok;
+        // Tentukan status menggunakan helper berdasarkan safety_stock
+        $status = StokStatusHelper::getStatus($this->stok_sisa, $this->Obat->safety_stock ?? 1);
+
+        // Map status ke warna
+        $warna_status = match ($status) {
+            'Habis' => 'danger',
+            'Menipis' => 'warning',
+            'Aman' => 'success',
+            default => 'secondary',
+        };
+
+        return ['warna' => $warna_status, 'status' => $status];
     }
 
+
+    // ! ================= RELASI =====================
 
     // ! Relasi Obat
     public function Obat()
@@ -124,16 +121,17 @@ class ObatMasuk extends Model
         return $this->belongsTo(Obat::class, 'id_obat', 'id_obat');
     }
 
-    // ! Relasi Satuan
-    public function DataSatuan()
+    // ! Relasi StokBatch - satu batch obat masuk bisa jadi multiple stok batch di berbagai cabang
+    // Filter by id_obat dan kode_batch sama untuk track batch yang sama across cabang
+    public function stokBatches()
     {
-        return $this->belongsTo(DataSatuan::class, 'id_satuan', 'id_satuan');
+        return $this->hasMany(StokBatch::class, 'id_obat', 'id_obat')
+            ->where('kode_batch', $this->kode_batch);
     }
 
-    // ! Relasi Kategori Obat
-    public function DataKategori()
+    // ! Alias untuk camelCase convention
+    public function StokBatch()
     {
-        return $this->belongsTo(DataKategori::class, 'id_kategori', 'id_kategori');
+        return $this->stokBatches();
     }
-
 }

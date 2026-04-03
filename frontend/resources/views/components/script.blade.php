@@ -1,76 +1,81 @@
-{{-- ! JAVA SCRIPT LINK --}}
-<!-- Required vendors -->
-<script src="{{ asset('assets/vendor/global/global.min.js') }}"></script>
-<script src="{{ asset('assets/vendor/chart.js/Chart.bundle.min.js') }}"></script>
-<script src="{{ asset('assets/vendor/jquery-nice-select/js/jquery.nice-select.min.js') }}"></script>
-<script src="{{ asset('assets/vendor/select2/js/select2.full.min.js')}}"></script>
-<script src="{{ asset('assets/js/plugins-init/select2-init.js')}}"></script>
-<!-- Apex Chart -->
 {{--
-<script src="{{ asset('assets/vendor/apexchart/apexchart.js') }}"></script> --}}
+    ⚠️  DEPRECATED FILE - DO NOT USE
+    This file is NOT included in any layout. All layouts use 'layouts.components.script' instead.
+    This file was replaced by layouts/components/script.blade.php which includes proper Select2 initialization guard clauses.
+    If you find yourself including this file, please use @include('layouts.components.script') instead.
+--}}
 
-
-<script src="{{ asset('assets/vendor/chart.js/Chart.bundle.min.js') }}"></script>
+{{-- ! JAVA SCRIPT LINK - Optimized for Performance --}}
+<!-- Required vendors - Async loaded (non-blocking) -->
+<script src="{{ asset('assets/vendor/global/global.min.js') }}" async></script>
+<script src="{{ asset('assets/vendor/chart.js/Chart.bundle.min.js') }}" async></script>
+<script src="{{ asset('assets/vendor/jquery-nice-select/js/jquery.nice-select.min.js') }}" async></script>
+<script src="{{ asset('assets/vendor/select2/js/select2.full.min.js')}}" async></script>
+<script src="{{ asset('assets/js/plugins-init/select2-init.js')}}" async></script>
 
 <!-- Chart piety plugin files -->
-<script src="{{ asset('assets/vendor/peity/jquery.peity.min.js') }}"></script>
+<script src="{{ asset('assets/vendor/peity/jquery.peity.min.js') }}" async></script>
 
-<!-- Dashboard 1 -->
+<!-- Carousel -->
+<script src="{{ asset('assets/vendor/owl-carousel/owl.carousel.js') }}" async></script>
 
-<script src="{{ asset('assets/vendor/owl-carousel/owl.carousel.js') }}"></script>
+<!-- Core custom scripts -->
+<script src="{{ asset('assets/js/custom.min.js') }}" async></script>
+<script src="{{ asset('assets/js/dlabnav-init.js') }}" async></script>
+<script src="{{ asset('assets/js/chart-bulanan.js') }}" async></script>
 
-<script src="{{ asset('assets/js/custom.min.js') }}"></script>
-<script src="{{ asset('assets/js/dlabnav-init.js') }}"></script>
-<script src="{{ asset('assets/js/chart-bulanan.js') }}"></script>
+<!-- DataTable -->
+<script src="{{ asset('assets/vendor/datatables/js/jquery.dataTables.min.js') }}" async></script>
+<script src="{{ asset('assets/js/plugins-init/datatables.init.js') }}" async></script>
 
+<!-- Date Picker & Range -->
+<script src="{{ asset('assets/vendor/moment/moment.min.js') }}" async></script>
+<script src="{{ asset('assets/vendor/bootstrap-daterangepicker/daterangepicker.js') }}" async></script>
+<script src="{{ asset('assets/vendor/pickadate/picker.js') }}" async></script>
+<script src="{{ asset('assets/vendor/pickadate/picker.time.js') }}" async></script>
+<script src="{{ asset('assets/vendor/pickadate/picker.date.js') }}" async></script>
+<script src="{{ asset('assets/js/plugins-init/pickadate-init.js') }}" async></script>
 
-<!-- data table -->
-<script src="{{ asset('assets/vendor/datatables/js/jquery.dataTables.min.js') }}"></script>
-<script src="{{ asset('assets/js/plugins-init/datatables.init.js') }}"></script>
+<!-- Sweet Alert Removed (using native browser alerts) -->
 
+{{-- ! Polyfill for Swal - fallback ke native alerts --}}
+<script>
+    // Create global Swal object if not loaded from CDN
+    if (typeof Swal === 'undefined') {
+        window.Swal = {
+            fire: function (config) {
+                return new Promise(function (resolve) {
+                    const { title = '', text = '', icon = '', showCancelButton = false, confirmButtonText = 'OK', cancelButtonText = 'Cancel' } = config;
+                    const message = title + (text ? '\n\n' + text : '');
 
-<!-- awal date pikcer -->
-<!-- Daterangepicker -->
-<!-- momment js is must -->
-<script src="{{ asset('assets/vendor/moment/moment.min.js') }}"></script>
-<script src="{{ asset('assets/vendor/bootstrap-daterangepicker/daterangepicker.js') }}"></script>
-<!-- pickdate -->
-<script src="{{ asset('assets/vendor/pickadate/picker.js') }}"></script>
-<script src="{{ asset('assets/vendor/pickadate/picker.time.js') }}"></script>
-<script src="{{ asset('assets/vendor/pickadate/picker.date.js') }}"></script>
-
-<!-- Pickdate -->
-<script src="{{ asset('assets/js/plugins-init/pickadate-init.js') }}"></script>
-
-{{-- select2 --}}
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+                    if (showCancelButton) {
+                        const confirmed = confirm(message);
+                        resolve({ isConfirmed: confirmed });
+                    } else {
+                        alert(message);
+                        resolve({ isConfirmed: true });
+                    }
+                });
+            }
+        };
+    }
+</script>
 
 <script>
     $(document).ready(function () {
+        // Datepicker initialization
         $('#datepicker2').pickadate({
             format: 'dd mmmm yyyy'
         });
     });
 </script>
 
-<!-- akhir datepicker -->
-
-<!-- select js awal -->
 <script>
-    // $(document).ready(function () {
-    //     //change selectboxes to selectize mode to be searchable
-    //     $("select").select2();
-    // });
-</script>
-<!-- select js akhir -->
-
-<script>
+    // Delete confirmation form
     document.addEventListener('submit', function (e) {
         if (e.target.classList.contains('delete-confirm')) {
             e.preventDefault();
-
             const text = e.target.getAttribute('data-text');
-
             Swal.fire({
                 title: 'Konfirmasi Hapus',
                 text: text,
@@ -86,21 +91,15 @@
             });
         }
     });
-</script>
 
-{{-- Sweet alert Script Start --}}
-<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
+    // Delete button click handler
     document.addEventListener('click', function (e) {
         const button = e.target.closest('.btn-delete');
         if (!button) return;
-
         e.preventDefault();
-
         const id = button.dataset.id;
         const nama = button.dataset.nama || '';
         const entity = button.dataset.entity || 'data';
-
         Swal.fire({
             title: `Yakin hapus ${entity} ini?`,
             html: `<strong>${nama}</strong> akan dihapus permanen.`,
@@ -118,17 +117,21 @@
         });
     });
 
-</script>
-{{-- Sweet alert Script End --}}
-
-{{-- Ajax simpan penjualan obat --}}
-<script>
+    // Select2 initialization with fallback
     $(document).ready(function () {
-        // menjadikan text placeholder
-        $('.js-example-data-array').select2({
-            placeholder: "Masukan Nama Obat | Kode Obat",
-            allowClear: true
-        });
+        // Try to initialize Select2 if available
+        if (typeof $.fn.select2 !== 'undefined') {
+            try {
+                $('.js-example-data-array').select2({
+                    placeholder: "Masukan Nama Obat | Kode Obat",
+                    allowClear: true
+                });
+            } catch (e) {
+                console.warn('Select2 error:', e);
+            }
+        } else {
+            console.warn('Select2 not loaded, using native select');
+        }
 
         // Setup CSRF token untuk semua AJAX
         $.ajaxSetup({
@@ -267,7 +270,20 @@
                     }
                     // Kalau span / div / td (detail mode)
                     else {
-                        element.textContent = value;
+                        // Special handling untuk status_stok dengan badge
+                        if (field === 'status_stok') {
+                            let badgeClass = '';
+                            if (value === 'Aman') {
+                                badgeClass = 'bg-success';
+                            } else if (value === 'Menipis') {
+                                badgeClass = 'bg-warning text-dark';
+                            } else if (value === 'Habis') {
+                                badgeClass = 'bg-danger';
+                            }
+                            element.innerHTML = `<span class="text-white badge ${badgeClass}">${value}</span>`;
+                        } else {
+                            element.textContent = value;
+                        }
                     }
 
                 });
@@ -277,6 +293,17 @@
                 if (form && button.dataset.action) {
                     form.action = button.dataset.action;
                 }
+
+            });
+
+            modal.addEventListener('shown.bs.modal', function () {
+
+                $(modal).find('select[id^="single-select-"]').each(function () {
+                    $(this).select2({
+                        dropdownParent: $(modal),
+                        width: '100%'
+                    });
+                });
 
             });
 

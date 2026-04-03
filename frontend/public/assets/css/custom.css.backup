@@ -1,0 +1,1276 @@
+/* ============================================================
+   ! APOTEK SENA FARMA - UNIFIED DESIGN SYSTEM
+   ! Modern Pharmacy Theme with Consistent Visual Identity
+   
+   Table of Contents:
+   1. CSS Variables (Colors, Spacing, Sizes)
+   2. Global Base Styles
+   3. Form Controls & Input Fields
+   4. Buttons & Actions
+   5. Modals & Dialogs
+   6. Cards & Containers
+   7. Tables & Data Display
+   8. Alerts & Messaging
+   9. Login Page (Pharmacy Theme)
+   10. Animations
+   11. Responsive Design
+   ============================================================ */
+
+/* ============================================================
+   ! 1. CSS VARIABLES - Design System Tokens
+   ============================================================ */
+
+:root {
+    /* PRIMARY COLORS - Pharmacy Green Theme */
+    --color-primary: #5cc93a;
+    --color-primary-dark: #4aa92e;
+    --color-primary-light: #7ad652;
+    --color-primary-lighter: #b1d6fd;
+    
+    /* SECONDARY COLORS - Professional Blue */
+    --color-secondary: #0056b3;
+    --color-secondary-light: #007bff;
+    --color-secondary-lighter: #4ba2ff;
+    
+    /* STATUS COLORS */
+    --color-success: #5cc93a;
+    --color-warning: #ffc107;
+    --color-danger: #dc3545;
+    --color-info: #0056b3;
+    
+    /* NEUTRAL COLORS */
+    --color-text-primary: #1a1a2e;
+    --color-text-secondary: #666;
+    --color-text-muted: #999;
+    --color-text-light: #f5f5f5;
+    --color-border: #d0d0d0;
+    --color-border-light: #e0e0e0;
+    --color-bg-light: #f8f9fa;
+    --color-bg-lighter: #f5f5f5;
+    
+    /* GRADIENT BACKGROUNDS */
+    --gradient-login: linear-gradient(135deg, #1a1a2e 0%, #0f3460 50%, #16213e 100%);
+    --gradient-button: linear-gradient(135deg, #5cc93a 0%, #4aa92e 100%);
+    --gradient-button-hover: linear-gradient(135deg, #4aa92e 0%, #3a8c21 100%);
+    
+    /* SPACING SCALE */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-xxl: 3rem;
+    
+    /* BORDER RADIUS */
+    --radius-xs: 0.25rem;
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.25rem;
+    
+    /* SHADOWS */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 15px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.2);
+    --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.3);
+    
+    /* TRANSITIONS */
+    --transition-fast: 0.15s ease;
+    --transition-base: 0.3s ease;
+    --transition-slow: 0.6s ease;
+    
+    /* TYPOGRAPHY */
+    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+}
+
+/* ============================================================
+   ! 2. GLOBAL BASE STYLES
+   ============================================================ */
+
+* {
+    font-family: var(--font-family) !important;
+}
+
+body {
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-lighter);
+    font-weight: var(--font-weight-regular);
+}
+
+/* Modal Content Base Styling */
+.modal-content {
+    border: none;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    background: white;
+}
+
+.modal-content .custom-modal-header {
+    background: var(--gradient-button);
+    border: none;
+    padding: var(--spacing-lg);
+}
+
+.modal-content .custom-modal-header .modal-title {
+    color: white;
+    font-weight: var(--font-weight-bold);
+    font-size: 1rem;
+}
+
+
+/* ============================================================
+   ! 3. FORM CONTROLS & INPUT FIELDS
+   ============================================================ */
+
+/* Modal Form Label Styling */
+.modal-form-label {
+    display: block;
+    margin-bottom: var(--spacing-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    font-size: 0.9rem;
+    transition: var(--transition-base);
+}
+
+/* Required Field Indicator */
+.modal-form-label.required::after,
+.required-field::after {
+    content: ' *';
+    color: var(--color-danger);
+    font-weight: var(--font-weight-bold);
+    margin-left: 2px;
+}
+
+/* Form Control Wrapper */
+.modal-form-control-wrapper {
+    position: relative;
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Form Controls - Input & Select Base Styling */
+.form-control,
+.form-select,
+.modal-form-control {
+    border-color: var(--color-secondary-lighter) !important;
+    border-width: 1.5px;
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    transition: var(--transition-base);
+    background-color: white;
+}
+
+.form-control:focus,
+.form-select:focus,
+.modal-form-control:focus {
+    border-color: var(--color-secondary) !important;
+    box-shadow: 0 0 0 0.25rem rgba(92, 201, 58, 0.1) !important;
+    outline: none;
+}
+
+.form-control:hover:not(:disabled):not([readonly]),
+.form-select:hover:not(:disabled):not([readonly]),
+.modal-form-control:hover:not(:disabled):not([readonly]) {
+    border-color: var(--color-secondary-light) !important;
+    box-shadow: 0 0 8px rgba(92, 201, 58, 0.2) !important;
+}
+
+/* Input READONLY Styling - More User Friendly */
+.form-control[readonly],
+.modal-form-control[readonly] {
+    background-color: var(--color-bg-light) !important;
+    color: var(--color-text-secondary);
+    border-color: var(--color-border-light) !important;
+    cursor: not-allowed;
+    font-style: italic;
+    opacity: 0.9;
+}
+
+.form-control[readonly]:focus,
+.modal-form-control[readonly]:focus {
+    border-color: var(--color-border-light) !important;
+    box-shadow: none !important;
+    outline: none;
+}
+
+/* Form Hint Text Styling */
+.modal-form-hint,
+.form-hint {
+    display: block;
+    margin-top: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+
+/* ============================================================
+   ! 5. TABLES & DATA DISPLAY
+   ============================================================ */
+
+/* Modal Table Styling - Consistent striped pattern */
+.modal-body table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #cce5ff !important;
+    color: var(--color-text-primary) !important;
+}
+
+.modal-body table.table-striped tbody tr:nth-of-type(even) {
+    background-color: #e6f0ff !important;
+    color: var(--color-text-primary) !important;
+}
+
+/* Hover effect for rows */
+.modal-body table.table-striped tbody tr:hover {
+    background-color: #99ccff !important;
+    color: var(--color-text-primary) !important;
+    transition: var(--transition-base);
+}
+
+/* Border styling */
+.modal-body table.table-striped td,
+.modal-body table.table-striped th {
+    border: 1px solid #99ccff !important;
+    padding: var(--spacing-md) !important;
+}
+
+.modal-body-custom .table tr td {
+    font-weight: var(--font-weight-medium);
+    color: #0d6efd !important;
+    font-family: var(--font-family);
+    transition: var(--transition-base);
+}
+
+.modal-body-custom .table tr td:hover {
+    color: var(--color-secondary) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+}
+
+/* Table header styling */
+.table thead th {
+    background-color: var(--gradient-button);
+    color: white;
+    font-weight: var(--font-weight-bold);
+    border: none;
+    padding: var(--spacing-md) !important;
+}
+
+/* Table responsive - Add scrollbar */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+
+/* ============================================================
+   ! 6. ALERTS & MESSAGING
+   ============================================================ */
+
+.alert-pharmacy {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-lg);
+    border-left: 4px solid transparent;
+    animation: fade-in var(--transition-slow);
+}
+
+.alert-danger-pharmacy {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #721c24;
+    border-left-color: var(--color-danger);
+}
+
+.alert-success-pharmacy {
+    background-color: rgba(92, 201, 58, 0.1);
+    color: #2d5016;
+    border-left-color: var(--color-success);
+}
+
+.alert-warning-pharmacy {
+    background-color: rgba(255, 193, 7, 0.1);
+    color: #664d03;
+    border-left-color: var(--color-warning);
+}
+
+.alert-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+}
+
+.alert-message {
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+.alert-message strong {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.error-item {
+    margin: 0.25rem 0;
+    padding-left: var(--spacing-lg);
+}
+
+.alert-close {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: var(--transition-base);
+}
+
+.alert-close:hover {
+    opacity: 0.7;
+}
+
+/* Input Error Message */
+.input-error-pharmacy {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 0.8rem;
+    color: var(--color-danger);
+    margin-top: var(--spacing-sm);
+}
+
+/* Required field indicator */
+.required-field {
+    color: var(--color-text-primary);
+}
+
+
+/* ============================================================
+   ! 7. CARDS & CONTAINERS
+   ============================================================ */
+
+.card {
+    border: none;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    margin-bottom: var(--spacing-lg);
+    transition: var(--transition-base);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    background: var(--gradient-button);
+    color: white;
+    border: none;
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.card-title {
+    color: white;
+    font-weight: var(--font-weight-bold);
+    margin: 0;
+}
+
+.card-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9rem;
+    margin: 0.25rem 0 0 0;
+}
+
+.card-body {
+    padding: var(--spacing-lg);
+}
+
+/* Stat Cards - Dashboard */
+.stat-card {
+    transition: var(--transition-base);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+}
+
+.stat-card.bg-primary {
+    background: var(--color-info) !important;
+}
+
+.stat-card.bg-success {
+    background: var(--color-success) !important;
+}
+
+.stat-card.bg-warning {
+    background: var(--color-warning) !important;
+}
+
+.stat-card.bg-danger {
+    background: var(--color-danger) !important;
+}
+
+.stat-card.text-white {
+    color: white !important;
+}
+
+.stat-card .opacity-50 {
+    opacity: 0.5;
+}
+
+/* Form Card - Login Page */
+.form-card {
+    background: rgba(255, 255, 255, 0.98);
+    background-blend-mode: screen;
+    backdrop-filter: blur(10px);
+    border-radius: var(--radius-xl);
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: var(--shadow-xl),
+                0 0 1px rgba(92, 201, 58, 0.5);
+    border: 1px solid rgba(92, 201, 58, 0.2);
+    animation: slide-up var(--transition-slow);
+}
+
+/* Chart Card */
+.chart-card {
+    margin-bottom: var(--spacing-lg);
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 400px;
+    margin-top: var(--spacing-md);
+}
+
+/* Brand Badge */
+.card .bg-primaryl,
+.bg-primaryl {
+    background-color: var(--color-primary-lighter) !important;
+}
+
+/* Background Layer Container */
+.pharmacy-bg-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Animated Background */
+.pharmacy-animated-bg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+}
+
+/* Background Icons */
+.bg-icon {
+    position: absolute;
+    font-size: 3rem;
+    color: rgba(92, 201, 58, 0.15);
+    animation: float-pharmacy-icon 6s ease-in-out infinite;
+}
+
+.bg-icon-1 {
+    top: 10%;
+    left: 5%;
+    animation-delay: 0s;
+}
+
+.bg-icon-2 {
+    top: 15%;
+    right: 10%;
+    animation-delay: 0.5s;
+}
+
+.bg-icon-3 {
+    top: 40%;
+    left: 8%;
+    animation-delay: 1s;
+}
+
+.bg-icon-4 {
+    top: 50%;
+    right: 5%;
+    animation-delay: 1.5s;
+}
+
+.bg-icon-5 {
+    top: 70%;
+    left: 15%;
+    animation-delay: 2s;
+}
+
+.bg-icon-6 {
+    top: 75%;
+    right: 12%;
+    animation-delay: 2.5s;
+}
+
+.bg-icon-7 {
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    animation-delay: 3s;
+}
+
+.bg-icon-8 {
+    bottom: 10%;
+    right: 8%;
+    animation-delay: 3.5s;
+}
+
+/* Background Overlay */
+.pharmacy-bg-overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at 20% 50%,
+            rgba(92, 201, 58, 0.08) 0%,
+            rgba(92, 201, 58, 0) 50%),
+        radial-gradient(ellipse at 80% 80%,
+            rgba(74, 169, 46, 0.05) 0%,
+            rgba(74, 169, 46, 0) 60%);
+}
+
+/* Login Wrapper */
+.pharmacy-login-wrapper {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    height: 100vh;
+    padding: 0;
+}
+
+/* Brand Section - Desktop Only */
+.pharmacy-brand-section {
+    display: none;
+    flex: 1;
+    background: linear-gradient(135deg, rgba(92, 201, 58, 0.1) 0%, rgba(74, 169, 46, 0.1) 100%);
+    padding: 3rem;
+    align-items: center;
+    justify-content: center;
+    border-right: 2px solid rgba(92, 201, 58, 0.2);
+}
+
+.brand-content {
+    text-align: center;
+    color: white;
+}
+
+.brand-icon-wrapper {
+    font-size: 4rem;
+    color: #5cc93a;
+    margin-bottom: 1.5rem;
+    animation: pulse-icon 2s ease-in-out infinite;
+}
+
+.brand-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #5cc93a;
+}
+
+.brand-subtitle {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 2rem;
+}
+
+.brand-features {
+    list-style: none;
+    padding: 0;
+    margin: 2rem 0;
+    text-align: left;
+    font-size: 0.95rem;
+}
+
+.brand-features li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    color: rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
+}
+
+.brand-features li:hover {
+    color: #5cc93a;
+    transform: translateX(5px);
+}
+
+.brand-features i {
+    color: #5cc93a;
+    margin-right: 0.75rem;
+    font-size: 1.1rem;
+}
+
+.brand-illustration {
+    font-size: 5rem;
+    color: rgba(92, 201, 58, 0.3);
+    margin-top: 2rem;
+    animation: float-illustration 4s ease-in-out infinite;
+}
+
+/* Form Section */
+.pharmacy-form-section {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+/* Form Card */
+.form-card {
+    background: rgba(255, 255, 255, 0.98);
+    background-blend-mode: screen;
+    backdrop-filter: blur(10px);
+    border-radius: 1.25rem;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 420px;
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.3),
+        0 0 1px rgba(92, 201, 58, 0.5);
+    border: 1px solid rgba(92, 201, 58, 0.2);
+    animation: slide-up 0.6s ease-out;
+}
+
+/* Form Logo */
+.form-logo {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    animation: fade-in 0.8s ease-out;
+}
+
+.form-logo img {
+    max-width: 160px;
+    height: auto;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+/* Form Header */
+.form-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.form-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.form-title i {
+    color: #5cc93a;
+    font-size: 1.5rem;
+}
+
+.form-description {
+    font-size: 0.95rem;
+    color: #666;
+    margin: 0;
+}
+
+/* Alert Styling */
+.alert-pharmacy {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid transparent;
+}
+
+.alert-danger-pharmacy {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #721c24;
+    border-left-color: #dc3545;
+}
+
+.alert-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+}
+
+.alert-message {
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+.alert-message strong {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.error-item {
+    margin: 0.25rem 0;
+    padding-left: 1.5rem;
+}
+
+.alert-close {
+    background: none;
+    border: none;
+    color: #721c24;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+/* Form */
+.pharmacy-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Form Groups */
+.form-group-pharmacy {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.input-group-pharmacy {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+/* Input Icon */
+.input-icon-left {
+    position: absolute;
+    left: 1rem;
+    color: #5cc93a;
+    font-size: 1.1rem;
+    pointer-events: none;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+/* Input Field */
+.input-pharmacy {
+    width: 100%;
+    padding: 0.875rem 1rem 0.875rem 2.75rem;
+    border: none;
+    border-bottom: 2px solid #e0e0e0;
+    background: rgba(255, 255, 255, 0.7);
+    color: #333;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.input-pharmacy::placeholder {
+    color: transparent;
+}
+
+.input-pharmacy:focus,
+.input-pharmacy:not(:placeholder-shown) {
+    background: rgba(255, 255, 255, 1);
+    border-bottom-color: #5cc93a;
+}
+
+.input-pharmacy:focus~.input-label-pharmacy,
+.input-pharmacy:not(:placeholder-shown)~.input-label-pharmacy {
+    transform: translateY(-1.5rem);
+    font-size: 0.8rem;
+    color: #5cc93a;
+    font-weight: 600;
+}
+
+.input-pharmacy:focus~.input-icon-left,
+.input-pharmacy:not(:placeholder-shown)~.input-icon-left {
+    transform: scale(1.2);
+}
+
+.input-pharmacy.is-invalid-pharmacy {
+    border-bottom-color: #dc3545;
+    background: rgba(220, 53, 69, 0.05);
+}
+
+/* Input Label (Floating) */
+.input-label-pharmacy {
+    position: absolute;
+    left: 2.75rem;
+    top: 0.875rem;
+    font-size: 1rem;
+    color: #999;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    transform-origin: left center;
+}
+
+/* Input Underline */
+.input-underline {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #5cc93a 0%, #4aa92e 100%);
+    transition: width 0.3s ease;
+}
+
+.input-pharmacy:focus~.input-underline {
+    width: 100%;
+}
+
+/* Input Error Message */
+.input-error-pharmacy {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: #dc3545;
+    margin-top: 0.25rem;
+}
+
+
+/* ============================================================
+   ! 4. BUTTONS & ACTION ELEMENTS
+   ============================================================ */
+
+/* Primary Button Styling */
+.btn-primary,
+.btn-login-pharmacy {
+    background: var(--gradient-button);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: var(--font-weight-semibold);
+    transition: var(--transition-base);
+    box-shadow: 0 4px 15px rgba(92, 201, 58, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary:hover,
+.btn-login-pharmacy:hover {
+    background: var(--gradient-button-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(92, 201, 58, 0.4);
+}
+
+.btn-primary:active,
+.btn-login-pharmacy:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(92, 201, 58, 0.3);
+}
+
+/* Ripple effect for buttons */
+.btn-primary::before,
+.btn-login-pharmacy::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width var(--transition-slow), height var(--transition-slow);
+}
+
+.btn-primary:hover::before,
+.btn-login-pharmacy:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn-text {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.btn-loader {
+    position: relative;
+    z-index: 1;
+}
+
+/* Secondary Button Styling */
+.btn-secondary,
+.btn-outline-secondary {
+    background: white;
+    color: var(--color-text-primary);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition: var(--transition-base);
+}
+
+.btn-secondary:hover,
+.btn-outline-secondary:hover {
+    background: var(--color-bg-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+/* Success Button */
+.btn-success {
+    background: var(--color-success);
+    color: white;
+    border: none;
+    transition: var(--transition-base);
+}
+
+.btn-success:hover {
+    background: var(--color-primary-dark);
+}
+
+/* Danger Button */
+.btn-danger {
+    background: var(--color-danger);
+    color: white;
+    border: none;
+    transition: var(--transition-base);
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+/* Small Button Variant */
+.btn-xs,
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+}
+
+/* Button Groups in Tables */
+.action-cell .btn-group-table {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.action-cell .btn-group-table .btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+}
+
+/* Form Footer */
+.form-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e0e0e0;
+}
+
+.footer-info {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.footer-info i {
+    color: #5cc93a;
+}
+
+.footer-copyright {
+    font-size: 0.75rem;
+    color: #999;
+    margin: 0;
+}
+
+
+/* ============================================
+   ! ANIMATIONS
+   ============================================ */
+
+@keyframes float-pharmacy-icon {
+
+    0%,
+    100% {
+        transform: translateY(0px) rotate(0deg);
+        opacity: 0.15;
+    }
+
+    50% {
+        transform: translateY(-30px) rotate(10deg);
+        opacity: 0.25;
+    }
+}
+
+@keyframes float-illustration {
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+@keyframes pulse-icon {
+
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(92, 201, 58, 0.3);
+    }
+
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(92, 201, 58, 0);
+    }
+}
+
+@keyframes slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px);
+    }
+
+    75% {
+        transform: translateX(5px);
+    }
+}
+
+
+/* ============================================
+   ! RESPONSIVE DESIGN
+   ============================================ */
+
+/* Tablet (768px - 991px) */
+@media (max-width: 991px) {
+    .pharmacy-login-page {
+        padding: 1rem;
+    }
+
+    .pharmacy-login-wrapper {
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .pharmacy-brand-section {
+        display: none;
+    }
+
+    .pharmacy-form-section {
+        padding: 1rem;
+    }
+
+    .form-card {
+        max-width: 100%;
+        padding: 2rem;
+    }
+
+    .form-title {
+        font-size: 1.5rem;
+    }
+
+    .bg-icon {
+        font-size: 2.5rem;
+    }
+}
+
+/* Mobile (max 767px) */
+@media (max-width: 767px) {
+    .pharmacy-login-page {
+        padding: 1rem;
+        min-height: 100vh;
+    }
+
+    .pharmacy-animated-bg {
+        display: flex;
+        align-items: flex-end;
+        overflow: hidden;
+    }
+
+    .bg-icon {
+        font-size: 2rem;
+        opacity: 0.1;
+    }
+
+    .pharmacy-login-wrapper {
+        height: auto;
+        min-height: 100vh;
+        padding: 0;
+    }
+
+    .pharmacy-brand-section {
+        display: none;
+    }
+
+    .pharmacy-form-section {
+        padding: 1rem 0;
+        width: 100%;
+    }
+
+    .form-card {
+        max-width: 100%;
+        padding: 1.5rem;
+        border-radius: 1rem;
+        box-shadow:
+            0 10px 40px rgba(0, 0, 0, 0.2),
+            0 0 1px rgba(92, 201, 58, 0.3);
+    }
+
+    .form-logo img {
+        max-width: 120px;
+    }
+
+    .form-title {
+        font-size: 1.35rem;
+    }
+
+    .form-description {
+        font-size: 0.85rem;
+    }
+
+    .input-pharmacy {
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        font-size: 16px;
+        /* Prevents zoom on iOS */
+    }
+
+    .input-icon-left {
+        left: 0.75rem;
+        font-size: 1rem;
+    }
+
+    .input-label-pharmacy {
+        left: 2.5rem;
+        top: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .btn-login-pharmacy {
+        padding: 0.75rem 1.25rem;
+        font-size: 0.95rem;
+    }
+
+    .form-footer {
+        margin-top: 1rem;
+        padding-top: 1rem;
+    }
+
+    .footer-info {
+        font-size: 0.75rem;
+    }
+
+    .footer-copyright {
+        font-size: 0.7rem;
+    }
+}
+
+/* Extra Small Devices (max 480px) */
+@media (max-width: 480px) {
+    .pharmacy-login-page {
+        padding: 0.5rem;
+    }
+
+    .pharmacy-form-section {
+        padding: 0;
+    }
+
+    .form-card {
+        padding: 1.25rem;
+        max-width: 100%;
+    }
+
+    .form-logo {
+        margin-bottom: 1rem;
+    }
+
+    .form-logo img {
+        max-width: 100px;
+    }
+
+    .form-title {
+        font-size: 1.2rem;
+    }
+
+    .form-group-pharmacy {
+        gap: 0.3rem;
+    }
+
+    .pharmacy-form {
+        gap: 1.25rem;
+    }
+
+    .alert-pharmacy {
+        gap: 0.75rem;
+        padding: 0.8rem;
+    }
+}
+
+/* Desktop Large Screen - Brand Section Visible */
+@media (min-width: 992px) {
+    .pharmacy-brand-section {
+        display: flex;
+    }
+
+    .pharmacy-form-section {
+        width: 50%;
+    }
+
+    .pharmacy-login-wrapper {
+        height: 100vh;
+    }
+}

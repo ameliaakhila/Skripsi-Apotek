@@ -1,4 +1,4 @@
-<x-layout title="Dashboard">
+<x-app title="Dashboard">
     {{-- @include('components.admin.dashboard') --}}
     <div class="content-body">
         <!-- row -->
@@ -100,4 +100,4 @@
     <script>
         window.chartData = @json($chartData);
     </script>
-</x-layout>
+</x-app>

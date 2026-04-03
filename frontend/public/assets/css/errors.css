@@ -1,0 +1,433 @@
+/* ============================================================
+   ERROR PAGES STYLING - Apotek Sena Farma
+   ============================================================ */
+
+/* Global Error Page Styles */
+body.error-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.error-container {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    padding: 20px;
+}
+
+.error-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    animation: slideIn 0.6s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.error-content {
+    padding: 60px 40px;
+    text-align: center;
+}
+
+/* Error Code Styling */
+.error-code {
+    font-size: 120px;
+    font-weight: 900;
+    line-height: 1;
+    margin: 0 0 20px 0;
+    animation: bounce 1s ease-in-out infinite;
+    text-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+/* 404 Error Styling */
+.error-404 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.error-404 .error-code {
+    color: #667eea;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.error-404 .error-icon {
+    color: #667eea;
+    animation: float 3s ease-in-out infinite;
+}
+
+/* 403 Error Styling */
+.error-403 {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.error-403 .error-code {
+    color: #f5576c;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.error-403 .error-icon {
+    color: #f5576c;
+    animation: shake 0.5s ease-in-out infinite;
+}
+
+/* 500 Error Styling */
+.error-500 {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.error-500 .error-code {
+    color: #fa709a;
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.error-500 .error-icon {
+    color: #fa709a;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* Icon Styling */
+.error-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+    display: block;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-10px);
+    }
+
+    75% {
+        transform: translateX(10px);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Error Title */
+.error-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+/* Error Description */
+.error-description {
+    font-size: 16px;
+    color: #7f8c8d;
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+/* Error Decoration */
+.error-decoration {
+    height: 5px;
+    width: 60px;
+    margin: 0 auto 30px;
+    border-radius: 3px;
+    animation: expand 0.8s ease-out;
+}
+
+.error-404 .error-decoration {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+.error-403 .error-decoration {
+    background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
+}
+
+.error-500 .error-decoration {
+    background: linear-gradient(90deg, #fa709a 0%, #fee140 100%);
+}
+
+@keyframes expand {
+    from {
+        width: 0;
+    }
+
+    to {
+        width: 60px;
+    }
+}
+
+/* Action Buttons */
+.error-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 30px;
+}
+
+.error-btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.error-btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+}
+
+.error-403 .error-btn-primary {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    box-shadow: 0 10px 25px rgba(245, 87, 108, 0.4);
+}
+
+.error-500 .error-btn-primary {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    box-shadow: 0 10px 25px rgba(250, 112, 154, 0.4);
+}
+
+.error-btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 35px rgba(102, 126, 234, 0.6);
+}
+
+.error-403 .error-btn-primary:hover {
+    box-shadow: 0 15px 35px rgba(245, 87, 108, 0.6);
+}
+
+.error-500 .error-btn-primary:hover {
+    box-shadow: 0 15px 35px rgba(250, 112, 154, 0.6);
+}
+
+.error-btn-secondary {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.error-403 .error-btn-secondary {
+    color: #f5576c;
+    border-color: #f5576c;
+}
+
+.error-500 .error-btn-secondary {
+    color: #fa709a;
+    border-color: #fa709a;
+}
+
+.error-btn-secondary:hover {
+    background: #f8f9fa;
+    transform: translateY(-3px);
+}
+
+/* Error Footer */
+.error-footer {
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 1px solid #ecf0f1;
+    color: #95a5a6;
+    font-size: 14px;
+}
+
+.error-footer a {
+    color: #667eea;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.error-403 .error-footer a {
+    color: #f5576c;
+}
+
+.error-500 .error-footer a {
+    color: #fa709a;
+}
+
+.error-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Logo Styling */
+.error-logo {
+    display: block;
+    max-width: 180px;
+    margin: 0 auto 30px;
+    animation: fadeIn 0.8s ease-out;
+    padding: 15px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25),
+        0 0 0 4px rgba(255, 255, 255, 0.8),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.15));
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .error-content {
+        padding: 40px 25px;
+    }
+
+    .error-code {
+        font-size: 80px;
+    }
+
+    .error-icon {
+        font-size: 60px;
+        margin-bottom: 15px;
+    }
+
+    .error-title {
+        font-size: 24px;
+    }
+
+    .error-description {
+        font-size: 14px;
+    }
+
+    .error-card {
+        border-radius: 15px;
+    }
+
+    .error-actions {
+        gap: 10px;
+    }
+
+    .error-btn {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .error-content {
+        padding: 30px 20px;
+    }
+
+    .error-code {
+        font-size: 60px;
+    }
+
+    .error-icon {
+        font-size: 50px;
+    }
+
+    .error-title {
+        font-size: 20px;
+    }
+
+    .error-actions {
+        flex-direction: column;
+    }
+
+    .error-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .error-logo {
+        max-width: 150px;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .error-card {
+        background: #1e1e1e;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .error-title {
+        color: #ecf0f1;
+    }
+
+    .error-description {
+        color: #bdc3c7;
+    }
+
+    .error-footer {
+        border-top-color: #2c3e50;
+        color: #95a5a6;
+    }
+
+    .error-btn-secondary {
+        background: #2c3e50;
+    }
+}

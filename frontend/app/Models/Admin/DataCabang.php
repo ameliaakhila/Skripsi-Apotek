@@ -14,6 +14,7 @@ class DataCabang extends Model
     protected $fillable = [
         'kode_cabang',
         'nama_cabang',
+        'tipe',
         'alamat_cabang'
     ];
 }

@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
@@ -16,11 +17,35 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory()->create([
-            'username' => 'admin',
-            'email' => 'admin@gmail.com',
-            'password' => Hash::make('admin')
-        ]);
+        // Create Admin User
+        User::firstOrCreate(
+            ['email' => 'admin@gmail.com'],
+            [
+                'username' => 'admin',
+                'password' => Hash::make('admin'),
+                'role' => 'admin'
+            ]
+        );
+
+        // Create Pharmacist (Apoteker) User
+        User::firstOrCreate(
+            ['email' => 'apotek@gmail.com'],
+            [
+                'username' => 'apotek',
+                'password' => Hash::make('apotek'),
+                'role' => 'apoteker'
+            ]
+        );
+
+        // Create Manager (Manajer) User
+        User::firstOrCreate(
+            ['email' => 'manajer@gmail.com'],
+            [
+                'username' => 'manajer',
+                'password' => Hash::make('manajer'),
+                'role' => 'manajer'
+            ]
+        );
 
         $this->call([
             DataSatuanSeeder::class,
@@ -30,8 +55,9 @@ class DatabaseSeeder extends Seeder
             ObatSeeder::class,
             ObatMasukSeeder::class,
             StokBatchSeeder::class,
+            ObatKeluarSeeder::class,
             StokOpnameSeeder::class,
+            MutasiStokSeeder::class,
         ]);
-
     }
 }

@@ -1,14 +1,10 @@
-<x-layout title="Prediksi Obat">
+<x-app title="Prediksi Obat">
     <div class="content-body">
         <div class="container-fluid">
             <div class="row">
 
                 <div class="col-12">
                     <div class="card">
-                        <div class="card-header">
-                            <h4 class="card-title">Data Prediksi Obat</h4>
-                        </div>
-
                         <div class="mx-4 d-flex justify-content-between">
                             <form action="{{-- route('prediksi.stok') --}}" method="GET">
                                 <div class="basic-dropdown">
@@ -97,4 +93,4 @@
             </div>
         </div>
     </div>
-</x-layout>
+</x-app>

@@ -12,8 +12,9 @@ return new class extends Migration {
     {
         Schema::create('tb_cabang', function (Blueprint $table) {
             $table->id('id_cabang');
-            $table->string('kode_cabang');
+            $table->string('kode_cabang')->unique();
             $table->string('nama_cabang');
+            $table->enum('tipe', ['pusat', 'cabang']);
             $table->string('alamat_cabang');
             $table->timestamps();
         });

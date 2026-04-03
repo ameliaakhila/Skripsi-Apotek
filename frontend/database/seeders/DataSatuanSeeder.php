@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -15,11 +14,11 @@ class DataSatuanSeeder extends Seeder
     {
         // ! Data Dummy Satuan
         DB::table('tb_satuan')->insert([
-            ['nama_satuan' => 'Strip'],
-            ['nama_satuan' => 'Botol'],
-            ['nama_satuan' => 'Box'],
-            ['nama_satuan' => 'Tube'],
-            ['nama_satuan' => 'Pcs']
+            ['nama_satuan' => 'Strip', 'created_at' => now(), 'updated_at' => now()],
+            ['nama_satuan' => 'Botol', 'created_at' => now(), 'updated_at' => now()],
+            ['nama_satuan' => 'Box', 'created_at' => now(), 'updated_at' => now()],
+            ['nama_satuan' => 'Tube', 'created_at' => now(), 'updated_at' => now()],
+            ['nama_satuan' => 'Pcs', 'created_at' => now(), 'updated_at' => now()]
         ]);
     }
 }

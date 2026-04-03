@@ -68,7 +68,10 @@
   })();
 
   $(window).on("load", function () {
-    dlabSparkLine.load();
+    // Hanya jalankan chart jika berada di halaman yang memiliki #barChart_1 dan chartData tersedia
+    if ($("#barChart_1").length > 0 && window.chartData) {
+      dlabSparkLine.load();
+    }
   });
 
   $(window).on("resize", function () {

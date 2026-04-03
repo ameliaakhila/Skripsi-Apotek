@@ -1,4 +1,4 @@
-<x-layout :title="'Kelola Data Obat'">
+<x-app :title="'Kelola Data Obat'">
     <div class="content-body">
         <!-- row -->
         <div class="container-fluid">
@@ -21,9 +21,6 @@
 
                 <div class="col-12">
                     <div class="card">
-                        <div class="card-header bg-primary">
-                            <h4 class="card-title text-white">{{ $title }}</h4>
-                        </div>
                         <div class="card-body">
                             <div class="table-responsive">
                                 @if(session('success'))
@@ -126,7 +123,6 @@
                                                         data-bs-target="#modalDetailObatMasuk"
                                                         data-id="{{ $d->id_obat_masuk }}" data-id_obat="{{ $d->id_obat }}"
                                                         data-nama_obat="{{ $d->Obat->nama_obat ?? '-'}}"
-                                                        data-kode_obat="{{ $d->kode_obat }}"
                                                         data-satuan_obat="{{ $d->DataSatuan->nama_satuan ?? '-' }}"
                                                         data-kategori_obat="{{ $d->DataKategori->nama_kategori ?? '-' }}"
                                                         data-tanggal_masuk="{{ $d->tanggal_masuk_formatted }}"
@@ -135,7 +131,6 @@
                                                         data-kode_batch="{{ $d->kode_batch }}"
                                                         data-stok_masuk="{{ $d->stok_masuk }}"
                                                         data-stok_keluar="{{ $d->stok_keluar }}"
-                                                        data-harga_obat="{{ $d->harga_obat }}">
                                                         <i class="fas fa-eye"></i>
                                                     </button> --}}
 
@@ -143,7 +138,6 @@
                                                     <button type="button" class="btn btn-primary shadow btn-xs sharp me-1"
                                                         data-bs-toggle="modal" data-bs-target="#modalEditObatMasuk"
                                                         data-id="{{ $d->id_obat_masuk }}"
-                                                        data-kode-obat="{{ $d->kode_obat }}"
                                                         data-kode-batch="{{ $d->kode_batch }}"
                                                         data-tanggal-masuk="{{ $d->tanggal_masuk }}"
                                                         data-tanggal-kedaluwarsa="{{ $d->tanggal_kedaluwarsa }}"
@@ -194,4 +188,4 @@
             </div>
         </div>
     </div>
-</x-layout>
+</x-app>

@@ -1,74 +1,111 @@
 <?php
 
+/**
+ * ! StokBatchSeeder - Distribusi stok_masuk dari gudang ke setiap cabang
+ * * ALUR:
+ * * 1. Ambil data dari tb_obat_masuk (stok gudang)
+ * * 2. Distribusikan stok_masuk secara random ke setiap cabang
+ * * 3. Insert tb_stok_batch per cabang (stok_keluar=0, di-update nanti oleh ObatKeluarSeeder)
+ * * NOTE: Jalan SETELAH ObatMasukSeeder, SEBELUM ObatKeluarSeeder
+ */
+
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-
-use function Illuminate\Support\days;
+use App\Helpers\StokStatusHelper;
 
 class StokBatchSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
-
-    // Buat Dummy dengan jumlah Serupa dengan data obat Diatas dengan stok batch dan 5 cabang yang berbeda dengan kode cabang ASF001 sampai ASF005
     public function run(): void
     {
-        // Supaya tidak dobel saat seed ulang
+        // ! Hapus data lama
         DB::table('tb_stok_batch')->delete();
 
-        $obats = DB::table('tb_obat')->pluck('id_obat');
-        $kode_cabangs = DB::table('tb_cabang')->pluck('id_cabang');
+        // ! Ambil semua data obat_masuk dengan safety_stock dari tb_obat
+        $obatMasuks = DB::table('tb_obat_masuk')
+            ->join('tb_obat', 'tb_obat_masuk.id_obat', '=', 'tb_obat.id_obat')
+            ->select(
+                'tb_obat_masuk.id_obat_masuk',
+                'tb_obat_masuk.id_obat',
+                'tb_obat_masuk.kode_batch',
+                'tb_obat_masuk.tanggal_kedaluwarsa',
+                'tb_obat_masuk.stok_masuk',
+                'tb_obat.safety_stock'
+            )
+            ->get();
+
+        // ! Ambil semua id cabang
+        $id_cabangs = DB::table('tb_cabang')->pluck('id_cabang')->toArray();
+        $jumlah_cabang = count($id_cabangs);
 
         $stok_batches = [];
 
-        // Buat 3 batch per obat per cabang
-        for ($i = 1; $i <= 3; $i++) {
+        // ! Loop setiap obat_masuk dan distribusikan stok_masuk ke setiap cabang
+        foreach ($obatMasuks as $obatMasuk) {
 
-            foreach ($obats as $obat) {
-                foreach ($kode_cabangs as $kode_cabang) {
+            // ! Distribusi stok_masuk secara random ke cabang
+            $distribusi = $this->distribusiStokRandom(
+                $obatMasuk->stok_masuk,
+                $jumlah_cabang
+            );
 
-                    $jumlah_masuk = rand(200, 500);
-                    $jumlah_sisa = rand(0, $jumlah_masuk);
+            foreach ($id_cabangs as $index => $id_cabang) {
 
-                    // Status stok lebih realistis
-                    if ($jumlah_sisa >= 300) {
-                        $status_stok = "Aman";
-                    } elseif ($jumlah_sisa >= 100) {
-                        $status_stok = "Menipis";
-                    } else {
-                        $status_stok = "Habis";
-                    }
+                $stok_masuk_cabang = $distribusi[$index];
 
-                    $stok_batches[] = [
-                        'id_obat' => $obat,
-                        'id_cabang' => $kode_cabang,
+                // ! Awalnya stok_keluar = 0, akan di-update oleh ObatKeluarSeeder
+                $status_stok = StokStatusHelper::getStatus(
+                    $stok_masuk_cabang,
+                    $obatMasuk->safety_stock
+                );
 
-                        // Lebih unik & rapi
-                        'kode_batch' => 'BAC-' . now()->format('YmdHis') . "-$obat-$kode_cabang-$i",
-
-                        // pakai copy supaya Carbon tidak konflik
-                        'tanggal_kedaluwarsa' => now()->copy()
-                            ->addYears(rand(1, 3))
-                            ->setDay(rand(1, 28)),
-
-                        'jumlah_masuk' => $jumlah_masuk,
-                        'jumlah_sisa' => $jumlah_sisa,
-                        'status_stok' => $status_stok,
-
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
-                }
+                $stok_batches[] = [
+                    'id_obat' => $obatMasuk->id_obat,
+                    'id_cabang' => $id_cabang,
+                    'kode_batch' => $obatMasuk->kode_batch,
+                    'tanggal_kedaluwarsa' => $obatMasuk->tanggal_kedaluwarsa,
+                    'stok_masuk' => $stok_masuk_cabang,
+                    'stok_keluar' => 0,
+                    'stok_sisa' => $stok_masuk_cabang,
+                    'status_stok' => $status_stok,
+                    'tujuan_penyesuaian' => 'Tidak ada penyesuaian',
+                    'catatan' => 'Tidak ada catatan',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
             }
         }
 
-        // Insert per 500 data
+        // ! Insert per 500 baris
         foreach (array_chunk($stok_batches, 500) as $chunk) {
             DB::table('tb_stok_batch')->insert($chunk);
         }
+    }
+
+    /**
+     * ! Distribusi stok secara random ke masing-masing cabang
+     */
+    private function distribusiStokRandom(int $total_stok, int $jumlah_cabang): array
+    {
+        if ($jumlah_cabang <= 0)
+            return [];
+        if ($jumlah_cabang === 1)
+            return [$total_stok];
+
+        $distribusi = [];
+        $remaining = $total_stok;
+
+        for ($i = 0; $i < $jumlah_cabang - 1; $i++) {
+            $max_untuk_cabang_ini = max(1, $remaining - ($jumlah_cabang - $i - 1));
+            $qty = rand(1, $max_untuk_cabang_ini);
+            $distribusi[] = $qty;
+            $remaining -= $qty;
+        }
+
+        // ! Cabang terakhir mendapat sisa
+        $distribusi[] = $remaining;
+
+        return $distribusi;
     }
 }

@@ -13,17 +13,17 @@ return new class extends Migration {
         Schema::create('tb_obat', function (Blueprint $table) {
             $table->id('id_obat');
             $table->string('nama_obat');
-            $table->timestamps();
+            $table->integer('safety_stock');
 
-            // ? Jika ingin menambahkan relasi dengan tabel satuan, bisa menggunakan kode berikut:
             $table->unsignedBigInteger('id_kategori');
             $table->foreign('id_kategori')->references('id_kategori')->on('tb_kategori')->onDelete('cascade');
 
-            $table->unsignedBigInteger('id_supplier');
+            $table->unsignedBigInteger(column: 'id_supplier');
             $table->foreign('id_supplier')->references('id_supplier')->on('tb_supplier')->onDelete('cascade');
 
             $table->unsignedBigInteger('id_satuan');
             $table->foreign('id_satuan')->references('id_satuan')->on('tb_satuan')->onDelete('cascade');
+            $table->timestamps();
         });
     }
 
