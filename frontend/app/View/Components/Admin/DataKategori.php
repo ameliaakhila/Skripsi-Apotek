@@ -21,6 +21,6 @@ class DataKategori extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.admin.main.data_kategori');
+        return view('admin.data_kategori');
     }
 }

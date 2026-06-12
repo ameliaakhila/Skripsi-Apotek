@@ -29,6 +29,6 @@ class ModalDataCabang extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.admin.modals.modal-data-cabang');
+        return view('admin.modals.modal-data-cabang');
     }
 }

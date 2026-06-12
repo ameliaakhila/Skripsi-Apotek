@@ -1,0 +1,8 @@
+# Model Directory
+Keep trained model (.pkl files) in this directory.
+
+## Files
+- `stock_prediction_model.pkl` - Trained Decision Tree Regressor model
+
+## Usage
+The Flask API automatically loads the model from this location.

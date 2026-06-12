@@ -2,59 +2,34 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Admin\DataKategori;
-use App\Models\Admin\DataSatuan;
-use App\Models\Admin\DataSupplier;
-use App\Models\Admin\Obat;
+use App\Services\Admin\DataObatService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Cache;
 
 class DataObatController extends Controller
 {
+    public function __construct(private readonly DataObatService $dataObatService)
+    {
+    }
+
     // ! ======================= READ ===================================
     public function index()
     {
-        // ! OPTIMIZATION 1: Cache seluruh obat data result (600s = 10 min)
-        // ! Invalidate saat create/update/delete
-        $data = Cache::remember('list_obat_paginated', 600, function () {
-            return Obat::with([
-                'DataKategori:id_kategori,nama_kategori',  // Select spesifik
-                'DataSupplier:id_supplier,nama_supplier',  // Kurangi kolom
-                'DataSatuan:id_satuan,nama_satuan'         // Yang dipakai di view
-            ])
-                ->select([
-                    'id_obat',
-                    'nama_obat',
-                    'safety_stock',
-                    'id_satuan',
-                    'id_kategori',
-                    'id_supplier',
-                    'created_at'
-                    // Exclude kolom yang tidak dipakai di view
-                ])
-                ->cursorPaginate(2000);  // OPTIMIZATION 2: Tidak ada COUNT query
-        });
+        $indexData = $this->dataObatService->ambilDataIndex();
 
-        // ! OPTIMIZATION 3: Cache master data lebih lama (1 jam)
-        $masterData = Cache::remember('master_data_obat', 3600, function () {
-            return [
-                'kategori' => DataKategori::select('id_kategori', 'nama_kategori')->get(),
-                'supplier' => DataSupplier::select('id_supplier', 'nama_supplier')->get(),
-                'satuan' => DataSatuan::select('id_satuan', 'nama_satuan')->get(),
-            ];
-        });
-        $kategori = $masterData['kategori'];
-        $supplier = $masterData['supplier'];
-        $satuan = $masterData['satuan'];
+        $data = $indexData['data'];
+        $kategori = $indexData['kategori'];
+        $supplier = $indexData['supplier'];
+        $satuan = $indexData['satuan'];
+
         return view('admin.data-obat', compact('data', 'kategori', 'supplier', 'satuan'));
     }
+
     // ! ======================= CREATE ===================================
     public function store(Request $request)
     {
         try {
-            // ? Validasi sesuai dengan schema tb_obat
-            $request->validate([
+            $validated = $request->validate([
                 'nama_obat' => 'required|string|max:255',
                 'safety_stock' => 'required|integer|min:1',
                 'id_supplier' => 'required|exists:tb_supplier,id_supplier',
@@ -69,16 +44,7 @@ class DataObatController extends Controller
                 'id_kategori.required' => 'Kategori harus dipilih'
             ]);
 
-            Obat::create([
-                'nama_obat' => $request->nama_obat,
-                'safety_stock' => $request->safety_stock,
-                'id_supplier' => $request->id_supplier,
-                'id_satuan' => $request->id_satuan,
-                'id_kategori' => $request->id_kategori,
-            ]);
-
-            // ! INVALIDATE cache saat ada data baru
-            Cache::forget('list_obat_paginated');
+            $this->dataObatService->simpan($validated);
 
             return redirect('/data-obat')->with([
                 'success' => "Data Obat {$request->nama_obat} berhasil ditambahkan"
@@ -94,8 +60,7 @@ class DataObatController extends Controller
     public function update(Request $request, $id_obat)
     {
         try {
-            // ? Validasi sesuai dengan schema tb_obat
-            $request->validate([
+            $validated = $request->validate([
                 'nama_obat' => 'required|string|max:255',
                 'safety_stock' => 'required|integer|min:1',
                 'id_supplier' => 'required|exists:tb_supplier,id_supplier',
@@ -110,17 +75,7 @@ class DataObatController extends Controller
                 'id_kategori.required' => 'Kategori harus dipilih'
             ]);
 
-            $dataObat = Obat::findOrFail($id_obat);
-            $dataObat->update([
-                'nama_obat' => $request->nama_obat,
-                'safety_stock' => $request->safety_stock,
-                'id_supplier' => $request->id_supplier,
-                'id_satuan' => $request->id_satuan,
-                'id_kategori' => $request->id_kategori,
-            ]);
-
-            // ! INVALIDATE cache saat update
-            Cache::forget('list_obat_paginated');
+            $this->dataObatService->ubah((int) $id_obat, $validated);
 
             return redirect('/data-obat')->with('success', "Data Obat {$request->nama_obat} berhasil diupdate");
 
@@ -135,12 +90,7 @@ class DataObatController extends Controller
     public function destroy($id_obat)
     {
         try {
-            $dataObat = Obat::findOrFail($id_obat);
-            $namaObat = $dataObat->nama_obat;
-            $dataObat->delete();
-
-            // ! INVALIDATE cache saat delete
-            Cache::forget('list_obat_paginated');
+            $namaObat = $this->dataObatService->hapus((int) $id_obat);
 
             return redirect('/data-obat')->with([
                 'success' => "Data Obat {$namaObat} berhasil dihapus",
@@ -154,8 +104,6 @@ class DataObatController extends Controller
             return redirect('/data-obat')->with('error', 'Terjadi kesalahan saat menghapus data.');
         }
     }
-
-
 }
 
 

@@ -21,6 +21,6 @@ class StokBatchKedaluwarsa extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.admin.stok-batch-kedaluwarsa');
+        return view('admin.stok-batch-kedaluwarsa');
     }
 }

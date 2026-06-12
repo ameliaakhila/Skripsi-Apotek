@@ -24,6 +24,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'status',
     ];
 
     /**
@@ -56,9 +57,9 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if user is pharmacist (apoteker)
+     * Check if user is Apoteker (apoteker)
      */
-    public function isPharmacist(): bool
+    public function isApoteker(): bool
     {
         return $this->role === 'apoteker';
     }
@@ -82,8 +83,22 @@ class User extends Authenticatable
 
         return in_array($this->role, $roles);
     }
+    
+    public function getAuthIdentifier()
+    {
+        return $this->id_user;
+    }
+
     public function getAuthIdentifierName()
     {
-        return 'username';
+        return 'id_user';
+    }
+
+    /**
+     * Get the user's name (alias for username)
+     */
+    public function getNameAttribute()
+    {
+        return $this->username;
     }
 }

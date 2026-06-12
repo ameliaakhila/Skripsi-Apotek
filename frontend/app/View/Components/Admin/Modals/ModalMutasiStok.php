@@ -14,14 +14,14 @@ class ModalMutasiStok extends Component
     public function __construct(
         public $type = 'default',
         public $judul = null,
-        public $dataStokBatch = null,
-        public $dataCabangTambah = null,
-        public $dataCabangEdit = null
+        public $dataStokBatch = [],
+        public $dataCabangTujuan = [],
+        public $dataCabangAsal = []
     ) {
         // Fallback ke shared data dari controller jika atribut tidak dikirim dari view.
-        $this->dataStokBatch = $dataStokBatch ?? view()->shared('dataStokBatch', []);
-        $this->dataCabangTambah = $dataCabangTambah ?? view()->shared('dataCabangTambah', []);
-        $this->dataCabangEdit = $dataCabangEdit ?? view()->shared('dataCabangEdit', []);
+        $this->dataStokBatch = $dataStokBatch;
+        $this->dataCabangTujuan = $dataCabangTujuan;
+        $this->dataCabangAsal = $dataCabangAsal;
     }
 
     /**
@@ -29,6 +29,6 @@ class ModalMutasiStok extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.admin.modals.modal-mutasi-stok');
+        return view('shared.modals.modal-mutasi-stok');
     }
 }

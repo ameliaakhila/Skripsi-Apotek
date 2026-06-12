@@ -17,19 +17,20 @@ class MutasiStokController extends Controller
      * Display a listing of the resource with optimized eager loading (no N+1)
      * Pattern: Follow ObatKeluarController structure - Controller handles data formatting
      */
+    // ! ==================================== READ (INDEX) ====================================
     public function index()
     {
         // ! OPTIMIZATION: Paginate with eager loading + select only needed columns
         $data = MutasiStok::with([
-            'stokBatch:id_stok_batch,kode_batch,id_obat,tanggal_kedaluwarsa,stok_masuk,stok_keluar,stok_sisa',
-            'stokBatch.Obat:id_obat,nama_obat,id_satuan,id_kategori',
-            'stokBatch.Obat.DataSatuan:id_satuan,nama_satuan',
-            'stokBatch.Obat.DataKategori:id_kategori,nama_kategori',
-            'cabangAsal:id_cabang,kode_cabang,nama_cabang',
-            'cabangTujuan:id_cabang,kode_cabang,nama_cabang'
+            'StokBatch:id_stok_batch,kode_batch,id_obat,tanggal_kedaluwarsa,stok_masuk,stok_keluar,stok_sisa',
+            'StokBatch.Obat:id_obat,nama_obat,id_satuan,id_kategori',
+            'StokBatch.Obat.DataSatuan:id_satuan,nama_satuan',
+            'StokBatch.Obat.DataKategori:id_kategori,nama_kategori',
+            'CabangAsal:id_cabang,kode_cabang,nama_cabang',
+            'CabangTujuan:id_cabang,kode_cabang,nama_cabang'
         ])
             ->select('id_mutasi', 'id_stok_batch', 'id_cabang_asal', 'id_cabang_tujuan', 'tanggal_mutasi', 'jumlah_mutasi', 'keterangan', 'created_at')
-            ->orderBy('tanggal_mutasi', 'desc')
+            ->orderBy('updated_at', 'desc')
             ->simplePaginate(25);  // Increase per-page untuk reduce queries
 
         // Share data modal sekali per request agar view tidak perlu kirim atribut data berulang.
@@ -43,6 +44,12 @@ class MutasiStokController extends Controller
      */
     private function getModalMutasiStokData(): array
     {
+        $dataCabangAsal = Cache::remember('master_cabang_edit_list', now()->addDay(), function () {
+            return DataCabang::select('id_cabang', 'kode_cabang', 'nama_cabang')
+                ->orderBy('id_cabang', 'asc')
+                ->get();
+        });
+
         $dataCabangTujuan = Cache::remember('master_cabang_tambah_list', now()->addDay(), function () {
             return DataCabang::select('id_cabang', 'kode_cabang', 'nama_cabang')
                 ->where('id_cabang', '!=', 1)
@@ -50,36 +57,26 @@ class MutasiStokController extends Controller
                 ->get();
         });
 
-        $dataCabangAsal = Cache::remember('master_cabang_edit_list', now()->addDay(), function () {
-            return DataCabang::select('id_cabang', 'kode_cabang', 'nama_cabang')
-                ->orderBy('id_cabang', 'asc')
-                ->get();
-        });
-
-        $dataStokBatch = Cache::remember('master_stok_batch_available', now()->addHours(2), function () {
-            return StokBatch::with('Obat:id_obat,nama_obat')
-                ->select('id_stok_batch', 'kode_batch', 'id_obat', 'tanggal_kedaluwarsa', 'stok_masuk', 'stok_keluar', 'stok_sisa')
-                ->where('stok_sisa', '>', 0)
-                ->orderBy('tanggal_kedaluwarsa', 'asc')
-                ->get();
-        });
+        $dataStokBatch = StokBatch::with(['Obat:id_obat,nama_obat', 'MutasiStok.CabangTujuan:id_cabang,nama_cabang'])
+            ->select('id_stok_batch', 'kode_batch', 'id_obat', 'tanggal_kedaluwarsa', 'stok_sisa')
+            ->where('id_cabang', 1)  // Filter hanya sisa cabang pusat
+            ->where('stok_sisa', '>', 0)
+            ->orderBy('tanggal_kedaluwarsa', 'asc')
+            ->get()
+            ->map(function ($batch) {
+                // ambil semua nama cabang tujuan
+                $batch->nama_cabang = $batch->MutasiStok
+                    ->pluck('CabangTujuan.nama_cabang')
+                    ->filter()
+                    ->first();
+                return $batch;
+            });
+        // dd($dataStokBatch->toArray());
 
         return compact('dataCabangTujuan', 'dataCabangAsal', 'dataStokBatch');
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     * FEFO Logic: Automatically select batch dengan tanggal kedaluwarsa paling dulu dari cabang asal
-     * DEFAULT: Jika id_cabang_asal kosong, gunakan cabang dengan ID pertama (gudang pusat)
-     */
+    // ! ==================================== CREATE (STORE) ====================================
     public function store(Request $request)
     {
         try {
@@ -132,7 +129,7 @@ class MutasiStokController extends Controller
 
                 $validated['id_stok_batch'] = $batchAsal->id_stok_batch;
             } else {
-                // User pilih batch spesifik - validasi batch ada di cabang asal dengan stok cukup
+                // User pilih batch spesifik - validasi batch ada di cabang asal dengan stok tersedia
                 $batchAsal = StokBatch::where('id_stok_batch', $validated['id_stok_batch'])
                     ->where('id_cabang', $validated['id_cabang_asal'])
                     ->first();
@@ -154,7 +151,7 @@ class MutasiStokController extends Controller
                     ->withInput();
             }
 
-            // ! UPDATE tb_stok_batch di cabang asal (kurangi stok keluar, hitung sisa)
+            // ! UPDATE tb_stok_batch di cabang asal (Menipisi stok keluar, hitung sisa)
             $batchAsal->update([
                 'stok_keluar' => $batchAsal->stok_keluar + $validated['jumlah_mutasi'],
                 'stok_sisa' => $batchAsal->stok_masuk - ($batchAsal->stok_keluar + $validated['jumlah_mutasi']),
@@ -220,26 +217,7 @@ class MutasiStokController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(MutasiStok $mutasiStok)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(MutasiStok $mutasiStok)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     * Memproses: REVERT mutation lama → validasi batch baru → APPLY mutation baru
-     */
+    // ! ========================================== UPDATE (EDIT) ====================================
     public function update(Request $request, $id_mutasi)
     {
         try {
@@ -382,7 +360,7 @@ class MutasiStokController extends Controller
 
     /**
      * Remove the specified resource from storage.
-     * Revert mutation: restore stok ke batch asal, kurangi dari batch tujuan
+     * Revert mutation: restore stok ke batch asal, Menipisi dari batch tujuan
      */
     public function destroy($id_mutasi)
     {
@@ -404,13 +382,13 @@ class MutasiStokController extends Controller
             }
 
             // ! REVERT mutation: Kembalikan stok ke kondisi sebelum mutasi
-            // Tambah kembali ke batch asal (kurangi stok_keluar)
+            // Tambah kembali ke batch asal (Menipisi stok_keluar)
             $batchAsal->update([
                 'stok_keluar' => max(0, $batchAsal->stok_keluar - $mutasi->jumlah_mutasi),
                 'stok_sisa' => $batchAsal->stok_masuk - max(0, $batchAsal->stok_keluar - $mutasi->jumlah_mutasi),
             ]);
 
-            // Kurangi dari batch tujuan (kurangi stok_masuk)
+            // Menipisi dari batch tujuan (Menipisi stok_masuk)
             $newStokMasukTujuan = max(0, $batchTujuan->stok_masuk - $mutasi->jumlah_mutasi);
             $newStokSisaTujuan = $newStokMasukTujuan - $batchTujuan->stok_keluar;
 

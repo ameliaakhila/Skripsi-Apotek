@@ -21,7 +21,7 @@ class StokBatch extends Model
         'tujuan_penyesuaian',
         'catatan',
         'id_obat',
-        'id_cabang'
+        'id_cabang',
     ];
 
     protected $casts = [
@@ -76,6 +76,11 @@ class StokBatch extends Model
     {
         return $this->hasOne(ObatMasuk::class, 'id_obat', 'id_obat')
             ->whereColumn('tb_obat_masuk.kode_batch', 'tb_stok_batch.kode_batch');
+    }
+
+    public function MutasiStok()
+    {
+        return $this->hasMany(MutasiStok::class, 'id_stok_batch', 'id_stok_batch');
     }
 
     public function StokOpname()

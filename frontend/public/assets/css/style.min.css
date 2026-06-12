@@ -12298,6 +12298,7 @@ h6 {
 .content-body .container-xl,
 .content-body .container-xxl {
     padding-top: 2.5rem;
+    padding-bottom: 0rem;
     padding-right: 2.5rem;
     padding-left: 2.5rem
 }
@@ -13155,7 +13156,7 @@ h6 {
     line-height: 0;
     font-weight: 700;
     font-size: 2rem;
-    margin-bottom: 15px;
+    margin-bottom: 5px;
     font-family: Nunito
 }
 
@@ -15873,13 +15874,14 @@ svg.pulse-svg .third-circle {
 
 .content-body {
     margin-left: 20.563rem;
+    min-height: 100% !important;
     z-index: 0;
     transition: all .2s ease
 }
 
 @media only screen and (max-width:87.5rem) {
     .content-body {
-        margin-left: 17rem
+        margin-left: 17rem;
     }
 }
 
@@ -16221,7 +16223,6 @@ svg.pulse-svg .third-circle {
 .copyright {
     padding: 0 1.875rem;
     color: #9fa4a6;
-    margin-top: 1.875rem
 }
 
 .copyright strong {

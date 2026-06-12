@@ -1,43 +1,31 @@
 <!DOCTYPE html>
 <html lang="id">
 
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'Sistem Apotek Sena Farma' }}</title>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
-    @include('layouts.components.head')
-
-</head>
+<x-head />
 
 <body>
-    {{-- Preloader --}}
-    <div id="preloader">
-        <div class="lds-ripple">
-            <div></div>
-            <div></div>
-        </div>
-    </div>
+    <x-preloader />
 
-    <div id="main-wrapper" class="show">
-        {{-- Navbar (Header Brand & Top Bar) --}}
-        @include('layouts.components.navbar')
+    <div id="main-wrapper">
+        <x-navbar />
 
-        {{-- Sidebar (Role-Based Navigation) --}}
         @auth
-            @include('layouts.components.sidebar-' . Auth::user()->role)
+            @include('components.layouts.sidebar-' . Auth::user()->role)
+            {{-- <x-sidebar- :role="Auth::user()->role" /> --}}
         @endauth
 
-        {{-- Main Content Area --}}
-        {{ $slot }}
+        <div class="content-body">
+            <div class="container-fluid">
+                {{ $slot }}
+            </div>
+            </div>
 
-        {{-- Footer --}}
-        @include('layouts.components.footer')
+        <x-footer />
     </div>
 
-    @include('layouts.components.script')
+    <x-script />
+    @stack('scripts')
+    @stack('extra_js')
 </body>
 
 </html>

@@ -3,61 +3,211 @@
 namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
+use App\Services\ML\StockPredictionService;
 use App\Models\Admin\StokBatch;
+use App\Exports\PrediksiObatExport;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
 
+/**
+ * Prediksi Stok Obat Controller
+ *
+ * Mengelola prediksi stok obat menggunakan ML model dan data penjualan bulanan
+ */
 class PrediksiController extends Controller
 {
-    /**
-     * Determine stock status based on quantity
-     */
-    private function getStokStatus($stok_sisa, $safety_stock)
+    private $predictionService;
+
+    public function __construct(StockPredictionService $predictionService)
     {
-        if ($stok_sisa <= 0) {
-            return 'habis';
-        } elseif ($stok_sisa <= $safety_stock) {
-            return 'menipis';
-        }
-        return 'aman';
+        $this->predictionService = $predictionService;
     }
 
+    /**
+     * Tampilkan halaman prediksi stok obat
+     */
     public function index()
     {
-        // OPTIMIZED: Use select() with specific columns instead of raw select,
-        // Add pagination, cache results for better performance
-        $cacheKey = 'prediksi_stok_data';
+        try {
+            // Get predictions (with cache)
+            $data = $this->predictionService->getAllPredictions(use_cache: true);
 
-        $data = Cache::remember($cacheKey, now()->addHours(1), function () {
-            return StokBatch::with('Obat:id_obat,nama_obat,safety_stock')
-                ->select(
-                    'id_stok_batch',
-                    'id_obat',
-                    DB::raw('SUM(stok_masuk - stok_keluar) as stok_sisa'),
-                    DB::raw('COUNT(*) as batch_count')
-                )
-                ->groupBy('id_obat')
-                ->get()
-                ->map(function ($batch) {
-                    $stok_sisa = $batch->stok_sisa ?? 0;
-                    $safety_stock = $batch->Obat->safety_stock ?? 10;
+            // Get statistics (Optimized: Get stats directly from the data we already have)
+            $stats = $this->calculateStatsFromData($data);
 
-                    return [
-                        'id_stok_batch' => $batch->id_stok_batch,
-                        'id_obat' => $batch->id_obat,
-                        'nama_obat' => $batch->Obat->nama_obat,
-                        'stok_sisa' => $stok_sisa,
-                        'safety_stock' => $safety_stock,
-                        'batch_count' => $batch->batch_count,
-                        'status' => $this->getStokStatus($stok_sisa, $safety_stock)
-                    ];
-                })
-                ->sortBy('stok_sisa')
-                ->values();
-        });
+            // Format data for view
+            $formattedData = $data->map(function ($prediction) {
+                // Ensure $prediction is handled as array
+                $predictionArray = is_array($prediction) ? $prediction : $prediction->toArray();
+                return $this->formatPredictionData($predictionArray);
+            });
 
-        return view('manager.prediksi-obat', compact('data'));
+            return view('manager.prediksi-obat', [
+                'data' => $formattedData,
+                'stats' => $stats,
+                'api_available' => $stats['api_available'] ?? false,
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Prediksi index error: {$e->getMessage()}");
+            return view('manager.prediksi-obat', [
+                'data' => collect(),
+                'stats' => [
+                    'total_drugs' => 0,
+                    'status_aman' => 0,
+                    'status_menipis' => 0,
+                    'status_habis' => 0,
+                    'api_available' => false,
+                ],
+                'error' => 'Gagal memuat data prediksi: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Calculate statistics from already fetched data to avoid double processing
+     */
+    private function calculateStatsFromData($predictions): array
+    {
+        if ($predictions->isEmpty()) {
+            return [
+                'total_drugs' => 0,
+                'status_aman' => 0,
+                'status_menipis' => 0,
+                'status_habis' => 0,
+                'total_reorder_value' => 0,
+                'api_available' => $this->predictionService->isAPIAvailable(),
+            ];
+        }
+
+        return [
+            'total_drugs' => $predictions->count(),
+            'status_aman' => $predictions->filter(fn($p) => (($p['status'] ?? '') === 'aman'))->count(),
+            'status_menipis' => $predictions->filter(fn($p) => (($p['status'] ?? '') === 'menipis'))->count(),
+            'status_habis' => $predictions->filter(fn($p) => (($p['status'] ?? '') === 'habis'))->count(),
+            'total_reorder_value' => (float)$predictions->sum(function ($p) {
+                $stok_saat_ini = $p['stok_saat_ini'] ?? 0;
+                $predicted = $p['predicted_stock'] ?? $stok_saat_ini;
+                $gap = $predicted - $stok_saat_ini;
+                return max(0, $gap);
+            }),
+            'api_available' => $this->predictionService->isAPIAvailable(),
+        ];
+    }
+
+    /**
+     * Generate prediksi stok berdasarkan data penjualan bulan lalu
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function generatePrediction(Request $request)
+    {
+        try {
+            // Hapus cache dan force regenerate
+            $this->predictionService->clearCache();
+            
+            // Force recompute and cache immediately (This might take a few seconds)
+            // This ensures data is ready when user is redirected back to index
+            $this->predictionService->getAllPredictions(use_cache: true);
+
+            Log::info("Stock prediction regenerated and cached at " . now());
+
+            return redirect()->back()
+                ->with('success', 'Prediksi stok berhasil diperbarui berdasarkan data penjualan bulan lalu');
+        } catch (\Exception $e) {
+            Log::error("Generate prediction error: {$e->getMessage()}");
+
+            return redirect()->back()
+                ->with('error', 'Gagal membuat prediksi: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get prediction untuk obat spesifik (AJAX)
+     */
+    public function getDrugPrediction($id_obat)
+    {
+        try {
+            $prediction = $this->predictionService->getDrugPrediction($id_obat);
+
+            if (!$prediction) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data tidak ditemukan'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $this->formatPredictionData($prediction),
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Get drug prediction error: {$e->getMessage()}");
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get ringkasan penjualan bulan lalu (AJAX)
+     */
+    public function getLastMonthSummary($id_obat)
+    {
+        try {
+            $summary = $this->predictionService->getLastMonthSummary($id_obat);
+
+            if (!$summary) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data tidak ditemukan'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $summary,
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Get last month summary error: {$e->getMessage()}");
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Format prediction data for view display
+     */
+    private function formatPredictionData(array $prediction): array
+    {
+        $current_stock = $prediction['stok_saat_ini'] ?? 0;
+        $predicted_stock = $prediction['predicted_stock'] ?? $current_stock;
+        $safety_stock = $prediction['safety_stock'] ?? 10;
+
+        return [
+            'id_obat' => $prediction['id_obat'] ?? null,
+            'nama_obat' => $prediction['nama_obat'] ?? 'Unknown',
+            'stok_awal' => (int)($prediction['stok_saat_ini'] + ($prediction['last_month_total_sales'] ?? 0)),
+            'stok_terjual' => (int)($prediction['last_month_total_sales'] ?? 0),
+            'stok_sisa' => (int) $current_stock,
+            'stok_prediksi' => (int) $predicted_stock,
+            'safety_stock' => (int) $safety_stock,
+            'confidence' => $prediction['confidence'] ?? 'medium',
+            'recommendation' => $prediction['recommendation'] ?? '-',
+            'status' => $this->predictionService->getStockStatus((int)$current_stock, (int)$safety_stock, (int)$predicted_stock),
+            'last_month_sales' => (int)($prediction['last_month_total_sales'] ?? 0),
+            'avg_daily_sales' => $prediction['avg_daily_sales'] ?? 0,
+            'source' => $prediction['source'] ?? 'ml',
+            'is_prediction' => true,
+        ];
     }
 
     public function upload(Request $request)
@@ -86,22 +236,25 @@ class PrediksiController extends Controller
         $cacheKey = 'obat_kedaluwarsa_report';
         $data = Cache::remember($cacheKey, 3600, function () {
             // Query actual expired/near-expiry medicine data from database
-            $today = now()->format('Y-m-d');
-
-            return StokBatch::with('Obat', 'ObatMasuk')
-                ->leftJoin('tb_obat_masuk', 'tb_stok_batch.id_obat_masuk', '=', 'tb_obat_masuk.id_obat_masuk')
-                ->where('tb_obat_masuk.tanggal_kedaluwarsa', '<=', now()->addMonths(3)->format('Y-m-d'))
-                ->orderBy('tb_obat_masuk.tanggal_kedaluwarsa', 'asc')
-                ->select('tb_stok_batch.*', 'tb_obat_masuk.tanggal_kedaluwarsa')
+            // We focus on batches that still have stock (stok_sisa > 0)
+            return StokBatch::with('Obat')
+                ->where('tanggal_kedaluwarsa', '<=', now()->addMonths(3)->format('Y-m-d'))
+                ->orderBy('tanggal_kedaluwarsa', 'asc')
                 ->get()
-                ->map(function ($stok) use ($today) {
-                    $expiry_date = \Carbon\Carbon::parse($stok->tanggal_kedaluwarsa);
-                    $status_terjual = $stok->status == 'keluar' ? 'Terjual' : 'Belum Terjual';
-                    $kondisi = $expiry_date->isPast() ? 'Sudah Kadaluarsa' : ($expiry_date->diffInDays(now()) <= 30 ? 'Kurang Baik' : 'Baik');
+                ->map(function ($stok) {
+                    $expiry_date = $stok->tanggal_kedaluwarsa;
+
+                    // Logic for status_terjual based on remaining stock
+                    $status_terjual = $stok->stok_sisa == 0 ? 'Terjual' : 'Belum Terjual';
+
+                    // Determine condition based on expiry date
+                    $kondisi = $expiry_date->isPast()
+                        ? 'Sudah Kadaluarsa'
+                        : ($expiry_date->diffInDays(now()) <= 30 ? 'Menipis Baik' : 'Baik');
 
                     return [
-                        'nama_obat' => $stok->Obat->nama_obat,
-                        'jumlah_obat' => $stok->jumlah_batch,
+                        'nama_obat' => $stok->Obat->nama_obat ?? 'Tidak Diketahui',
+                        'jumlah_obat' => $stok->stok_sisa,
                         'tanggal_kedaluwarsa' => $expiry_date->format('d F Y'),
                         'status_terjual' => $status_terjual,
                         'kondisi' => $kondisi
@@ -115,5 +268,51 @@ class PrediksiController extends Controller
         }
 
         return view('manager.obat-kedaluwarsa', compact('data'));
+    }
+
+    /**
+     * Export prediksi obat ke Excel
+     */
+    public function exportExcel()
+    {
+        try {
+            $data = $this->predictionService->getAllPredictions(use_cache: true);
+
+            $formattedData = $data->map(function ($prediction) {
+                return $this->formatPredictionData($prediction);
+            })->toArray();
+
+            return Excel::download(
+                new PrediksiObatExport($formattedData),
+                'Prediksi_Stok_Obat_' . now()->format('d-m-Y') . '.xlsx'
+            );
+        } catch (\Exception $e) {
+            Log::error("Export prediksi Excel error: {$e->getMessage()}");
+            return redirect()->back()->with('error', 'Gagal export Excel: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Export prediksi obat ke PDF (Tampilkan di browser, user bisa print)
+     */
+    public function exportPdf()
+    {
+        try {
+            $data = $this->predictionService->getAllPredictions(use_cache: true);
+
+            $formattedData = $data->map(function ($prediction) {
+                return $this->formatPredictionData($prediction);
+            });
+
+            $stats = $this->calculateStatsFromData($data);
+
+            return view('manager.prediksi-obat-pdf', [
+                'data' => $formattedData,
+                'stats' => $stats,
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Export prediksi PDF error: {$e->getMessage()}");
+            return redirect()->back()->with('error', 'Gagal membuka preview PDF: ' . $e->getMessage());
+        }
     }
 }

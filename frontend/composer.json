@@ -9,7 +9,8 @@
         "php": "^8.2",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
-        "livewire/livewire": "^3.7"
+        "livewire/livewire": "^3.7",
+        "maatwebsite/excel": "3.1.x-dev"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.15",
@@ -81,13 +82,11 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "audit": {
+            "block-insecure": false
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true,
-    "repositories": [{
-        "name": "packagist",
-        "type": "composer",
-        "url": "https://mirrors.aliyun.com/composer/"
-    }]
+    "prefer-stable": true
 }

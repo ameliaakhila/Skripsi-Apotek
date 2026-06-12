@@ -23,6 +23,6 @@ class Head extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.head');
+        return view('components.layouts.head');
     }
 }

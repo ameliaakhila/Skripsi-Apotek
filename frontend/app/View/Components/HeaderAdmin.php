@@ -93,6 +93,6 @@ class HeaderAdmin extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.header_admin');
+        return view('components.layouts.navbar');
     }
 }

@@ -1,8 +1,4 @@
-@extends('layouts.auth')
-
-@section('title', 'Login - Sistem Apotek Sena Farma')
-
-@section('content')
+<x-auth-layout :title="'Login - Sistem Apotek Sena Farma'">
     <div class="pharmacy-login-page">
         <!-- Animated Background Layer -->
         <div class="pharmacy-bg-container">
@@ -86,6 +82,7 @@
                                     <i class="fas fa-user"></i>
                                 </span>
                                 <input type="text" name="username"
+                                    placeholder=""
                                     class="input-pharmacy @error('username') is-invalid-pharmacy @enderror"
                                     value="{{ old('username') }}" required autofocus>
                                 <label class="input-label-pharmacy">Username</label>
@@ -104,6 +101,7 @@
                                     <i class="fas fa-lock"></i>
                                 </span>
                                 <input type="password" name="password"
+                                    placeholder=""
                                     class="input-pharmacy @error('password') is-invalid-pharmacy @enderror"
                                     required>
                                 <label class="input-label-pharmacy">Password</label>
@@ -138,4 +136,4 @@
             </div>
         </div>
     </div>
-@endsection
+</x-auth-layout>

@@ -37,8 +37,12 @@ class MutasiStokSeeder extends Seeder
             // random() = ambil satu secara random
             $id_cabang_tujuan = $cabangs->diff([$id_cabang_asal])->random();
 
-            // ↓ Jumlah mutasi = random antara 10-100 unit
-            $jumlah_mutasi = rand(10, 100);
+            // ↓ Ambil stok_masuk dari stok_batch random untuk menentukan jumlah_mutasi
+            $stok_masuk = DB::table('tb_stok_batch')->inRandomOrder()->value('stok_masuk');
+
+            // ↓ Jumlah mutasi = random antara 10 sampai stok_masuk maksimum (untuk memastikan tidak melebihi stok yang ada)
+            $jumlah_mutasi = rand(1, $stok_masuk);
+
 
             // ↓ Tanggal mutasi = tanggal random antara hari ini sampai 30 hari lalu
             $tanggal_mutasi = now()->subDays(rand(0, 30));

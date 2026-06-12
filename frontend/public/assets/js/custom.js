@@ -13,7 +13,7 @@
 
 	var handlePreloader = function(){
 		setTimeout(function() {
-			jQuery('#preloader').remove();
+			jQuery('#preloader').fadeOut(500);
 			$('#main-wrapper').addClass('show');
 		},800);
 

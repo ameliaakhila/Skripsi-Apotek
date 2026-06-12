@@ -31,9 +31,9 @@ class CompressResponse
             if ($compressed !== false && strlen($compressed) < strlen($content)) {
                 // Set compressed content
                 $response->setContent($compressed);
-                $response->header('Content-Encoding', 'gzip');
-                $response->header('Vary', 'Accept-Encoding');
-                $response->header('Content-Length', strlen($compressed));
+                $response->headers->set('Content-Encoding', 'gzip');
+                $response->headers->set('Vary', 'Accept-Encoding');
+                $response->headers->set('Content-Length', strlen($compressed));
             }
         }
 

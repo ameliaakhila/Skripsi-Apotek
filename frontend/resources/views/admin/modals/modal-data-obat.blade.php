@@ -4,7 +4,7 @@
         <div class="modal-dialog modal-m">
             <div class="modal-content">
                 <div class="modal-header custom-modal-header">
-                    <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>{{ $judul }} aw</h5>
+                    <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>{{ $judul }}</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body modal-body-custom">

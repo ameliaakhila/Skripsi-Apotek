@@ -21,9 +21,9 @@ class StokOpnameSeeder extends Seeder
         $users = DB::table('users')->pluck('id_user');
         $users = $users->random();
 
-        // buat keterangan stok opname 'kurang', 'lebih', 'sesuai'
+        // buat keterangan stok opname 'Menipis', 'lebih', 'sesuai'
         $keterangan = [
-            'Kurang',
+            'Menipis',
             'Lebih',
             'Sesuai',
         ];

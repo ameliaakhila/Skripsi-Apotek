@@ -21,7 +21,7 @@ class ObatMasukSeeder extends Seeder
         $obats = DB::table('tb_obat')->get();
 
         // ? Tentukan jumlah batch per obat (bisa diubah sesuai kebutuhan)
-        $batchPerObat = 3;
+        $batchPerObat = 1;
 
         // ? Array untuk menampung data yang akan diinsert
         $data_obat_masuk = [];

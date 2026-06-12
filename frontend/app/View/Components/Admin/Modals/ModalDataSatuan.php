@@ -21,6 +21,6 @@ class ModalDataSatuan extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.admin.modals.modal-data-satuan');
+        return view('admin.modals.modal-data-satuan');
     }
 }

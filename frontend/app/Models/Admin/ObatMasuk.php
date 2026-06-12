@@ -3,6 +3,7 @@
 namespace App\Models\Admin;
 
 use App\Helpers\StokStatusHelper;
+use App\Models\Admin\ObatKeluar;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 use NumberFormatter;
@@ -91,7 +92,8 @@ class ObatMasuk extends Model
         if ($this->stok_masuk == 0) {
             return 0;
         }
-        $presentase_stok_keluar = (($this->stok_masuk - $this->stok_keluar) / $this->stok_masuk) * 100;
+        $stok_keluar = $this->stok_keluar ?? $this->obatKeluar()->sum('stok_keluar');
+        $presentase_stok_keluar = (($this->stok_masuk - $stok_keluar) / $this->stok_masuk) * 100;
         return round($presentase_stok_keluar);
     }
 
@@ -133,5 +135,10 @@ class ObatMasuk extends Model
     public function StokBatch()
     {
         return $this->stokBatches();
+    }
+
+    public function obatKeluar()
+    {
+        return $this->hasMany(ObatKeluar::class, 'id_obat_masuk', 'id_obat_masuk');
     }
 }

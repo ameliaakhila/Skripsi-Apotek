@@ -1,0 +1,2 @@
+id_obat,nama_obat,periode,total_masuk,total_keluar,stok_saat_ini,safety_stock,frekuensi_masuk,frekuensi_keluar,avg_selisih_opname,mutasi_count,avg_mutasi_qty,expiry_risk,turnover_rate,reorder_point,status_stok
+1,"AMOXCILLINE 500 MG TAB HJ",2026-04-01,3100,170,239,17,1,5,-16.2800,20,4.5161,693.0000,0.71,170.00,Aman

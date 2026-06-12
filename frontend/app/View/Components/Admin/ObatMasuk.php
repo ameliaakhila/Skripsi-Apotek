@@ -22,6 +22,6 @@ class ObatMasuk extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.obat_masuk');
+        return view('apoteker.obat-masuk');
     }
 }

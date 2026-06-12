@@ -21,6 +21,6 @@ class DataSatuan extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.data-satuan');
+        return view('admin.data-satuan');
     }
 }

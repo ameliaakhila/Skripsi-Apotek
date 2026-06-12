@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Admin\{Obat, DataCabang, DataKategori, DataSatuan, DataSupplier, StokBatch, ObatMasuk, ObatKeluar};
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DashboardService
 {
@@ -15,41 +17,90 @@ class DashboardService
      */
     public function getAdminDashboardData(): array
     {
-        return [
-            'totalDataObat' => Obat::count(),
-            'totalDataCabang' => DataCabang::count(),
-            'totalDataMaster' => $this->countMasterData(),
-            'totalUsers' => User::count(),
-            'monthlySalesChart' => $this->getMonthlySalesData(),
-            'statusCards' => [
-                'obat' => Obat::count(),
-                'cabang' => DataCabang::count(),
-                'users' => User::count(),
-                'master' => $this->countMasterData(),
-            ]
-        ];
+        try {
+            return [
+                'totalDataObat' => Obat::count(),
+                'totalDataCabang' => DataCabang::count(),
+                'totalDataMaster' => $this->countMasterData(),
+                'totalUsers' => User::count(),
+                'monthlySalesChart' => $this->getMonthlySalesData(),
+                'statusCards' => [
+                    'obat' => Obat::count(),
+                    'cabang' => DataCabang::count(),
+                    'users' => User::count(),
+                    'master' => $this->countMasterData(),
+                ]
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error in getAdminDashboardData: ' . $e->getMessage());
+            return [];
+        }
     }
 
     /**
-     * Get Pharmacist Dashboard Data
+     * Get Apoteker Dashboard Data
      *
      * @return array
      */
-    public function getPharmacistDashboardData(): array
+    public function getApotekerDashboardData(): array
     {
-        return [
-            'totalDataObat' => Obat::count(),
-            'totalDataCabang' => DataCabang::count(),
-            'transactionToday' => $this->getTodayTransactionCount(),
-            'expiredMedicines' => $this->getExpiredMedicinesCount(),
-            'weeklyTransactionChart' => $this->getWeeklyTransactionData(),
-            'statusCards' => [
-                'obat' => Obat::count(),
-                'transaksi' => $this->getTodayTransactionCount(),
-                'cabang' => DataCabang::count(),
-                'kedaluwarsa' => $this->getExpiredMedicinesCount(),
-            ]
-        ];
+        try {
+            return [
+                'totalDataObat' => Obat::count(),
+                'totalDataCabang' => DataCabang::count(),
+                'transactionToday' => $this->getTodayTransactionCount(),
+                'expiredMedicines' => $this->getExpiredMedicinesCount(),
+                'upcomingExpired' => $this->getUpcomingExpiredCount(),
+                'lowStockCount' => $this->getLowStockCount(),
+                'weeklyTransactionChart' => $this->getWeeklyTransactionData(),
+                'stockDistribution' => $this->getStockDistributionData(),
+                'recentActivities' => $this->getRecentActivities(),
+                'statusCards' => [
+                    'obat' => Obat::count(),
+                    'transaksi' => $this->getTodayTransactionCount(),
+                    'cabang' => DataCabang::count(),
+                    'kedaluwarsa' => $this->getExpiredMedicinesCount(),
+                    'stok_rendah' => $this->getLowStockCount(),
+                    'hampir_kedaluwarsa' => $this->getUpcomingExpiredCount(),
+                ]
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error in getApotekerDashboardData: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get Count of Medicines with Low Stock
+     *
+     * @return int
+     */
+    private function getLowStockCount(): int
+    {
+        return StokBatch::whereRaw('stok_sisa <= (SELECT safety_stock FROM tb_obat WHERE tb_obat.id_obat = tb_stok_batch.id_obat)')
+            ->where('stok_sisa', '>', 0)
+            ->count();
+    }
+
+    /**
+     * Get Recent Activities from activity_logs table
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    private function getRecentActivities(): \Illuminate\Support\Collection
+    {
+        return \App\Models\ActivityLog::with('user')
+            ->orderBy('created_at', 'desc')
+            ->limit(8)
+            ->get()
+            ->map(function($item) {
+                return [
+                    'title' => $item->user->name ?? 'System',
+                    'description' => $item->action,
+                    'time' => $item->created_at->diffForHumans(),
+                    'color' => 'info' // Default color
+                ];
+            });
     }
 
     /**
@@ -59,19 +110,46 @@ class DashboardService
      */
     public function getManagerDashboardData(): array
     {
+        try {
+            return [
+                'totalDataObat' => Obat::count(),
+                'totalDataCabang' => DataCabang::count(),
+                'predictedStockIssue' => $this->getPredictedStockIssueCount(),
+                'availableReports' => 4, // Based on reports available in system
+                'trendChart' => $this->getMonthlyTrendData(),
+                'distributionChart' => $this->getStockDistributionData(),
+                'topSellingDrugs' => $this->getTopSellingDrugs(),
+                'statusCards' => [
+                    'obat' => Obat::count(),
+                    'cabang' => DataCabang::count(),
+                    'prediksi' => $this->getPredictedStockIssueCount(),
+                    'laporan' => 4,
+                ]
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error in getManagerDashboardData: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get Top Selling Drugs for Bar Chart
+     *
+     * @return array
+     */
+    private function getTopSellingDrugs(): array
+    {
+        $topDrugs = ObatKeluar::join('tb_obat_masuk', 'tb_obat_keluar.id_obat_masuk', '=', 'tb_obat_masuk.id_obat_masuk')
+            ->join('tb_obat', 'tb_obat_masuk.id_obat', '=', 'tb_obat.id_obat')
+            ->select('tb_obat.nama_obat', DB::raw('SUM(tb_obat_keluar.stok_keluar) as total_keluar'))
+            ->groupBy('tb_obat.id_obat', 'tb_obat.nama_obat')
+            ->orderBy('total_keluar', 'desc')
+            ->limit(5)
+            ->get();
+
         return [
-            'totalDataObat' => Obat::count(),
-            'totalDataCabang' => DataCabang::count(),
-            'predictedStockIssue' => $this->getPredictedStockIssueCount(),
-            'availableReports' => 4, // Based on reports available in system
-            'trendChart' => $this->getMonthlyTrendData(),
-            'distributionChart' => $this->getStockDistributionData(),
-            'statusCards' => [
-                'obat' => Obat::count(),
-                'cabang' => DataCabang::count(),
-                'prediksi' => $this->getPredictedStockIssueCount(),
-                'laporan' => 4,
-            ]
+            'labels' => $topDrugs->map(fn($item) => $item->nama_obat ?? 'Unknown')->toArray(),
+            'data' => $topDrugs->pluck('total_keluar')->map(fn($val) => (int)$val)->toArray(),
         ];
     }
 
@@ -230,7 +308,7 @@ class DashboardService
 
     /**
      * Get Upcoming Expired Medicines (7-30 days)
-     * Useful for pharmacist early warning
+     * Useful for Apoteker early warning
      *
      * @return int
      */

@@ -8,7 +8,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body modal-body-custom">
-                    <form action="{{ url('/data-supplier-tambah') }}" method="POST">
+                    <form action="{{ route('admin.data-supplier.store') }}" method="POST">
                         @csrf
                         <table class="table table-sm table-borderless">
                             <tr>
@@ -33,9 +33,10 @@
                                 </td>
                             </tr>
                         </table>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn btn-primary">Simpan</button>
+                        <div class="modal-footer" style="background-color: #f8f9fa; border-top: 1px solid #e9ecef;">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal"><i
+                                    class="fas fa-times me-2"></i>Batal</button>
+                            <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-save me-2"></i>Simpan</button>
                         </div>
                     </form>
                 </div>

@@ -1,96 +1,190 @@
 <x-app title="Prediksi Obat">
-    <div class="content-body">
-        <div class="container-fluid">
-            <div class="row">
-
-                <div class="col-12">
-                    <div class="card">
-                        <div class="mx-4 d-flex justify-content-between">
-                            <form action="{{-- route('prediksi.stok') --}}" method="GET">
-                                <div class="basic-dropdown">
-                                    <div class="dropdown">
-                                        <button type="button" class="btn btn-primary dropdown-toggle"
-                                            data-bs-toggle="dropdown">
-                                            <i class="bi bi-gear-fill fs-5"></i>
-                                            Prediksi Berdasarkan
-                                        </button>
-                                        <div class="dropdown-menu">
-                                            <button class="dropdown-item active" type="submit" name="periode"
-                                                value="bulan">
-                                                Januari 2026
-                                            </button>
-                                            <button class="dropdown-item" type="submit" name="periode" value="tahun">
-                                                Desember 2025
-                                            </button>
-                                            <button class="dropdown-item" type="submit" name="periode" value="tahun">
-                                                November 2025
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </form>
-
-                            <button class="btn btn-success"><i class="fas fa-file-excel fs-6"></i> Cetak
-                                Laporan</button>
-                        </div>
-
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table id="example3" class="display">
-                                    <thead>
-                                        <tr>
-                                            <th>No</th>
-                                            <th>Nama Obat</th>
-                                            <th style="text-align: center;">Stok Awal</th>
-                                            <th style="text-align: center;">Stok Terjual</th>
-                                            <th style="text-align: center;">Stok Sisa</th>
-                                            <th>Status</th>
-                                            <th style="text-align: center;">Stok Prediksi</th>
-                                            {{-- <th style="text-align: center;">Rekomendasi Sistem</th> --}}
-                                        </tr>
-                                    </thead>
-
-                                    <tbody>
-                                        @php $no = 1; @endphp
-                                        @foreach ($data as $d)
-                                            <tr>
-                                                <td>{{ $no++ }}</td>
-                                                <td>{{ $d['nama_obat'] }}</td>
-                                                <td style="text-align: center;">{{ $d['stok_awal'] }}</td>
-                                                <td style="text-align: center;">{{ $d['stok_terjual'] }}</td>
-                                                <td style="text-align: center;">{{ $d['stok_sisa'] }}</td>
-                                                <td>
-                                                    @if ($d['status'] == 'menipis')
-                                                        <span class="badge badge-sm badge-warning">Menipis</span>
-
-                                                    @elseif ($d['status'] == 'aman')
-                                                        <span class="badge badge-sm badge-success">Aman</span>
-
-                                                    @elseif ($d['status'] == 'habis')
-                                                        <span class="badge badge-sm badge-danger">Habis</span>
-
-                                                    @else
-                                                        <span class="badge badge-sm badge-secondary">Error</span>
-                                                    @endif
-                                                </td>
-
-                                                <td style="text-align: center;">{{ $d['stok_prediksi'] }}</td>
-
-                                                <td class="d-flex justify-content-center align-items-center gap-0">
-
-                                                </td>
-
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="mx-4 d-flex justify-content-between align-items-center py-3">
+                    <div>
+                        <h5 class="card-title mb-0">
+                            Prediksi Stok Obat (Total: {{ count($data) }})
+                            @if($api_available ?? false)
+                                <span class="badge badge-success"><i class="fas fa-check-circle"></i> ML Model Aktif</span>
+                            @else
+                                <span class="badge badge-warning"><i class="fas fa-database"></i> Mode Database</span>
+                            @endif
+                        </h5>
+                        <small class="text-muted">Update terakhir: {{ now()->format('d/m/Y H:i:s') }}</small>
                     </div>
-                </div>
+                
+                    <div>
+                        <form action="{{ route('prediksi.generate') }}" method="POST" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-primary" id="btnGeneratePrediction">
+                                <i class="fas fa-redo-alt"></i> Hitung Prediksi
+                            </button>
+                        </form>
+                        <button id="btnCetakDropdown" type="button" class="btn btn-success">
+                            <a href="{{ route('prediksi.export-excel') }}" class="text-white">
+                                <i class="fas fa-file-excel"></i>
+                                Cetak Laporan
+                            </a>
+                        </button>
+                        </div>
+                        </div>
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show mx-4 mt-3" role="alert">
+        <i class="fas fa-check-circle"></i> {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+@endif
 
+                @if(session('error') || isset($error))
+                    <div class="alert alert-danger alert-dismissible fade show mx-4 mt-3" role="alert">
+                        <i class="fas fa-exclamation-circle"></i> {{ session('error') ?? $error }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+
+                <div class="card-body">
+                    @if($data && count($data) > 0)
+                        <div class="table-responsive">
+                            <table id="tablePrediksi" class="display table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Nama Obat</th>
+                                        <th style="text-align: center;">Stok Awal</th>
+                                        <th style="text-align: center;">Stok Terjual</th>
+                                        <th style="text-align: center;">Stok Sisa</th>
+                                        <th>Status</th>
+                                        <th style="text-align: center;">Stok Prediksi</th>
+                                        <th style="text-align: center;">Kepercayaan</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                            @php $no = 1; @endphp
+                                            @foreach ($data as $d)
+                                                <tr>
+                                                    <td>{{ $no++ }}</td>
+                                                    <td>{{ $d['nama_obat'] ?? 'Unknown' }}</td>
+                                                        <td style="text-align: center;">{{ number_format($d['stok_awal'] ?? 0, 0) }}</td>
+                                                        <td style="text-align: center;">{{ number_format($d['stok_terjual'] ?? 0, 0) }}</td>
+                                                        <td style="text-align: center;">
+                                                            {{ number_format($d['stok_sisa'] ?? 0, 0) }}
+                                                        </td>
+                                                        <td>
+                                                            @if ($d['status'] === 'menipis')
+                                                                <span class="badge badge-sm badge-warning"><i class="fas fa-exclamation-triangle"></i> Menipis</span>
+                                                            @elseif ($d['status'] === 'aman')
+                                                                <span class="badge badge-sm badge-success"><i class="fas fa-check"></i> Aman</span>
+                                                            @elseif ($d['status'] === 'habis')
+                                                                <span class="badge badge-sm badge-danger"><i class="fas fa-times"></i> Habis</span>
+                                                            @else
+                                                                <span class="badge badge-sm badge-secondary">-</span>
+                                                            @endif
+                                                                </td>
+                                                                <td style="text-align: center;">
+                                                                    <strong class="text-primary">
+                                                                        {{ number_format($d['stok_prediksi'] ?? 0, 0) }}
+                                                                    </strong>
+                                                                    @if(isset($d['is_prediction']) && $d['is_prediction'])
+                                                                        <br><small class="text-muted">(Prediksi ML)</small>
+                                                                    @else
+                                                                        <br><small class="text-muted">(Dari DB)</small>
+                                                                    @endif
+                                                                </td>
+                                                                <td style="text-align: center;">
+                                                                    @if(isset($d['confidence']))
+                                                                        @if($d['confidence'] === 'high')
+                                                                            <span class="badge badge-success"><i class="fas fa-star"></i> Tinggi</span>
+                                                                        @elseif($d['confidence'] === 'medium')
+                                                                            <span class="badge badge-warning"><i class="fas fa-star-half-alt"></i> Sedang</span>
+                                                                        @elseif($d['confidence'] === 'low')
+                                                                            <span class="badge badge-danger"><i class="far fa-star"></i> Rendah</span>
+                                                                        @else
+                                                                            <span class="badge badge-secondary">-</span>
+                                                                        @endif
+                                                                    @else
+                                                                        <span class="badge badge-secondary">-</span>
+                                                                    @endif
+                                                                </td>
+                                                                </tr>
+                                            @endforeach
+                                                                </tbody>
+                                                                </table>
+                                                                </div>
+
+                                                                <div class="row mt-4">
+                                                                    <div class="col-md-3">
+                                                                        <div class="card bg-light">
+                                                                            <div class="card-body">
+                                                                                <h6 class="card-title">Total Obat</h6>
+                                                                                <h3 class="text-primary">{{ $stats['total_drugs'] ?? 0 }}</h3>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-3">
+                                                                        <div class="card bg-light">
+                                                                            <div class="card-body">
+                                                                                <h6 class="card-title">Status Aman</h6>
+                                                                                <h3 class="text-success">
+                                                                                    {{ $stats['status_aman'] ?? 0 }}
+                                                                                </h3>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-3">
+                                                                        <div class="card bg-light">
+                                                                            <div class="card-body">
+                                                                                <h6 class="card-title">Status Menipis</h6>
+                                                                                <h3 class="text-warning">
+                                                                                    {{ $stats['status_menipis'] ?? 0 }}
+                                                                                </h3>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-3">
+                                                                        <div class="card bg-light">
+                                                                            <div class="card-body">
+                                                                                <h6 class="card-title">Status Habis</h6>
+                                                                                <h3 class="text-danger">
+                                                                                    {{ $stats['status_habis'] ?? 0 }}
+                                                                                </h3>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                    @else
+                        <div class="alert alert-info">
+                            <div class="d-flex align-items-center justify-content-center gap-2">
+                                <span><i class="fas fa-info-circle"></i> Tidak ada data prediksi yang tersedia.</span>
+                                <a href="javascript:void(0);"
+                                    onclick="event.preventDefault(); document.getElementById('form-generate-prediksi').submit();"
+                                    class="alert-link">Klik di sini untuk menghitung prediksi</a>
+                            </div>
+                            <form id="form-generate-prediksi" action="{{ route('prediksi.generate') }}" method="POST" style="display: none;">
+                                @csrf
+                            </form>
+                            </div>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
+@push('scripts')
+<script>
+    $(document).ready(function () {
+        initStandardDataTable('#tablePrediksi');
+    });
+
+    document.getElementById('btnGeneratePrediction')?.addEventListener('click', function (e) {
+        // Find the form and submit it
+        const form = this.closest('form');
+        if (form) {
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menghitung...';
+            form.submit();
+        }
+    });
+</script>
+@endpush
 </x-app>

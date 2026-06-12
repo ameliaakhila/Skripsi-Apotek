@@ -23,24 +23,27 @@ class SetCacheHeaders
         // Set cache headers based on asset type
         if ($this->isStaticAsset($path)) {
             // Cache static assets for 1 year (max-age)
-            $response->header('Cache-Control', 'public, max-age=31536000, immutable');
-            $response->header('Expires', gmdate('D, d M Y H:i:s T', time() + 31536000));
+            // $response->headers->set('Cache-Control', 'public, max-age=31536000, immutable');
+            // $response->headers->set('Expires', gmdate('D, d M Y H:i:s T', time() + 31536000));
+            $response->headers->set('Cache-Control', 'public, max-age=3600');
+            $response->headers->set('Pragma', 'public');
+            $response->headers->set('Expires', gmdate('D, d M Y H:i:s', time() + 3600) . ' GMT');
         } elseif ($this->isFont($path)) {
             // Cache fonts for 1 year
-            $response->header('Cache-Control', 'public, max-age=31536000, immutable');
+            $response->headers->set('Cache-Control', 'public, max-age=31536000, immutable');
         } elseif ($this->isImage($path)) {
             // Cache images for 30 days
-            $response->header('Cache-Control', 'public, max-age=2592000');
+            $response->headers->set('Cache-Control', 'public, max-age=2592000');
         } else {
             // Dynamic content - no cache
-            $response->header('Cache-Control', 'no-cache, no-store, must-revalidate');
-            $response->header('Pragma', 'no-cache');
-            $response->header('Expires', '0');
+            $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate');
+            $response->headers->set('Pragma', 'no-cache');
+            $response->headers->set('Expires', '0');
         }
 
         // Add compression headers if supported
         if ($this->acceptsGzip($request)) {
-            $response->header('Vary', 'Accept-Encoding');
+            $response->headers->set('Vary', 'Accept-Encoding');
         }
 
         return $response;

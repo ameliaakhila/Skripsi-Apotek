@@ -1,9 +1,5 @@
 <x-app title="Kelola Data Supplier">
-    <div class="content-body">
-        <!-- row -->
-        <div class="container-fluid">
             <div class="row">
-
                 <div class="col-12">
                     <div class="card">
                         <div class="card-body">
@@ -71,7 +67,7 @@
                                                         <button type="button" class="btn btn-primary shadow btn-xs sharp me-1" data-bs-toggle="modal"
                                                             data-bs-target="#modalEditSupplier" data-id="{{ $s->id_supplier }}" data-nama="{{ $s->nama_supplier }}"
                                                             data-alamat="{{ $s->alamat_supplier }}" data-telp="{{ $s->no_telp }}"
-                                                            data-action="{{ url('/data-supplier-edit/' . $s->id_supplier) }}">
+                                                            data-action="{{ Route::has('admin.data-supplier.edit-legacy') ? route('admin.data-supplier.edit-legacy', $s->id_supplier) : url('/data-supplier-edit/' . $s->id_supplier) }}">
                                                             <i class="fas fa-pencil-alt"></i>
                                                         </button>
                                                         {{-- ! DELETE --}}
@@ -93,62 +89,13 @@
                                     </tbody>
                                 </table>
                                 {{-- ! Modal Tambah & Edit --}}
-                                <x-admin.modals.modal-data-supplier type="tambah" judul="Tambah Data Supplier" />
-                                {{-- ! Modal Edit --}}
-                                <x-admin.modals.modal-data-supplier id="modalEditSupplier" judul="Edit Data Supplier" type="edit"/>
+                                <x-admin.modals.modal-data-supplier type="tambah" id="modalTambahSupplier" judul="Tambah Data Supplier" />
+                                <x-admin.modals.modal-data-supplier type="edit" id="modalEditSupplier" judul="Edit Data Supplier" />
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
-
-    {{-- ! SCRIPT UNTUK EDIT MODAL POPULATION & DELETE HANDLING --}}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Handle edit button click untuk populate form
-            const editButtons = document.querySelectorAll('button[data-bs-target="#modalEditSupplier"]');
-
-            editButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    // Ambil data dari button attribute
-                    const id = this.getAttribute('data-id');
-                    const nama = this.getAttribute('data-nama');
-                    const alamat = this.getAttribute('data-alamat');
-                    const telp = this.getAttribute('data-telp');
-                    const action = this.getAttribute('data-action');
-
-                    // Populate form fields
-                    document.querySelector('[data-field="nama"]').value = nama || '';
-                    document.querySelector('[data-field="alamat"]').value = alamat || '';
-                    document.querySelector('[data-field="telp"]').value = telp || '';
-
-                    // Set form action
-                    const form = document.getElementById('formEditSupplier');
-                    if (form && action) {
-                        form.setAttribute('action', action);
-                    }
-
-                    console.log('Edit form populated:', {
-                        id, nama, alamat, telp, action
-                    });
-                });
-            });
-
-            // Handle delete button
-            document.querySelectorAll('.btn-delete').forEach(button => {
-                button.addEventListener('click', function() {
-                    const id = this.getAttribute('data-id');
-                    const nama = this.getAttribute('data-nama');
-                    const entity = this.getAttribute('data-entity');
-
-                    if (confirm(`Apakah Anda yakin ingin menghapus ${entity} "${nama}"?`)) {
-                        document.getElementById('delete-form-' + id).submit();
-                    }
-                });
-            });
-        });
-    </script>
 </x-app>

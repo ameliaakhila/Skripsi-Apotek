@@ -22,6 +22,6 @@ class ModalDataKategori extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.admin.modals.modal-data-kategori');
+        return view('admin.modals.modal-data-kategori');
     }
 }

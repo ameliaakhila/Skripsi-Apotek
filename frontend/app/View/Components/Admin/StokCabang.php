@@ -21,6 +21,6 @@ class StokCabang extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.gudang.gudang-pusat');
+        return view('shared.stok-cabang');
     }
 }

@@ -21,6 +21,6 @@ class KelolaAkun extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.kelola_akun');
+        return view('components.layouts.kelola_akun');
     }
 }

@@ -88,7 +88,7 @@
             padding-left: 0.9375rem;
         }
 		@include media-breakpoint-between(sm, md) {
-			padding-left: 0;			
+			padding-left: 0;
 		}
     }
 }
@@ -96,12 +96,8 @@
 .toolbar {
     .btn-group {
         .btn {
-            // background: $dark;
             border: 0;
-            // color: $white;
-            // i {
-            //     color: $white!important;
-            // }
+            color: $white;
         }
         input{
             position: relative;
@@ -157,7 +153,7 @@
             }
         }
     }
-}  
+}
 
 .compose-content {
     .wysihtml5-toolbar {
@@ -392,7 +388,7 @@
     .input-group{
 
         &-prepend{
-            
+
             i{
                 font-size: 0.875rem;
                 color: $muted;
@@ -515,7 +511,7 @@
 			left: 5.5rem;
 		}
 	}
-	
+
 }
 
 

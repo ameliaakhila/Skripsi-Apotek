@@ -21,6 +21,6 @@ class DataCabang extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.data-cabang');
+        return view('admin.data-cabang');
     }
 }

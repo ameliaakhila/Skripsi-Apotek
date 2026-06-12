@@ -16,6 +16,7 @@ class ModalObatMasuk extends Component
         public $type = 'default',
         public $judul = null,
         public $kodeBatch = null,
+
         public $d = null,
         public $data = [],
         public $obat = [],
@@ -34,6 +35,6 @@ class ModalObatMasuk extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.admin.modals.modal-obat-masuk');
+        return view('apoteker.modals.modal-obat-masuk');
     }
 }

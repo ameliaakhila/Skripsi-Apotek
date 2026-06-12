@@ -24,6 +24,6 @@ class ModalStokCabang extends Component
      */
     public function render(): View|Closure|string
     {
-        return view(view: 'components.admin.modals.modal-stok-cabang');
+        return view(view: 'admin.modals.modal-stok-cabang');
     }
 }

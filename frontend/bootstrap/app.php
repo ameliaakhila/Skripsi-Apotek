@@ -21,10 +21,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
             'admin' => \App\Http\Middleware\CheckAdmin::class,
-            'pharmacist' => \App\Http\Middleware\CheckPharmacist::class,
+            'apoteker' => \App\Http\Middleware\CheckApoteker::class,
             'manager' => \App\Http\Middleware\CheckManager::class,
         ]);
     })
+    ->withProviders([
+        // \App\Providers\MLServiceProvider::class,
+    ])
     ->withExceptions(function (Exceptions $exceptions): void {
         // Custom exception handling
         // Error pages are automatically rendered from resources/views/errors/{status_code}.blade.php

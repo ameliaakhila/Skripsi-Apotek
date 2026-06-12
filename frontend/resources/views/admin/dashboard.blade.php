@@ -1,18 +1,10 @@
-@extends('layouts.app')
-
-@section('title', 'Dashboard - Sistem Apotek Sena Farma')
-
-@section('content')
-    <div class="dashboard-container">
+<x-app :title="'Dashboard Admin - Sistem Apotek Sena Farma'">
+    <div class="container-fluid">
         {{-- Dashboard Header --}}
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="card dashboard-header">
-                    <div class="card-header">
-                        <h4 class="card-title">Admin Dashboard</h4>
-                        <p class="card-subtitle">Selamat datang, {{ Auth::user()->username }}! 👋</p>
-                    </div>
-                </div>
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="font-weight-bold">Dashboard Admin</h2>
+                <p class="text-muted">Kelola sistem, pengguna, dan pantau aktivitas apotek secara menyeluruh.</p>
             </div>
         </div>
 
@@ -21,82 +13,87 @@
             <div class="col-md-6 col-lg-3 mb-4">
                 <div class="card stat-card bg-primary text-white">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-subtitle mb-1">Total Obat</h6>
-                                <h3 class="mb-0">{{ $statusCards['obat'] ?? 0 }}</h3>
-                            </div>
-                            <i class="fas fa-pills fa-3x opacity-50"></i>
-                        </div>
+                        <h6 class="text-uppercase mb-2 opacity-8">Total Obat</h6>
+                        <h3 class="mb-0 font-weight-bold">{{ $statusCards['obat'] ?? 0 }}</h3>
+                        <i class="fas fa-pills"></i>
                     </div>
                 </div>
             </div>
-
             <div class="col-md-6 col-lg-3 mb-4">
                 <div class="card stat-card bg-success text-white">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-subtitle mb-1">Total Cabang</h6>
-                                <h3 class="mb-0">{{ $statusCards['cabang'] ?? 0 }}</h3>
-                            </div>
-                            <i class="fas fa-hospital fa-3x opacity-50"></i>
-                        </div>
+                        <h6 class="text-uppercase mb-2 opacity-8">Total Cabang</h6>
+                        <h3 class="mb-0 font-weight-bold">{{ $statusCards['cabang'] ?? 0 }}</h3>
+                        <i class="fas fa-hospital"></i>
                     </div>
                 </div>
             </div>
-
             <div class="col-md-6 col-lg-3 mb-4">
                 <div class="card stat-card bg-warning text-white">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-subtitle mb-1">Master Data</h6>
-                                <h3 class="mb-0">{{ $statusCards['master'] ?? 0 }}</h3>
-                            </div>
-                            <i class="fas fa-database fa-3x opacity-50"></i>
-                        </div>
+                        <h6 class="text-uppercase mb-2 opacity-8">Master Data</h6>
+                        <h3 class="mb-0 font-weight-bold">{{ $statusCards['master'] ?? 0 }}</h3>
+                        <i class="fas fa-database"></i>
                     </div>
                 </div>
             </div>
-
             <div class="col-md-6 col-lg-3 mb-4">
                 <div class="card stat-card bg-danger text-white">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-subtitle mb-1">Total Users</h6>
-                                <h3 class="mb-0">{{ $statusCards['users'] ?? 0 }}</h3>
-                            </div>
-                            <i class="fas fa-users fa-3x opacity-50"></i>
-                        </div>
+                        <h6 class="text-uppercase mb-2 opacity-8">Total Users</h6>
+                        <h3 class="mb-0 font-weight-bold">{{ $statusCards['users'] ?? 0 }}</h3>
+                        <i class="fas fa-users"></i>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- Chart Section --}}
-        <div class="row mt-4">
-            <div class="col-lg-12">
-                <div class="card chart-card">
-                    <div class="card-header">
-                        <h4 class="card-title">📊 Grafik Penjualan (Stok Keluar) - Tahun Ini</h4>
+        {{-- Detailed Analysis & Logs --}}
+        <div class="row">
+            {{-- Main Chart --}}
+            <div class="col-lg-8">
+                <div class="card chart-card mb-4">
+                    <div class="card-header border-0 pt-4">
+                        <h4 class="card-title font-weight-bold">Grafik Penjualan Tahun Ini</h4>
                     </div>
                     <div class="card-body">
-                        <div class="chart-wrapper">
-                            <canvas id="monthlySalesChart" height="80"></canvas>
+                        <div class="chart-wrapper" style="height: 350px;">
+                            <canvas id="monthlySalesChart"></canvas>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Recent Activity Log --}}
+            <div class="col-lg-4">
+                <div class="card chart-card mb-4">
+                    <div class="card-header border-0 pt-4">
+                        <h4 class="card-title font-weight-bold">Aktivitas Sistem Terbaru</h4>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="list-group list-group-flush">
+                            @forelse($recentLogs ?? [] as $log)
+                                <li class="list-group-item px-4 py-3">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1 font-weight-bold">{{ $log->user?->username ?? 'System' }}</h6>
+                                        <small class="text-muted">{{ $log->created_at->diffForHumans() }}</small>
+                                    </div>
+                                    <p class="mb-0 text-muted small">{{ $log->action }}</p>
+                                </li>
+                            @empty
+                                <li class="list-group-item px-4 py-3 text-center text-muted">Tidak ada aktivitas.</li>
+                            @endforelse
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    @push('extra_js')
+    @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                // Monthly Sales Chart
                 const montlyCtx = document.getElementById('monthlySalesChart').getContext('2d');
                 new Chart(montlyCtx, {
                     type: 'line',
@@ -120,46 +117,14 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: true,
-                                position: 'top',
-                                labels: {
-                                    font: {
-                                        size: 13,
-                                        weight: 'bold'
-                                    },
-                                    padding: 15,
-                                    usePointStyle: true
-                                }
-                            }
-                        },
+                        plugins: { legend: { position: 'top', labels: { usePointStyle: true } } },
                         scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    font: {
-                                        size: 12
-                                    }
-                                },
-                                grid: {
-                                    color: 'rgba(0, 0, 0, 0.05)'
-                                }
-                            },
-                            x: {
-                                ticks: {
-                                    font: {
-                                        size: 12
-                                    }
-                                },
-                                grid: {
-                                    display: false
-                                }
-                            }
+                            y: { beginAtZero: true, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
+                            x: { grid: { display: false } }
                         }
                     }
                 });
             });
         </script>
     @endpush
-@endsection
+</x-app>

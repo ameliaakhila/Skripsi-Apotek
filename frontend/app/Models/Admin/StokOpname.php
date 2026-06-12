@@ -45,7 +45,7 @@ class StokOpname extends Model
     public function getKeteranganIconAttribute()
     {
         return match ($this->keterangan) {
-            'Kurang' => 'fas fa-circle text-danger',
+            'Menipis' => 'fas fa-circle text-danger',
             'Lebih' => 'fas fa-circle text-warning',
             'Sesuai' => 'fas fa-circle text-success',
             default => 'fas fa-circle text-secondary',

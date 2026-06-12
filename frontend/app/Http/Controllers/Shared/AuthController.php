@@ -22,7 +22,9 @@ class AuthController extends Controller
             'username' => ['required'],
             'password' => ['required'],
         ]);
-        // dd($credentials);
+
+        // Add status check: Only 'Aktif' accounts can login
+        $credentials['status'] = 'Aktif';
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
@@ -30,9 +32,8 @@ class AuthController extends Controller
         }
 
         return back()->withErrors([
-            'username' => 'Username salah',
-            'password' => 'Password salah',
-        ])->onlyInput(['username', 'password']);
+            'username' => 'Username/Password salah atau akun tidak aktif',
+        ])->onlyInput('username');
     }
     public function logout(Request $request)
     {

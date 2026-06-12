@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Create Pharmacist (Apoteker) User
+        // Create Apoteker (Apoteker) User
         User::firstOrCreate(
             ['email' => 'apotek@gmail.com'],
             [

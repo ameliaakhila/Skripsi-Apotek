@@ -40,6 +40,6 @@ class ModalObatKeluar extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.admin.modals.modal-obat-keluar');
+        return view('apoteker.modals.modal-obat-keluar');
     }
 }

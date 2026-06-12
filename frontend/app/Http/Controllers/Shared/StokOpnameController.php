@@ -171,7 +171,7 @@ class StokOpnameController extends Controller
     private function determineKeterangan(int $selisih): string
     {
         if ($selisih < 0) {
-            return 'Kurang';
+            return 'Menipis';
         }
 
         if ($selisih > 0) {

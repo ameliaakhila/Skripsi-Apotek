@@ -21,6 +21,6 @@ class DataSupplier extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.admin.main.data-supplier');
+        return view('admin.data-supplier');
     }
 }

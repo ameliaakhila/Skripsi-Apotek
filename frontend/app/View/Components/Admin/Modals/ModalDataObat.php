@@ -48,6 +48,6 @@ class ModalDataObat extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.admin.modals.modal-data-obat');
+        return view('admin.modals.modal-data-obat');
     }
 }
