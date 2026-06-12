@@ -46,7 +46,7 @@ st.markdown("""
 # Load model function
 @st.cache_resource
 def load_model():
-    model_path = Path("model/stock_prediction_model.pkl")
+    model_path = Path("backend/model/stock_prediction_model.pkl")
     if not model_path.exists():
         return None
     with open(model_path, "rb") as f:
@@ -86,7 +86,7 @@ if model_data:
 
         # Actual vs Predicted Plot
         st.subheader("Actual vs. Predicted Stock")
-        data_path = Path("dataset/prepared_data.csv")
+        data_path = Path("backend/dataset/prepared_data.csv")
         if data_path.exists():
             df = pd.read_csv(data_path)
             sample_df = df.sample(n=min(500, len(df)), random_state=42)
@@ -168,11 +168,11 @@ if model_data:
     # --- Tab 4: Data Preview ---
     with tab4:
         st.subheader("Sample Training Data")
-        data_path = Path("dataset/prepared_data.csv")
+        data_path = Path("backend/dataset/prepared_data.csv")
         if data_path.exists():
             df_sample = pd.read_csv(data_path).head(100)
             st.dataframe(df_sample, use_container_width=True)
-            st.markdown(f"*Showing first 100 rows from `dataset/prepared_data.csv`*")
+            st.markdown(f"*Showing first 100 rows from `backend/dataset/prepared_data.csv`*")
         else:
             st.warning("Training data not found.")
 
@@ -182,11 +182,11 @@ if model_data:
         st.markdown("Test how the model responds to abnormal conditions (e.g., sudden sales spike).")
         if st.button("Run Drift Simulation"):
             import simulate_drift
-            simulate_drift.simulate_drift("model/stock_prediction_model.pkl", 
-                                          "dataset/prepared_data.csv", 
-                                          "dataset/drifted_data.csv")
+            simulate_drift.simulate_drift("backend/model/stock_prediction_model.pkl", 
+                                          "backend/dataset/prepared_data.csv", 
+                                          "backend/dataset/drifted_data.csv")
             
-        drift_path = Path("dataset/drifted_data.csv")
+        drift_path = Path("backend/dataset/drifted_data.csv")
         if drift_path.exists():
             df_drift = pd.read_csv(drift_path)
             st.write("### Simulation Results: Demand Shock Scenario")

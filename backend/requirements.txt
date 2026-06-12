@@ -26,3 +26,6 @@ plotly==5.17.0
 # Utilities
 python-dotenv==1.0.0
 requests==2.31.0
+
+# Streamlit for Frontend
+streamlit==1.28.0
