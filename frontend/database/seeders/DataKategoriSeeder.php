@@ -13,7 +13,8 @@ class DataKategoriSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('tb_kategori')->insert([
+        // insertOrIgnore = skip jika sudah ada, tidak error
+        DB::table('tb_kategori')->insertOrIgnore([
             ['nama_kategori' => 'Analgesik', 'created_at' => now(), 'updated_at' => now()],
             ['nama_kategori' => 'Antipiretik', 'created_at' => now(), 'updated_at' => now()],
             ['nama_kategori' => 'Antibiotik', 'created_at' => now(), 'updated_at' => now()],

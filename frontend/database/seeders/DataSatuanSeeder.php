@@ -12,8 +12,8 @@ class DataSatuanSeeder extends Seeder
      */
     public function run(): void
     {
-        // ! Data Dummy Satuan
-        DB::table('tb_satuan')->insert([
+        // insertOrIgnore = skip jika sudah ada, tidak error
+        DB::table('tb_satuan')->insertOrIgnore([
             ['nama_satuan' => 'Strip', 'created_at' => now(), 'updated_at' => now()],
             ['nama_satuan' => 'Botol', 'created_at' => now(), 'updated_at' => now()],
             ['nama_satuan' => 'Box', 'created_at' => now(), 'updated_at' => now()],

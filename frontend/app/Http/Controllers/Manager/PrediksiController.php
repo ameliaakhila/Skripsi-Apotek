@@ -116,7 +116,7 @@ class PrediksiController extends Controller
             Log::info("Stock prediction regenerated and cached at " . now());
 
             return redirect()->back()
-                ->with('success', 'Prediksi stok berhasil diperbarui berdasarkan data penjualan bulan lalu');
+                ->with('success', 'Prediksi stok berhasil diperbarui berdasarkan riwayat transaksi 3 bulan terakhir');
         } catch (\Exception $e) {
             Log::error("Generate prediction error: {$e->getMessage()}");
 
@@ -188,25 +188,42 @@ class PrediksiController extends Controller
      */
     private function formatPredictionData(array $prediction): array
     {
-        $current_stock = $prediction['stok_saat_ini'] ?? 0;
+        $current_stock   = $prediction['stok_saat_ini'] ?? 0;
         $predicted_stock = $prediction['predicted_stock'] ?? $current_stock;
-        $safety_stock = $prediction['safety_stock'] ?? 10;
+        $safety_stock    = $prediction['safety_stock'] ?? 10;
+        $avg_daily_sales = $prediction['avg_daily_sales'] ?? 0;
+
+        // Total penjualan 3 bulan terakhir (alias kompatibilitas)
+        $sales_3month  = (int) ($prediction['last_3month_total_sales'] ?? $prediction['last_month_total_sales'] ?? 0);
+
+        // Rekomendasi order = berapa yang harus dipesan agar stok cukup 1 bulan
+        $rekomendasi_order = (int) ($prediction['rekomendasi_order'] ?? max(0, $predicted_stock - $current_stock));
 
         return [
-            'id_obat' => $prediction['id_obat'] ?? null,
-            'nama_obat' => $prediction['nama_obat'] ?? 'Unknown',
-            'stok_awal' => (int)($prediction['stok_saat_ini'] + ($prediction['last_month_total_sales'] ?? 0)),
-            'stok_terjual' => (int)($prediction['last_month_total_sales'] ?? 0),
-            'stok_sisa' => (int) $current_stock,
-            'stok_prediksi' => (int) $predicted_stock,
-            'safety_stock' => (int) $safety_stock,
-            'confidence' => $prediction['confidence'] ?? 'medium',
-            'recommendation' => $prediction['recommendation'] ?? '-',
-            'status' => $this->predictionService->getStockStatus((int)$current_stock, (int)$safety_stock, (int)$predicted_stock),
-            'last_month_sales' => (int)($prediction['last_month_total_sales'] ?? 0),
-            'avg_daily_sales' => $prediction['avg_daily_sales'] ?? 0,
-            'source' => $prediction['source'] ?? 'ml',
-            'is_prediction' => true,
+            'id_obat'               => $prediction['id_obat'] ?? null,
+            'nama_obat'             => $prediction['nama_obat'] ?? 'Unknown',
+            // Stok awal = stok saat ini + penjualan 3 bulan (estimasi stok sebelum periode ini)
+            'stok_awal'             => (int) ($current_stock + $sales_3month),
+            'stok_terjual'          => $sales_3month,
+            'stok_sisa'             => (int) $current_stock,
+            // Kebutuhan 1 bulan ke depan (hasil prediksi model)
+            'stok_prediksi'         => (int) $predicted_stock,
+            'safety_stock'          => (int) $safety_stock,
+            'confidence'            => $prediction['confidence'] ?? 'medium',
+            'recommendation'        => $prediction['rekomendasi_order_text'] ?? $prediction['recommendation'] ?? '-',
+            'status'                => $this->predictionService->getStockStatus(
+                                            (int) $current_stock,
+                                            (int) $safety_stock,
+                                            (int) $predicted_stock
+                                        ),
+            // Berapa unit yang harus dipesan sekarang
+            'rekomendasi_order'     => $rekomendasi_order,
+            // Rata-rata penjualan harian berdasarkan 3 bulan terakhir
+            'avg_daily_sales'       => round((float) $avg_daily_sales, 1),
+            // Informasi periode data
+            'periode_data'          => $prediction['periode_data'] ?? '3 bulan terakhir',
+            'source'                => $prediction['source'] ?? 'ml',
+            'is_prediction'         => true,
         ];
     }
 

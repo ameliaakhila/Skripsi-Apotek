@@ -12,8 +12,8 @@ class DataCabangSeeder extends Seeder
      */
     public function run(): void
     {
-        // ! Data Dummy Cabang
-        DB::table('tb_cabang')->insert([
+        // insertOrIgnore = skip jika kode_cabang sudah ada (tidak error duplicate)
+        DB::table('tb_cabang')->insertOrIgnore([
             [
                 'kode_cabang' => 'SF01',
                 'nama_cabang' => 'Apotek Sena Farma - Cijeruk',

@@ -13,8 +13,8 @@ class DataSupplierSeeder extends Seeder
      */
     public function run(): void
     {
-        // ! Data Dummy Supplier
-        DB::table('tb_supplier')->insert([
+        // insertOrIgnore = skip jika sudah ada, tidak error
+        DB::table('tb_supplier')->insertOrIgnore([
             [
                 'nama_supplier' => 'PT Kalbe Farma Tbk',
                 'alamat_supplier' => 'Jl. Letjen Suprapto No.4, Jakarta',

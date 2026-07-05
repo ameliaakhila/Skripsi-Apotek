@@ -11,8 +11,17 @@ use Illuminate\Support\Collection;
 /**
  * Stock Prediction Service
  *
- * Orchestrates feature extraction and ML predictions
- * Provides hybrid mode: tries ML API, falls back to database logic
+ * Mengorkestrasi feature extraction dan ML predictions.
+ * Mode hybrid: coba ML API, fallback ke logika database.
+ *
+ * Makna "predicted_stock":
+ *   = Kebutuhan stok untuk 1 bulan ke depan
+ *   = (avg_daily_sales × 30) + safety_stock buffer
+ *   Berdasarkan rata-rata penjualan 3 BULAN TERAKHIR.
+ *
+ * "rekomendasi_order":
+ *   = max(0, predicted_stock - stok_saat_ini)
+ *   = Berapa unit yang perlu dipesan agar stok aman 1 bulan
  */
 class StockPredictionService
 {
@@ -25,7 +34,7 @@ class StockPredictionService
         MLPredictionService $mlService
     ) {
         $this->featureService = $featureService;
-        $this->mlService = $mlService;
+        $this->mlService      = $mlService;
     }
 
     /**
@@ -37,7 +46,7 @@ class StockPredictionService
     }
 
     /**
-     * Get predictions for all drugs
+     * Get predictions untuk semua obat
      *
      * @param bool $use_cache Cache results
      * @return Collection
@@ -60,7 +69,7 @@ class StockPredictionService
     }
 
     /**
-     * Get prediction for single drug
+     * Get prediction untuk satu obat
      */
     public function getDrugPrediction(int $id_obat): ?array
     {
@@ -70,22 +79,24 @@ class StockPredictionService
                 return null;
             }
 
-            // Extract features
             $features = $this->featureService->extractFeatures($id_obat);
             if (!$features) {
                 return null;
             }
 
-            // Try ML prediction
             $prediction = null;
             if ($this->mlService->isAPIAvailable()) {
                 $prediction = $this->mlService->predict($features);
             }
 
-            // Fallback: calculate from database
             if (!$prediction) {
                 $prediction = $this->calculateDatabasePrediction($features);
             }
+
+            // Tambah rekomendasi_order
+            $predicted = $prediction['predicted_stock'] ?? 0;
+            $prediction['rekomendasi_order'] = max(0, $predicted - $features['stok_saat_ini']);
+            $prediction['rekomendasi_order_text'] = $this->generateRecommendation($predicted, $features);
 
             return array_merge($features, $prediction);
         } catch (\Exception $e) {
@@ -95,185 +106,184 @@ class StockPredictionService
     }
 
     /**
-     * Compute all predictions
+     * Compute semua prediksi (core logic)
      */
     private function computeAllPredictions(): Collection
     {
         try {
-            // ! OPTIMIZATION: Check API availability once
-            $apiAvailable = $this->mlService->isAPIAvailable();
-            
-            $drugs = Obat::all();
+            $apiAvailable  = $this->mlService->isAPIAvailable();
+            $drugs         = Obat::all();
             $allPredictions = collect();
-            
-            Log::info("Starting computeAllPredictions for " . $drugs->count() . " drugs. API Available: " . ($apiAvailable ? 'Yes' : 'No'));
 
-            // ! OPTIMIZATION: Process in chunks of 100 to balance memory and speed
+            Log::info("computeAllPredictions: " . $drugs->count() . " obat. API: " . ($apiAvailable ? 'Ya' : 'Tidak'));
+
             $drugs->chunk(100)->each(function ($chunk, $index) use ($allPredictions, $apiAvailable) {
                 try {
-                    // 1. Extract features for the chunk in bulk
+                    // 1. Extract features (bulk)
                     $featureBatch = $this->featureService->extractFeaturesForDrugs($chunk);
-                    
+
                     if ($featureBatch->isEmpty()) {
-                        Log::warning("Chunk {$index}: No features extracted for " . $chunk->count() . " drugs");
+                        Log::warning("Chunk {$index}: Tidak ada fitur untuk " . $chunk->count() . " obat");
                         return;
                     }
 
-                    Log::info("Chunk {$index}: Extracted features for " . $featureBatch->count() . " drugs");
-
                     $mlPredictions = [];
-                    
-                    // 2. Try ML batch prediction
+
+                    // 2. Coba ML batch prediction
                     if ($apiAvailable) {
                         $response = $this->mlService->predictBatch($featureBatch->toArray());
                         if ($response && isset($response['results'])) {
-                            // Map ML results by id_obat
                             foreach ($response['results'] as $res) {
                                 if (isset($res['id_obat'])) {
                                     $mlPredictions[$res['id_obat']] = $res;
                                 }
                             }
-                            Log::info("Chunk {$index}: Received " . count($mlPredictions) . " ML predictions");
+                            Log::info("Chunk {$index}: {" . count($mlPredictions) . "} prediksi ML diterima");
                         } else {
-                            Log::warning("Chunk {$index}: ML Batch prediction returned no results");
+                            Log::warning("Chunk {$index}: ML batch tidak mengembalikan hasil");
                         }
                     }
-                    
-                    // 3. Merge features with predictions (ML or Fallback)
-                    $pushedCount = 0;
+
+                    // 3. Merge fitur dengan prediksi (ML atau fallback)
                     foreach ($featureBatch as $features) {
                         $id_obat = $features['id_obat'];
 
                         if (isset($mlPredictions[$id_obat]) && !isset($mlPredictions[$id_obat]['error'])) {
-                            // Use ML prediction
+                            $predicted = $mlPredictions[$id_obat]['predicted_stock'];
                             $prediction = [
-                                'predicted_stock' => $mlPredictions[$id_obat]['predicted_stock'],
-                                'confidence' => $mlPredictions[$id_obat]['confidence'],
-                                'recommendation' => $this->generateRecommendation($mlPredictions[$id_obat]['predicted_stock'], $features),
-                                'source' => 'ml',
+                                'predicted_stock'       => $predicted,
+                                'confidence'            => $mlPredictions[$id_obat]['confidence'],
+                                'rekomendasi_order'     => max(0, $predicted - $features['stok_saat_ini']),
+                                'rekomendasi_order_text' => $this->generateRecommendation($predicted, $features),
+                                'source'                => 'ml',
                             ];
                         } else {
-                            // Fallback to database logic
+                            // Fallback ke logika database
                             $prediction = $this->calculateDatabasePrediction($features);
                         }
 
                         $merged = array_merge($features, $prediction);
 
-                        // ! ADDED: Include status in the raw data
+                        // Hitung status stok
                         $merged['status'] = $this->getStockStatus(
-                            (int)$merged['stok_saat_ini'], 
-                            (int)$merged['safety_stock'],
-                            (int)$merged['predicted_stock']
+                            (int) $merged['stok_saat_ini'],
+                            (int) $merged['safety_stock'],
+                            (int) $merged['predicted_stock']
                         );
 
                         $allPredictions->push($merged);
-                        $pushedCount++;
                     }
-                    Log::info("Chunk {$index}: Pushed {$pushedCount} predictions to total");
                 } catch (\Exception $e) {
-                    Log::error("Error in chunk {$index}: " . $e->getMessage());
-                    // Don't throw, just continue with next chunk to get at least some data
+                    Log::error("Error di chunk {$index}: " . $e->getMessage());
                 }
             });
 
-            Log::info("Finished computeAllPredictions. Total: " . $allPredictions->count() . " predictions");
+            Log::info("computeAllPredictions selesai. Total: " . $allPredictions->count());
             return $allPredictions;
         } catch (\Exception $e) {
-            Log::error("computeAllPredictions failed: " . $e->getMessage());
+            Log::error("computeAllPredictions gagal: " . $e->getMessage());
             Log::error($e->getTraceAsString());
-            return collect(); // Return empty instead of throwing to avoid 500
-        }
-    }
-
-
-    /**
-     * Helper to generate recommendation based on predicted stock (moved from ML backend logic)
-     */
-    private function generateRecommendation(float $predicted, array $features): string
-    {
-        $current = $features['stok_saat_ini'];
-        $safety = $features['safety_stock'];
-        $gap = $predicted - $current;
-
-        if ($gap > $safety) {
-            return "Pesanan mendesak {$gap} unit (Melebihi Safety Stock)";
-        } elseif ($gap > 0) {
-            return "Rekomendasi pesanan {$gap} unit untuk 1 bulan";
-        } elseif ($current >= $predicted * 1.2) {
-            return "Stok sangat mencukupi, tidak perlu pesan";
-        } else {
-            return "Stok mencukupi, pantau secara berkala";
+            return collect();
         }
     }
 
     /**
-     * Calculate prediction from database logic
-     * Fallback when ML API is unavailable
+     * Hitung prediksi dari logika database (fallback ketika ML API tidak tersedia)
+     *
+     * Hasil = Kebutuhan stok untuk 1 bulan ke depan:
+     *   base = (avg_daily_sales × 30) + safety_stock
+     *   Jika tren naik → kalikan dengan faktor tren (max 1.5)
      */
     private function calculateDatabasePrediction(array $features): array
     {
-        $current_stock = $features['stok_saat_ini'];
-        $avg_daily_sales = $features['avg_daily_sales'];
-        $safety_stock = $features['safety_stock'];
-        $demand_volatility = $features['demand_volatility'];
-        $trend_indicator = $features['trend_indicator'] ?? 1.0;
+        $avgDailySales   = max(0, $features['avg_daily_sales']);
+        $safetyStock     = max(1, $features['safety_stock']);
+        $stokSaatIni     = $features['stok_saat_ini'];
+        $demandVolatility = $features['demand_volatility'];
+        $trendIndicator  = $features['trend_indicator'] ?? 1.0;
 
-        // Optimized logic: (avg_daily_sales × 30) + safety_stock + (volatility * safety_factor)
-        // This ensures we cover average demand plus peak demand fluctuations
-        $base_prediction = ($avg_daily_sales * 30) + $safety_stock + ($demand_volatility * 1.5);
-        
-        // Apply trend factor if sales are increasing
-        if ($trend_indicator > 1.1) {
-            $base_prediction *= min(1.5, $trend_indicator);
+        // Kebutuhan stok 1 bulan = rata-rata harian × 30 + buffer keamanan
+        // Buffer keamanan = safety_stock + kompensasi volatilitas
+        $volatilityBuffer = $demandVolatility * 1.5;
+        $basePrediction   = ($avgDailySales * 30) + $safetyStock + $volatilityBuffer;
+
+        // Koreksi tren naik (lebih dari 10%)
+        if ($trendIndicator > 1.1) {
+            $basePrediction *= min(1.5, $trendIndicator);
         }
 
-        $predicted_stock = round($base_prediction, 0);
+        $predictedStock = (float) max(0, round($basePrediction, 0));
 
-        // Determine confidence based on data quality
-        $confidence = 'medium';
-        if ($features['frekuensi_transaksi'] > 20) {
+        // Rekomendasi order = berapa yang harus dipesan sekarang
+        $rekomendasiOrder = max(0, $predictedStock - $stokSaatIni);
+
+        // Tingkat kepercayaan berdasarkan kelengkapan data
+        $frekuensi = $features['frekuensi_transaksi'];
+        if ($frekuensi >= 20) {
             $confidence = 'high';
-        } elseif ($features['frekuensi_transaksi'] < 5) {
+        } elseif ($frekuensi >= 5) {
+            $confidence = 'medium';
+        } else {
             $confidence = 'low';
         }
 
-        // Generate recommendation
-        $gap = $predicted_stock - $current_stock;
-        if ($gap > $safety_stock) {
-            $recommendation = "⚠️ Pesanan mendesak {$gap} unit (Permintaan Tinggi)";
-        } elseif ($gap > 0) {
-            $recommendation = "Rekomendasi pesanan {$gap} unit untuk 1 bulan";
-        } else {
-            $recommendation = "Stok saat ini masih mencukupi";
-        }
-
         return [
-            'predicted_stock' => (float)$predicted_stock,
-            'confidence' => $confidence,
-            'recommendation' => $recommendation,
-            'source' => 'database',
+            'predicted_stock'        => $predictedStock,
+            'confidence'             => $confidence,
+            'rekomendasi_order'      => (float) $rekomendasiOrder,
+            'rekomendasi_order_text' => $this->generateRecommendation($predictedStock, $features),
+            'source'                 => 'database',
         ];
     }
 
     /**
-     * Get stock status based on current stock, safety stock, and predicted demand
+     * Generate teks rekomendasi yang informatif
+     */
+    private function generateRecommendation(float $predicted, array $features): string
+    {
+        $current     = $features['stok_saat_ini'];
+        $safety      = $features['safety_stock'];
+        $gap         = $predicted - $current;
+        $avgDaily    = $features['avg_daily_sales'];
+
+        if ($gap > $safety * 2) {
+            return "⚠️ Segera pesan {$gap} unit — stok tidak cukup untuk 1 bulan";
+        } elseif ($gap > 0) {
+            $daysLeft = $avgDaily > 0 ? round($current / $avgDaily) : 0;
+            return "Pesan {$gap} unit (stok saat ini cukup ~{$daysLeft} hari)";
+        } elseif ($current >= $predicted * 1.2) {
+            return "✅ Stok sangat mencukupi, tidak perlu pesan bulan ini";
+        } else {
+            return "Stok cukup untuk 1 bulan, pantau berkala";
+        }
+    }
+
+    /**
+     * Tentukan status stok berdasarkan stok saat ini vs safety stock vs prediksi demand
+     *
+     * - 'habis'   : stok = 0
+     * - 'menipis' : stok ≤ safety_stock ATAU stok < 30% dari kebutuhan 1 bulan
+     * - 'aman'    : stok cukup untuk memenuhi perkiraan permintaan
      */
     public function getStockStatus(int $current_stock, int $safety_stock, int $predicted_stock = 0): string
     {
         if ($current_stock <= 0) {
             return 'habis';
         }
-        
-        // If current stock is below safety stock or below 30% of predicted monthly demand
-        if ($current_stock <= $safety_stock || ($predicted_stock > 0 && $current_stock < ($predicted_stock * 0.3))) {
+
+        if ($current_stock <= $safety_stock) {
             return 'menipis';
         }
-        
+
+        if ($predicted_stock > 0 && $current_stock < ($predicted_stock * 0.3)) {
+            return 'menipis';
+        }
+
         return 'aman';
     }
 
     /**
-     * Get last month sales summary for a drug
+     * Get ringkasan penjualan 3 bulan terakhir untuk satu obat
      */
     public function getLastMonthSummary(int $id_obat): ?array
     {
@@ -281,16 +291,17 @@ class StockPredictionService
     }
 
     /**
-     * Clear prediction cache
+     * Hapus cache prediksi
      */
     public function clearCache(): void
     {
         Cache::forget('stock_predictions_all');
-        Log::info("Stock prediction cache cleared");
+        $this->cachedPredictions = null;
+        Log::info("Stock prediction cache dibersihkan");
     }
 
     /**
-     * Get prediction statistics
+     * Get statistik prediksi
      */
     public function getPredictionStats(): array
     {
@@ -299,37 +310,32 @@ class StockPredictionService
 
             if ($predictions->isEmpty()) {
                 return [
-                    'total_drugs' => 0,
-                    'status_aman' => 0,
-                    'status_menipis' => 0,
-                    'status_habis' => 0,
+                    'total_drugs'        => 0,
+                    'status_aman'        => 0,
+                    'status_menipis'     => 0,
+                    'status_habis'       => 0,
                     'total_reorder_value' => 0,
-                    'api_available' => $this->mlService->isAPIAvailable(),
+                    'api_available'      => $this->mlService->isAPIAvailable(),
                 ];
             }
 
             return [
-                'total_drugs' => $predictions->count(),
-                'status_aman' => $predictions->filter(fn($p) => ($p['status'] ?? '') === 'aman')->count(),
-                'status_menipis' => $predictions->filter(fn($p) => ($p['status'] ?? '') === 'menipis')->count(),
-                'status_habis' => $predictions->filter(fn($p) => ($p['status'] ?? '') === 'habis')->count(),
-                'total_reorder_value' => (float)$predictions->sum(function ($p) {
-                    $stok_saat_ini = $p['stok_saat_ini'] ?? 0;
-                    $predicted = $p['predicted_stock'] ?? $stok_saat_ini;
-                    $gap = $predicted - $stok_saat_ini;
-                    return max(0, $gap);
-                }),
-                'api_available' => $this->mlService->isAPIAvailable(),
+                'total_drugs'        => $predictions->count(),
+                'status_aman'        => $predictions->filter(fn($p) => ($p['status'] ?? '') === 'aman')->count(),
+                'status_menipis'     => $predictions->filter(fn($p) => ($p['status'] ?? '') === 'menipis')->count(),
+                'status_habis'       => $predictions->filter(fn($p) => ($p['status'] ?? '') === 'habis')->count(),
+                'total_reorder_value' => (float) $predictions->sum(fn($p) => max(0, $p['rekomendasi_order'] ?? 0)),
+                'api_available'      => $this->mlService->isAPIAvailable(),
             ];
         } catch (\Exception $e) {
-            \Log::error("getPredictionStats error: " . $e->getMessage());
+            Log::error("getPredictionStats error: " . $e->getMessage());
             return [
-                'total_drugs' => 0,
-                'status_aman' => 0,
-                'status_menipis' => 0,
-                'status_habis' => 0,
+                'total_drugs'        => 0,
+                'status_aman'        => 0,
+                'status_menipis'     => 0,
+                'status_habis'       => 0,
                 'total_reorder_value' => 0,
-                'api_available' => $this->mlService->isAPIAvailable(),
+                'api_available'      => $this->mlService->isAPIAvailable(),
             ];
         }
     }

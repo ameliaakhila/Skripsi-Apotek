@@ -12,16 +12,24 @@ use Illuminate\Support\Collection;
 /**
  * Stock Feature Extraction Service
  *
- * Extracts 12 features from database for ML model training/prediction
- * Focuses on last month sales data as primary predictor
+ * Extracts 12 features dari database untuk prediksi stok obat.
+ * Menggunakan DATA TRANSAKSI 3 BULAN TERAKHIR sebagai dasar kalkulasi fitur.
+ *
+ * Filosofi: Prediksi kebutuhan stok = kebutuhan 1 bulan ke depan
+ * berdasarkan rata-rata penjualan 3 bulan terakhir (lebih stabil dari 1 bulan).
  */
 class StockFeatureService
 {
     /**
-     * Extract all features for a single drug
+     * Periode history untuk fitur frekuensi & rata-rata penjualan: 3 bulan
+     */
+    private const SALES_PERIOD_MONTHS = 3;
+
+    /**
+     * Extract all features untuk satu obat
      *
      * @param int $id_obat
-     * @param int $months Historical period in months (default: 12)
+     * @param int $months Historical period untuk total masuk/keluar (default: 12)
      * @return array|null
      */
     public function extractFeatures(int $id_obat, int $months = 12): ?array
@@ -32,48 +40,55 @@ class StockFeatureService
                 return null;
             }
 
-            $endDate = now()->endOfDay();
+            // -- Periode untuk total masuk/keluar historis (12 bulan) --
+            $endDate   = now()->endOfDay();
             $startDate = $endDate->copy()->subMonths($months)->startOfDay();
 
-            // Get all batches for this drug (remove created_at filter)
+            // -- Periode 3 bulan terakhir untuk fitur transaksi (konsisten) --
+            $periodStart = now()->subMonths(self::SALES_PERIOD_MONTHS)->startOfDay();
+            $periodEnd   = now()->endOfDay();
+            $periodDays  = max(1, $periodStart->diffInDays($periodEnd));
+
+            // Get all batches for this drug
             $batches = StokBatch::where('id_obat', $id_obat)->get();
 
             if ($batches->isEmpty()) {
                 return null;
             }
 
-            // Feature 1: Total incoming stock (historical)
-            $totalMasuk = (int)$batches->sum('stok_masuk');
+            $batchIds = $batches->pluck('id_stok_batch');
 
-            // Feature 2: Total outgoing stock (sales)
-            $totalKeluar = (int)ObatKeluar::whereIn('id_stok_batch', $batches->pluck('id_stok_batch'))
+            // Feature 1: Total incoming stock (historical 12 bulan)
+            $totalMasuk = (int) $batches->sum('stok_masuk');
+
+            // Feature 2: Total outgoing stock (historical 12 bulan)
+            $totalKeluar = (int) ObatKeluar::whereIn('id_stok_batch', $batchIds)
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->sum('stok_keluar');
 
             // Feature 3: Current stock level
-            $stokSaatIni = (int)$batches->sum('stok_sisa');
+            $stokSaatIni = (int) $batches->sum('stok_sisa');
 
-            // Feature 4: Transaction frequency (last month focus)
-            $lastMonthStart = now()->subMonth()->startOfDay();
-            $lastMonthEnd = now()->endOfDay();
+            // Feature 4 & 5: Frekuensi & rata-rata transaksi — 3 BULAN TERAKHIR
+            $periodSales = ObatKeluar::whereIn('id_stok_batch', $batchIds)
+                ->whereBetween('created_at', [$periodStart, $periodEnd])
+                ->get(['stok_keluar', 'created_at']);
 
-            $frekuensiTransaksi = (int)ObatKeluar::whereIn('id_stok_batch', $batches->pluck('id_stok_batch'))
-                ->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])
-                ->count();
+            $frekuensiTransaksi = $periodSales->count();
+            $periodSalesTotal   = (int) $periodSales->sum('stok_keluar');
 
-            // Feature 5: Average transaction value
             $avgTransaksi = $frekuensiTransaksi > 0
-                ? round($totalKeluar / $frekuensiTransaksi, 2)
+                ? round($periodSalesTotal / $frekuensiTransaksi, 2)
                 : 0;
 
             // Feature 6: Expiry risk (batches expiring within 30 days)
-            $kedaluwarsaRisk = (int)$batches
+            $kedaluwarsaRisk = (int) $batches
                 ->filter(fn($b) => Carbon::parse($b->tanggal_kedaluwarsa)
                     ->diffInDays(Carbon::now(), false) <= 30)
                 ->count();
 
             // Feature 7: Inventory accuracy from opname
-            $opnameData = StokOpname::whereIn('id_stok_batch', $batches->pluck('id_stok_batch'))
+            $opnameData = StokOpname::whereIn('id_stok_batch', $batchIds)
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->get();
 
@@ -86,46 +101,49 @@ class StockFeatureService
                 ? round($stokSaatIni / $drug->safety_stock, 2)
                 : 0;
 
-            // Feature 9: Demand volatility (standard deviation of last month daily sales)
-            $demandVolatility = $this->calculateMonthlyVolatility($batches, $lastMonthStart, $lastMonthEnd);
+            // Feature 9: Demand volatility (std dev daily sales — 3 bulan terakhir)
+            // FIX: gunakan $periodStart/$periodEnd yang sudah didefinisikan
+            $demandVolatility = $this->calculateVolatilityFromCollection(
+                $periodSales,
+                $periodStart,
+                $periodEnd
+            );
 
-            // Feature 10: Trend indicator (recent vs overall average)
-            $recentAvg = $this->getRecentAverage($batches, 7);
-            $lastMonthSalesTotal = (int)ObatKeluar::whereIn('id_stok_batch', $batches->pluck('id_stok_batch'))
-                ->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])
-                ->sum('stok_keluar');
-            $overallAvg = $frekuensiTransaksi > 0 ? $lastMonthSalesTotal / $frekuensiTransaksi : 0;
-            $trendIndicator = $overallAvg > 0
-                ? round($recentAvg / $overallAvg, 2)
+            // Feature 10: Trend indicator (7 hari terakhir vs avg 3 bulan)
+            $sevenDaysAgo = now()->subDays(7)->startOfDay();
+            $recentSales  = $periodSales->filter(fn($s) => $s->created_at >= $sevenDaysAgo);
+            $recentAvg    = round($recentSales->sum('stok_keluar') / 7, 2);
+
+            $overallDailyAvg  = $periodDays > 0 ? $periodSalesTotal / $periodDays : 0;
+            $trendIndicator   = $overallDailyAvg > 0
+                ? round($recentAvg / $overallDailyAvg, 2)
                 : 0;
 
             // Feature 11: Safety stock threshold
-            $safetyStock = (int)($drug->safety_stock ?? 10);
+            $safetyStock = (int) ($drug->safety_stock ?? 10);
 
-            // Feature 12: Average daily sales (last month)
-            $lastMonthDays = $lastMonthStart->diffInDays($lastMonthEnd) ?: 1;
-            $lastMonthSales = (int)ObatKeluar::whereIn('id_stok_batch', $batches->pluck('id_stok_batch'))
-                ->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])
-                ->sum('stok_keluar');
-
-            $avgDailySales = round($lastMonthSales / $lastMonthDays, 2);
+            // Feature 12: Average daily sales — 3 BULAN TERAKHIR
+            $avgDailySales = round($periodSalesTotal / $periodDays, 2);
 
             return [
-                'id_obat' => $id_obat,
-                'nama_obat' => $drug->nama_obat,
-                'total_masuk' => $totalMasuk,
-                'total_keluar' => $totalKeluar,
-                'stok_saat_ini' => $stokSaatIni,
-                'frekuensi_transaksi' => $frekuensiTransaksi,
-                'avg_transaksi' => (float)$avgTransaksi,
-                'kedaluwarsa_risk' => $kedaluwarsaRisk,
-                'accuracy_deviation' => (float)$accuracyDeviation,
-                'safety_stock_ratio' => (float)$safetyStockRatio,
-                'demand_volatility' => (float)$demandVolatility,
-                'trend_indicator' => (float)$trendIndicator,
-                'safety_stock' => $safetyStock,
-                'avg_daily_sales' => (float)$avgDailySales,
-                'last_month_total_sales' => $lastMonthSales,
+                'id_obat'                => $id_obat,
+                'nama_obat'              => $drug->nama_obat,
+                'total_masuk'            => $totalMasuk,
+                'total_keluar'           => $totalKeluar,
+                'stok_saat_ini'          => $stokSaatIni,
+                'frekuensi_transaksi'    => $frekuensiTransaksi,
+                'avg_transaksi'          => (float) $avgTransaksi,
+                'kedaluwarsa_risk'       => $kedaluwarsaRisk,
+                'accuracy_deviation'     => (float) $accuracyDeviation,
+                'safety_stock_ratio'     => (float) $safetyStockRatio,
+                'demand_volatility'      => (float) $demandVolatility,
+                'trend_indicator'        => (float) $trendIndicator,
+                'safety_stock'           => $safetyStock,
+                'avg_daily_sales'        => (float) $avgDailySales,
+                // Informasi tambahan untuk view (tidak dikirim ke ML API)
+                'last_3month_total_sales' => $periodSalesTotal,
+                'last_month_total_sales'  => $periodSalesTotal, // alias agar kompatibel
+                'periode_data'           => self::SALES_PERIOD_MONTHS . ' bulan terakhir',
             ];
         } catch (\Exception $e) {
             \Log::error("Feature extraction error for drug {$id_obat}: {$e->getMessage()}");
@@ -134,7 +152,7 @@ class StockFeatureService
     }
 
     /**
-     * Extract features for multiple drugs efficiently
+     * Extract features untuk banyak obat sekaligus (bulk, dipakai production)
      */
     public function extractFeaturesForDrugs(Collection $drugs, int $months = 12): Collection
     {
@@ -143,61 +161,84 @@ class StockFeatureService
         }
 
         $drugIds = $drugs->pluck('id_obat')->filter()->toArray();
-        $endDate = now()->endOfDay();
-        $startDate = $endDate->copy()->subMonths($months)->startOfDay();
-        $lastMonthStart = now()->subMonth()->startOfDay();
 
-        // 1. Bulk fetch batches (Optimized: Select specific columns)
+        // -- Periode untuk total masuk/keluar historis --
+        $endDate   = now()->endOfDay();
+        $startDate = $endDate->copy()->subMonths($months)->startOfDay();
+
+        // -- Periode 3 bulan terakhir untuk fitur transaksi (SERAGAM) --
+        $periodStart = now()->subMonths(self::SALES_PERIOD_MONTHS)->startOfDay();
+        $periodEnd   = now()->endOfDay();
+
+        // 1. Bulk fetch batches
         $allBatches = StokBatch::whereIn('id_obat', $drugIds)
             ->select('id_stok_batch', 'id_obat', 'stok_masuk', 'stok_sisa', 'tanggal_kedaluwarsa')
             ->get();
-        
+
         if ($allBatches->isEmpty()) {
             return collect();
         }
 
-        // Mapping batch ID to drug ID for fast lookup
         $batchToDrugMap = $allBatches->pluck('id_obat', 'id_stok_batch')->toArray();
-        $batchIds = array_keys($batchToDrugMap);
+        $batchIds       = array_keys($batchToDrugMap);
         $groupedBatches = $allBatches->groupBy('id_obat');
 
-        // 2. Bulk fetch sales (Optimized: Filter by date and select specific columns)
+        // 2. Bulk fetch sales — GUNAKAN 3 BULAN TERAKHIR (bukan subMonths(12))
         $allSales = ObatKeluar::whereIn('id_stok_batch', $batchIds)
-            ->where('created_at', '>=', $startDate)
+            ->where('created_at', '>=', $periodStart)   // << 3 bulan terakhir
             ->select('id_stok_batch', 'stok_keluar', 'created_at')
             ->get();
 
-        $salesByDrug = $allSales->groupBy(function($sale) use ($batchToDrugMap) {
+        $salesByDrug = $allSales->groupBy(function ($sale) use ($batchToDrugMap) {
             return $batchToDrugMap[$sale->id_stok_batch] ?? 0;
         });
 
-        // 3. Bulk fetch opnames (Optimized: Select specific columns)
+        // 3. Bulk fetch total keluar historis 12 bulan (untuk feature total_keluar)
+        $allSalesHistorical = ObatKeluar::whereIn('id_stok_batch', $batchIds)
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->select('id_stok_batch', 'stok_keluar')
+            ->get();
+
+        $historicalSalesByDrug = $allSalesHistorical->groupBy(function ($sale) use ($batchToDrugMap) {
+            return $batchToDrugMap[$sale->id_stok_batch] ?? 0;
+        });
+
+        // 4. Bulk fetch opnames
         $allOpnames = StokOpname::whereIn('id_stok_batch', $batchIds)
             ->select('id_stok_batch', 'selisih')
             ->get()
             ->groupBy('id_stok_batch');
-        
+
         $features = collect();
         foreach ($drugs as $drug) {
-            $drugId = (int)$drug->id_obat;
+            $drugId      = (int) $drug->id_obat;
             $drugBatches = $groupedBatches->get($drugId) ?? collect();
+
             if ($drugBatches->isEmpty()) {
                 continue;
             }
 
-            // O(1) lookup instead of O(M) filtering
-            $drugSales = $salesByDrug->get($drugId) ?? collect();
-            
-            // Opnames still need some aggregation but it's smaller
+            $drugSales      = $salesByDrug->get($drugId) ?? collect();
+            $historicalSales = $historicalSalesByDrug->get($drugId) ?? collect();
+
             $drugBatchIds = $drugBatches->pluck('id_stok_batch');
-            $drugOpnames = collect();
+            $drugOpnames  = collect();
             foreach ($drugBatchIds as $bid) {
                 if ($allOpnames->has($bid)) {
                     $drugOpnames = $drugOpnames->concat($allOpnames->get($bid));
                 }
             }
 
-            $drugFeatures = $this->extractFeaturesWithPreFetchedData($drug, $drugBatches, $drugSales, $drugOpnames, $startDate, $endDate);
+            $drugFeatures = $this->extractFeaturesWithPreFetchedData(
+                $drug,
+                $drugBatches,
+                $drugSales,
+                $historicalSales,
+                $drugOpnames,
+                $periodStart,
+                $periodEnd
+            );
+
             if ($drugFeatures) {
                 $features->push($drugFeatures);
             }
@@ -207,40 +248,53 @@ class StockFeatureService
     }
 
     /**
-     * Optimized version using pre-fetched data (No DB queries inside)
+     * Versi optimized menggunakan data yang sudah di-prefetch (tanpa DB query di dalam)
+     *
+     * @param Obat       $drug             Data obat
+     * @param Collection $batches          Batches milik obat ini
+     * @param Collection $sales            Sales 3 bulan terakhir
+     * @param Collection $historicalSales  Sales 12 bulan (untuk total_keluar)
+     * @param Collection $opnames          Data opname
+     * @param Carbon     $periodStart      Start 3 bulan terakhir
+     * @param Carbon     $periodEnd        End (hari ini)
      */
-    private function extractFeaturesWithPreFetchedData(Obat $drug, Collection $batches, Collection $sales, Collection $opnames, $startDate, $endDate): ?array
-    {
+    private function extractFeaturesWithPreFetchedData(
+        Obat       $drug,
+        Collection $batches,
+        Collection $sales,
+        Collection $historicalSales,
+        Collection $opnames,
+        $periodStart,
+        $periodEnd
+    ): ?array {
         try {
-            $id_obat = $drug->id_obat;
-            $lastMonthStart = now()->subMonth()->startOfDay();
-            $lastMonthEnd = now()->endOfDay();
+            $id_obat    = $drug->id_obat;
+            $periodDays = max(1, $periodStart->diffInDays($periodEnd));
 
-            // Feature 1: Total incoming stock (historical)
-            $totalMasuk = (int)$batches->sum('stok_masuk');
+            // Feature 1: Total incoming stock
+            $totalMasuk = (int) $batches->sum('stok_masuk');
 
-            // Feature 2: Total outgoing stock (sales)
-            $totalKeluar = (int)$sales->sum('stok_keluar');
-            
-            $lastMonthSales = $sales->filter(fn($s) => $s->created_at >= $lastMonthStart);
-            $frekuensiTransaksi = $lastMonthSales->count();
-            $lastMonthSalesTotal = (int)$lastMonthSales->sum('stok_keluar');
+            // Feature 2: Total outgoing stock — 12 bulan historis
+            $totalKeluar = (int) $historicalSales->sum('stok_keluar');
 
             // Feature 3: Current stock level
-            $stokSaatIni = (int)$batches->sum('stok_sisa');
+            $stokSaatIni = (int) $batches->sum('stok_sisa');
 
-            // Feature 5: Average transaction value
+            // Feature 4 & 5: Frekuensi & avg transaksi — 3 BULAN TERAKHIR
+            $frekuensiTransaksi = $sales->count();
+            $periodSalesTotal   = (int) $sales->sum('stok_keluar');
+
             $avgTransaksi = $frekuensiTransaksi > 0
-                ? round($lastMonthSalesTotal / $frekuensiTransaksi, 2)
+                ? round($periodSalesTotal / $frekuensiTransaksi, 2)
                 : 0;
 
-            // Feature 6: Expiry risk (batches expiring within 30 days)
-            $kedaluwarsaRisk = (int)$batches
+            // Feature 6: Expiry risk
+            $kedaluwarsaRisk = (int) $batches
                 ->filter(fn($b) => Carbon::parse($b->tanggal_kedaluwarsa)
                     ->diffInDays(Carbon::now(), false) <= 30)
                 ->count();
 
-            // Feature 7: Inventory accuracy from opname
+            // Feature 7: Accuracy deviation dari opname
             $accuracyDeviation = $opnames->isNotEmpty()
                 ? round(abs($opnames->avg('selisih') ?? 0), 2)
                 : 0;
@@ -250,42 +304,48 @@ class StockFeatureService
                 ? round($stokSaatIni / $drug->safety_stock, 2)
                 : 0;
 
-            // Feature 9: Demand volatility
-            $demandVolatility = $this->calculateVolatilityFromCollection($lastMonthSales, $lastMonthStart, $lastMonthEnd);
+            // Feature 9: Demand volatility — 3 BULAN TERAKHIR
+            $demandVolatility = $this->calculateVolatilityFromCollection(
+                $sales,
+                $periodStart,
+                $periodEnd
+            );
 
-            // Feature 10: Trend indicator
+            // Feature 10: Trend indicator (7 hari vs rata-rata harian 3 bulan)
             $sevenDaysAgo = now()->subDays(7)->startOfDay();
-            $recentSales = $lastMonthSales->filter(fn($s) => $s->created_at >= $sevenDaysAgo);
-            $recentAvg = round($recentSales->sum('stok_keluar') / 7, 2);
-            
-            $overallAvg = $frekuensiTransaksi > 0 ? $lastMonthSalesTotal / $frekuensiTransaksi : 0;
-            $trendIndicator = $overallAvg > 0
-                ? round($recentAvg / $overallAvg, 2)
+            $recentSales  = $sales->filter(fn($s) => $s->created_at >= $sevenDaysAgo);
+            $recentAvg    = round($recentSales->sum('stok_keluar') / 7, 2);
+
+            $overallDailyAvg = $periodDays > 0 ? $periodSalesTotal / $periodDays : 0;
+            $trendIndicator  = $overallDailyAvg > 0
+                ? round($recentAvg / $overallDailyAvg, 2)
                 : 0;
 
             // Feature 11: Safety stock threshold
-            $safetyStock = (int)($drug->safety_stock ?? 10);
+            $safetyStock = (int) ($drug->safety_stock ?? 10);
 
-            // Feature 12: Average daily sales (last month)
-            $lastMonthDays = $lastMonthStart->diffInDays($lastMonthEnd) ?: 1;
-            $avgDailySales = round($lastMonthSalesTotal / $lastMonthDays, 2);
+            // Feature 12: Average daily sales — 3 BULAN TERAKHIR
+            $avgDailySales = round($periodSalesTotal / $periodDays, 2);
 
             return [
-                'id_obat' => $id_obat,
-                'nama_obat' => $drug->nama_obat,
-                'total_masuk' => $totalMasuk,
-                'total_keluar' => $totalKeluar,
-                'stok_saat_ini' => $stokSaatIni,
-                'frekuensi_transaksi' => $frekuensiTransaksi,
-                'avg_transaksi' => (float)$avgTransaksi,
-                'kedaluwarsa_risk' => $kedaluwarsaRisk,
-                'accuracy_deviation' => (float)$accuracyDeviation,
-                'safety_stock_ratio' => (float)$safetyStockRatio,
-                'demand_volatility' => (float)$demandVolatility,
-                'trend_indicator' => (float)$trendIndicator,
-                'safety_stock' => $safetyStock,
-                'avg_daily_sales' => (float)$avgDailySales,
-                'last_month_total_sales' => $lastMonthSalesTotal,
+                'id_obat'                 => $id_obat,
+                'nama_obat'               => $drug->nama_obat,
+                'total_masuk'             => $totalMasuk,
+                'total_keluar'            => $totalKeluar,
+                'stok_saat_ini'           => $stokSaatIni,
+                'frekuensi_transaksi'     => $frekuensiTransaksi,
+                'avg_transaksi'           => (float) $avgTransaksi,
+                'kedaluwarsa_risk'        => $kedaluwarsaRisk,
+                'accuracy_deviation'      => (float) $accuracyDeviation,
+                'safety_stock_ratio'      => (float) $safetyStockRatio,
+                'demand_volatility'       => (float) $demandVolatility,
+                'trend_indicator'         => (float) $trendIndicator,
+                'safety_stock'            => $safetyStock,
+                'avg_daily_sales'         => (float) $avgDailySales,
+                // Informasi tambahan untuk view
+                'last_3month_total_sales' => $periodSalesTotal,
+                'last_month_total_sales'  => $periodSalesTotal,  // alias kompatibilitas
+                'periode_data'            => self::SALES_PERIOD_MONTHS . ' bulan terakhir',
             ];
         } catch (\Exception $e) {
             \Log::error("Feature extraction error for drug {$drug->id_obat}: {$e->getMessage()}");
@@ -294,7 +354,7 @@ class StockFeatureService
     }
 
     /**
-     * Calculate volatility from a collection of sales (No DB queries)
+     * Hitung demand volatility (std deviasi penjualan harian) dari collection
      */
     private function calculateVolatilityFromCollection(Collection $sales, $startDate, $endDate): float
     {
@@ -303,19 +363,20 @@ class StockFeatureService
                 return 0;
             }
 
-            // Group sales by date more efficiently
+            // Kelompokkan penjualan per hari
             $salesByDate = [];
             foreach ($sales as $sale) {
                 $date = $sale->created_at->format('Y-m-d');
                 $salesByDate[$date] = ($salesByDate[$date] ?? 0) + $sale->stok_keluar;
             }
 
-            $dailySales = [];
+            // Bangun array penjualan harian (termasuk hari dengan 0 penjualan)
+            $dailySales  = [];
             $currentDate = $startDate->copy();
-            
+
             while ($currentDate <= $endDate) {
-                $dateStr = $currentDate->format('Y-m-d');
-                $dailySales[] = (int)($salesByDate[$dateStr] ?? 0);
+                $dateStr      = $currentDate->format('Y-m-d');
+                $dailySales[] = (int) ($salesByDate[$dateStr] ?? 0);
                 $currentDate->addDay();
             }
 
@@ -324,12 +385,12 @@ class StockFeatureService
                 return 0;
             }
 
-            $mean = array_sum($dailySales) / $count;
+            $mean      = array_sum($dailySales) / $count;
             $sumSqDiff = 0;
             foreach ($dailySales as $val) {
                 $sumSqDiff += pow($val - $mean, 2);
             }
-            
+
             return round(sqrt($sumSqDiff / $count), 2);
         } catch (\Exception $e) {
             return 0;
@@ -337,7 +398,7 @@ class StockFeatureService
     }
 
     /**
-     * Extract features for all drugs
+     * Extract features untuk semua obat
      */
     public function extractAllFeatures(int $months = 12): Collection
     {
@@ -346,74 +407,14 @@ class StockFeatureService
     }
 
     /**
-     * Calculate demand volatility (std dev of daily sales in last month)
-     */
-    private function calculateMonthlyVolatility($batches, $startDate, $endDate): float
-    {
-        try {
-            $batchIds = $batches->pluck('id_stok_batch');
-            
-            // ! OPTIMIZATION: Use a single query with groupBy to get all daily sales in one go
-            $salesData = ObatKeluar::whereIn('id_stok_batch', $batchIds)
-                ->whereBetween('created_at', [$startDate, $endDate])
-                ->selectRaw('DATE(created_at) as date, SUM(stok_keluar) as total_sales')
-                ->groupBy('date')
-                ->pluck('total_sales', 'date')
-                ->toArray();
-
-            $dailySales = [];
-            $dateRange = $startDate->copy();
-            
-            while ($dateRange <= $endDate) {
-                $dateStr = $dateRange->format('Y-m-d');
-                $dailySales[] = (int)($salesData[$dateStr] ?? 0);
-                $dateRange->addDay();
-            }
-
-            if (count($dailySales) <= 1) {
-                return 0;
-            }
-
-            $mean = array_sum($dailySales) / count($dailySales);
-            $variance = array_sum(array_map(
-                fn($x) => pow($x - $mean, 2),
-                $dailySales
-            )) / count($dailySales);
-
-            return round(sqrt($variance), 2);
-        } catch (\Exception $e) {
-            \Log::error("Volatility calculation error: " . $e->getMessage());
-            return 0;
-        }
-    }
-
-    /**
-     * Get recent average (last N days)
-     */
-    private function getRecentAverage($batches, int $days): float
-    {
-        try {
-            $startDate = Carbon::now()->subDays($days)->startOfDay();
-            $endDate = Carbon::now()->endOfDay();
-
-            $totalSales = ObatKeluar::whereIn('id_stok_batch', $batches->pluck('id_stok_batch'))
-                ->whereBetween('created_at', [$startDate, $endDate])
-                ->sum('stok_keluar');
-
-            return round($totalSales / $days, 2);
-        } catch (\Exception $e) {
-            return 0;
-        }
-    }
-
-    /**
-     * Get last month sales summary for a drug
+     * Get ringkasan penjualan 3 bulan terakhir untuk satu obat
      */
     public function getLastMonthSalesSummary(int $id_obat): ?array
     {
         try {
-            $lastMonthStart = now()->subMonth()->startOfDay();
-            $lastMonthEnd = now()->endOfDay();
+            $periodStart = now()->subMonths(self::SALES_PERIOD_MONTHS)->startOfDay();
+            $periodEnd   = now()->endOfDay();
+            $periodDays  = max(1, $periodStart->diffInDays($periodEnd));
 
             $batches = StokBatch::where('id_obat', $id_obat)->get();
 
@@ -422,20 +423,21 @@ class StockFeatureService
             }
 
             $sales = ObatKeluar::whereIn('id_stok_batch', $batches->pluck('id_stok_batch'))
-                ->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])
+                ->whereBetween('created_at', [$periodStart, $periodEnd])
                 ->get();
 
-            $totalSales = (int)$sales->sum('stok_keluar');
-            $avgDailySales = round($totalSales / 30, 2);
-            $maxDailySales = (int)$sales->max('stok_keluar') ?? 0;
+            $totalSales       = (int) $sales->sum('stok_keluar');
+            $avgDailySales    = round($totalSales / $periodDays, 2);
+            $maxDailySales    = (int) ($sales->max('stok_keluar') ?? 0);
             $transactionCount = $sales->count();
 
             return [
-                'total_sales' => $totalSales,
-                'avg_daily_sales' => $avgDailySales,
-                'max_daily_sales' => $maxDailySales,
+                'total_sales'       => $totalSales,
+                'avg_daily_sales'   => $avgDailySales,
+                'max_daily_sales'   => $maxDailySales,
                 'transaction_count' => $transactionCount,
-                'days_active' => $sales->groupBy('tanggal_keluar')->count(),
+                'period_months'     => self::SALES_PERIOD_MONTHS,
+                'days_active'       => $sales->groupBy(fn($s) => $s->created_at->format('Y-m-d'))->count(),
             ];
         } catch (\Exception $e) {
             return null;

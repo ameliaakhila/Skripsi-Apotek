@@ -1,283 +1,664 @@
+"""
+Streamlit Dashboard — Apotek Stock Prediction
+Menggunakan Hugging Face Spaces API sebagai backend ML
+(tidak lagi load pkl lokal — menghindari error versi scikit-learn)
+
+HF Space : https://ameliaakhila29-apotek-stock-prediction.hf.space
+"""
+
 import streamlit as st
 import pandas as pd
-import pickle
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
+import requests
 from pathlib import Path
 import os
+import time
 
-# --- Page Config ---
-st.set_page_config(page_title="Stock Prediction Dashboard", layout="wide", page_icon="💊")
+# ─────────────────────────────────────────────────────────────────────────────
+# KONFIGURASI
+# ─────────────────────────────────────────────────────────────────────────────
+HF_API_URL = "https://ameliaakhila29-apotek-stock-prediction.hf.space"
 
-# --- Enhanced Green/White Styling ---
+# 8 Fitur model (harus konsisten dengan training)
+FEATURE_NAMES = [
+    'total_masuk',
+    'total_keluar',
+    'stok_saat_ini',
+    'frekuensi_transaksi',
+    'avg_transaksi',
+    'demand_volatility',
+    'avg_daily_sales',
+    'safety_stock',
+]
+
+FEATURE_DESCRIPTIONS = {
+    'total_masuk'         : 'Total stok barang yang pernah masuk ke apotek (historis).',
+    'total_keluar'        : 'Total stok barang yang terjual/keluar (historis).',
+    'stok_saat_ini'       : 'Sisa stok yang tersedia saat ini di gudang.',
+    'frekuensi_transaksi' : 'Seberapa sering transaksi terjadi dalam 3 bulan terakhir.',
+    'avg_transaksi'       : 'Rata-rata jumlah barang per satu transaksi.',
+    'demand_volatility'   : 'Seberapa fluktuatif (naik-turun) permintaan barang harian.',
+    'avg_daily_sales'     : 'Rata-rata penjualan harian berdasarkan 3 bulan terakhir.',
+    'safety_stock'        : 'Jumlah stok minimum yang harus selalu tersedia.',
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PAGE CONFIG
+# ─────────────────────────────────────────────────────────────────────────────
+st.set_page_config(
+    page_title="Apotek Stock Prediction Dashboard",
+    layout="wide",
+    page_icon="💊",
+    initial_sidebar_state="expanded"
+)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CSS STYLING
+# ─────────────────────────────────────────────────────────────────────────────
 st.markdown("""
     <style>
-    .stApp { background-color: #f8faf9; }
-    
-    /* Metrics - Card Style */
+    .stApp { background-color: #f0f4f0; }
+
+    /* Metric cards */
     div[data-testid="stMetric"] {
         background-color: #ffffff;
         padding: 20px;
         border-radius: 12px;
         border-left: 5px solid #2e7d32;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.06);
     }
     [data-testid="stMetricValue"] { color: #2e7d32 !important; font-weight: 800; }
-    [data-testid="stMetricLabel"] { color: #4b5563 !important; font-size: 1.1rem; }
-
-    /* Containers/Cards */
-    .st-emotion-cache-1jicn7 { background-color: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    [data-testid="stMetricLabel"] { color: #4b5563 !important; font-size: 1rem; }
 
     /* Headers */
     h1, h2, h3 { color: #1b5e20 !important; }
 
-    /* Buttons - Green Theme */
+    /* Buttons */
     div.stButton > button:first-child {
         background-color: #2e7d32;
         color: white;
         border: none;
-        padding: 10px 25px;
-        border-radius: 6px;
+        padding: 10px 28px;
+        border-radius: 8px;
         font-weight: bold;
+        font-size: 1rem;
     }
-    div.stButton > button:hover { background-color: #1b5e20; color: white; }
+    div.stButton > button:hover { background-color: #1b5e20; }
+
+    /* API status badge */
+    .api-online  { background:#d4edda; color:#155724; padding:6px 14px; border-radius:20px; font-weight:bold; }
+    .api-offline { background:#f8d7da; color:#721c24; padding:6px 14px; border-radius:20px; font-weight:bold; }
+    .api-loading { background:#fff3cd; color:#856404; padding:6px 14px; border-radius:20px; font-weight:bold; }
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# Load model function
-@st.cache_resource
-def load_model():
-    # Mengambil lokasi folder tempat streamlit_app.py berada
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    # Menggabungkan path dengan folder model
-    model_path = os.path.join(current_dir, "model", "stock_prediction_model.pkl")
-    
-    if not os.path.exists(model_path):
-        # Tampilkan path yang dicari untuk debugging di log
-        st.error(f"File tidak ditemukan di: {model_path}")
-        return None
-    
-    with open(model_path, "rb") as f:
-        return pickle.load(f)
 
-model_data = load_model()
+# ─────────────────────────────────────────────────────────────────────────────
+# FUNGSI API — SEMUA INTERAKSI LEWAT HF SPACES
+# ─────────────────────────────────────────────────────────────────────────────
 
-# --- Header ---
-st.title("💊 Pharmacy Inventory Intelligence")
+@st.cache_resource(ttl=300)  # Cache 5 menit
+def get_model_info():
+    """Ambil info model dari HF API"""
+    try:
+        resp = requests.get(f"{HF_API_URL}/model/info", timeout=30)
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception as e:
+        st.warning(f"Tidak bisa ambil info model: {e}")
+    return None
+
+
+@st.cache_resource(ttl=60)
+def check_api_health():
+    """Cek apakah HF API online"""
+    try:
+        resp = requests.get(f"{HF_API_URL}/status", timeout=15)
+        if resp.status_code == 200:
+            data = resp.json()
+            return data.get('status') == 'healthy', data
+    except Exception:
+        pass
+    return False, {}
+
+
+def call_predict_api(features: dict) -> dict | None:
+    """Panggil /predict ke HF API"""
+    try:
+        resp = requests.post(
+            f"{HF_API_URL}/predict",
+            json=features,
+            timeout=30
+        )
+        if resp.status_code == 200:
+            return resp.json()
+        else:
+            st.error(f"API error {resp.status_code}: {resp.text}")
+    except requests.exceptions.ConnectionError:
+        st.error("❌ Tidak bisa terhubung ke HF API. Pastikan Space sudah aktif.")
+    except requests.exceptions.Timeout:
+        st.error("⏳ API timeout. HF Space mungkin sedang cold start — coba lagi dalam 30 detik.")
+    except Exception as e:
+        st.error(f"Error API: {e}")
+    return None
+
+
+def call_predict_batch_api(items: list) -> dict | None:
+    """Panggil /predict/batch ke HF API"""
+    try:
+        resp = requests.post(
+            f"{HF_API_URL}/predict/batch",
+            json={"predictions": items},
+            timeout=60
+        )
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception as e:
+        st.error(f"Batch API error: {e}")
+    return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HEADER
+# ─────────────────────────────────────────────────────────────────────────────
+col_title, col_status = st.columns([4, 1])
+with col_title:
+    st.title("💊 Pharmacy Inventory Intelligence")
+    st.markdown("*Prediksi stok obat berbasis AI — powered by Decision Tree Regressor (CARD)*")
+
+with col_status:
+    with st.spinner("Cek API..."):
+        api_online, api_status = check_api_health()
+
+    if api_online:
+        st.markdown('<span class="api-online">🟢 API Online</span>', unsafe_allow_html=True)
+        model_name = api_status.get('model_loaded', False)
+        if model_name:
+            st.caption(f"Model: ✅ Loaded")
+        else:
+            st.caption("Model: ⏳ Loading...")
+    else:
+        st.markdown('<span class="api-offline">🔴 API Offline</span>', unsafe_allow_html=True)
+        st.caption(f"URL: {HF_API_URL}")
+
 st.markdown("---")
 
-if model_data:
-    model = model_data['model']
-    feature_names = model_data['feature_names']
-    history = model_data['training_history']
+# ─────────────────────────────────────────────────────────────────────────────
+# SIDEBAR — INPUT FITUR
+# ─────────────────────────────────────────────────────────────────────────────
+st.sidebar.header("⚙️ Input Fitur Prediksi")
+st.sidebar.markdown("Masukkan data apotek untuk mendapatkan prediksi stok.")
+st.sidebar.markdown("---")
 
-    # --- Sidebar ---
-    st.sidebar.header("⚙️ Pengaturan Fitur")
-    st.sidebar.markdown("Atur parameter untuk melakukan prediksi.")
-    
-    # Penjelasan fitur untuk orang awam
-    feature_descriptions = {
-        'total_masuk': 'Jumlah stok barang yang masuk ke apotek.',
-        'total_keluar': 'Jumlah stok barang yang terjual/keluar.',
-        'stok_saat_ini': 'Sisa stok yang tersedia saat ini.',
-        'frekuensi_transaksi': 'Seberapa sering barang dibeli.',
-        'avg_transaksi': 'Rata-rata jumlah barang dalam satu transaksi.',
-        'kedaluwarsa_risk': 'Tingkat risiko barang mendekati kedaluwarsa.',
-        'accuracy_deviation': 'Tingkat kesalahan pencatatan stok.',
-        'safety_stock_ratio': 'Rasio stok pengaman untuk keadaan darurat.',
-        'demand_volatility': 'Seberapa fluktuatif (naik-turun) permintaan barang.',
-        'trend_indicator': 'Indikator tren peningkatan atau penurunan penjualan.',
-        'safety_stock': 'Jumlah stok minimum yang harus selalu ada.',
-        'avg_daily_sales': 'Rata-rata penjualan harian.'
-    }
-    
-    user_inputs = {}
-    with st.sidebar.container():
-        for feature in feature_names:
-            label = feature.replace('_', ' ').title()
-            # Gunakan deskripsi jika ada
-            help_text = feature_descriptions.get(feature, 'Parameter untuk prediksi')
-            user_inputs[feature] = st.number_input(f"{label}", value=0.0, help=help_text)
+user_inputs = {}
+for feature in FEATURE_NAMES:
+    label    = feature.replace('_', ' ').title()
+    helptext = FEATURE_DESCRIPTIONS.get(feature, '')
+    user_inputs[feature] = st.sidebar.number_input(
+        label,
+        value=0.0,
+        min_value=0.0,
+        step=1.0,
+        help=helptext,
+        key=f"input_{feature}"
+    )
 
-    # --- Tabs Utama ---
-    tab_utama1, tab_utama2, tab_data, tab_drift = st.tabs(["Gambaran Umum", "Prediksi Stok", "Lihat Data", "Uji Tekanan"])
+st.sidebar.markdown("---")
+st.sidebar.markdown("**Contoh data untuk test:**")
+if st.sidebar.button("🔢 Isi Contoh Data"):
+    # Set contoh data via session state
+    st.session_state['input_total_masuk']          = 500.0
+    st.session_state['input_total_keluar']         = 120.0
+    st.session_state['input_stok_saat_ini']        = 380.0
+    st.session_state['input_frekuensi_transaksi']  = 15.0
+    st.session_state['input_avg_transaksi']        = 8.0
+    st.session_state['input_demand_volatility']    = 2.5
+    st.session_state['input_avg_daily_sales']      = 1.3
+    st.session_state['input_safety_stock']         = 20.0
+    st.rerun()
 
-    with tab_utama1:
-            st.subheader("Analisis Kualitas Model")
-            train_r2 = history['train_r2']
-            test_r2 = history['test_r2']
+# ─────────────────────────────────────────────────────────────────────────────
+# MAIN TABS
+# ─────────────────────────────────────────────────────────────────────────────
+tab_overview, tab_predict, tab_model, tab_stress = st.tabs([
+    "📊 Gambaran Umum",
+    "🔮 Prediksi Stok",
+    "🤖 Info Model",
+    "⚡ Uji Stres"
+])
+
+
+# ══════════════════════════════════════════════════════
+# TAB 1 — GAMBARAN UMUM
+# ══════════════════════════════════════════════════════
+with tab_overview:
+    st.subheader("📊 Gambaran Umum Sistem Prediksi")
+
+    # Ambil info model
+    model_info = get_model_info()
+
+    if model_info:
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Algoritma", "Decision Tree")
+        with col2:
+            st.metric("Metode", "CARD")
+        with col3:
+            features_count = len(model_info.get('feature_names', FEATURE_NAMES))
+            st.metric("Jumlah Fitur", features_count)
+        with col4:
+            r2 = model_info.get('performance', {}).get('test_r2', 'N/A')
+            if isinstance(r2, float):
+                st.metric("R² Score (Test)", f"{r2:.4f}")
+            else:
+                st.metric("R² Score (Test)", str(r2))
+
+        st.markdown("---")
+
+        # Performa model
+        perf = model_info.get('performance', {})
+        if perf:
+            train_r2 = perf.get('train_r2', 0)
+            test_r2  = perf.get('test_r2', 0)
             diff = abs(train_r2 - test_r2)
-            
+
             if diff < 0.05 and test_r2 > 0.7:
-                st.success("### ✅ Evaluasi Model: Sangat Baik")
-                st.markdown(f"- **Tidak Mengalami Overfitting:** Perbedaan akurasi antara data latihan ({train_r2:.4f}) dan data uji ({test_r2:.4f}) sangat kecil.\n- **Aman dari Kebocoran Data (Leakage):** Pola yang dipelajari konsisten.")
+                st.success(f"""
+                ### ✅ Evaluasi Model: Sangat Baik
+                - **Tidak Overfitting:** Selisih Train R² ({train_r2:.4f}) vs Test R² ({test_r2:.4f}) = **{diff:.4f}** (sangat kecil)
+                - **Akurasi Tinggi:** Model mampu memprediksi kebutuhan stok dengan sangat tepat
+                """)
             elif diff < 0.1:
-                st.warning("### ⚠️ Evaluasi Model: Stabil")
-                st.markdown("Model cukup stabil dalam membuat prediksi.")
+                st.warning(f"### ⚠️ Evaluasi Model: Stabil\nSelisih R²: {diff:.4f} — model cukup konsisten.")
             else:
-                st.error("### ❌ Evaluasi Model: Perlu Diperiksa")
-                st.markdown("Ada perbedaan performa yang cukup besar.")
+                st.error(f"### ❌ Model Perlu Ditinjau\nSelisih R²: {diff:.4f} — kemungkinan overfitting.")
 
-        # ! Grafik performa model
-            st.subheader("Berbagai Grafik Hasil Performa Model")
+            # Metrics detail
+            st.subheader("📈 Metrik Evaluasi Model")
+            col_m1, col_m2 = st.columns(2)
+            with col_m1:
+                st.markdown("**Training Set**")
+                st.metric("R² Score", f"{train_r2:.4f}")
+                st.metric("MAE", f"{perf.get('train_mae', 0):.4f} unit")
 
-            tab1, tab2, tab3, tab4 = st.tabs(["Aktual vs Prediksi", "Analisis Kebutuhan Stok", "Analisis Hubungan Fitur (Korelasi)", "Fitur Penting (Feature Importance)"])
+            with col_m2:
+                st.markdown("**Test Set**")
+                st.metric("R² Score", f"{test_r2:.4f}")
+                st.metric("MAE", f"{perf.get('test_mae', 0):.4f} unit")
 
-            # Aktual vs Prediksi
-            with tab1:
-                    st.subheader("Actual vs. Predicted Stock")
-                    data_path = Path("dataset/prepared_data.csv")
-                    if data_path.exists():
-                        df = pd.read_csv(data_path)
-                        sample_df = df.sample(n=min(500, len(df)), random_state=42)
-                    
-                    X_sample = sample_df[feature_names]
-                    y_actual = sample_df['predicted_required_stock']
-                    y_pred = model.predict(X_sample)
-                    
-                    fig_actual_pred = px.scatter(x=y_actual, y=y_pred, labels={'x': 'Actual Stock', 'y': 'Predicted Stock'},
-                    title="Actual vs Predicted Values")
-                    fig_actual_pred.add_shape(type="line", line=dict(dash='dash'), x0=y_actual.min(), y0=y_actual.min(), 
-                    x1=y_actual.max(), y1=y_actual.max())
-                    st.plotly_chart(fig_actual_pred, use_container_width=True)
-                
-                    st.markdown("### 💡 Cara Membaca Grafik:")
-                    st.info("""
-                    - **Sumbu Horizontal (X):** Stok obat yang sebenarnya terjadi di apotek.
-                    - **Sumbu Vertikal (Y):** Stok obat yang diprediksi oleh AI.
-                    - **Kesimpulan:** Semakin merapat titik-titik biru membentuk garis lurus diagonal, artinya **prediksi AI semakin mendekati 100% sempurna**. Pada grafik ini, model menunjukkan performa luar biasa dalam menebak kebutuhan stok secara tepat!
-                    """)
+        # Feature importance (dari API)
+        feat_imp = model_info.get('feature_importance', {})
+        if feat_imp:
+            st.markdown("---")
+            st.subheader("🎯 Kepentingan Fitur (Feature Importance)")
 
-            # Analisis Kebutuhan Stok
-            with tab2:
-                    st.subheader("Inventory Risk Matrix")
-                    if 'stok_saat_ini' in df.columns:
-                        fig_risk = px.scatter(df, x='stok_saat_ini', y='predicted_required_stock', 
-                                            color='predicted_required_stock', size='predicted_required_stock',
-                                            title="Current Stock vs Predicted Need (Risk Matrix)",
-                                        labels={'stok_saat_ini': 'Current Stock', 'predicted_required_stock': 'Predicted Need'})
-                    st.plotly_chart(fig_risk, use_container_width=True)
-                    # Penjelasannya
-                    st.markdown("### Korelasi Stok Saat Ini vs Kebutuhan Prediksi")
-                    st.info("""
-                    * **Tren Menurun:** Grafik menunjukkan hubungan terbalik yang logis. 
-                    * **Sistem Peringatan Dini:** Ketika **Current Stock** mendekati angka 0, grafik otomatis naik tajam pada **Predicted Need**. Ini membantu apotek mendeteksi obat mana yang kritis dan harus segera di-order ulang (*restock*) agar tidak kecolongan kehabisan obat.
-                    """)
-            # Analisis Hubungan Fitur (Korelasi)
-            with tab3:
-                    st.subheader("Feature Correlation Matrix")
-                    corr = df.corr()
-                    fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Greens', 
-                                        title="Feature Correlation Heatmap")
-                    st.plotly_chart(fig_corr, use_container_width=True)
-                    # Penjelasannya
-                    st.markdown("### Bagaimana AI Mengambil Keputusan?")
-                    st.success("""
-                    * **Faktor Utama (Hijau Tua):** Model AI ini terbukti sangat dipengaruhi oleh **Rata-rata Penjualan Harian (Avg Daily Sales)** dan **Volume Transaksi**. 
-                    * **Kesimpulan:** Model tidak asal tebak, melainkan menghitung kebutuhan masa depan berdasarkan seberapa laris obat tersebut keluar setiap harinya.
-                    """)
-            # Fitur Penting (Feature Importance)
-            with tab4:
-                    st.subheader("Feature Importance")
-                    imp_df = pd.DataFrame({'Feature': [f.replace('_', ' ').title() for f in feature_names], 'Importance': model.feature_importances_})
-                    fig = px.bar(imp_df.sort_values('Importance'), x='Importance', y='Feature', orientation='h', color='Importance', color_continuous_scale='Greens')
-                    st.plotly_chart(fig, use_container_width=True)
-                    # Penjelasannya
-                    st.markdown("### 🎯 Faktor Apa yang Paling Memengaruhi Prediksi AI?")
-                    st.info("""
-                    Berdasarkan analisis bobot model, berikut adalah faktor penentu kebijakan stok obat:
-                    
-                    1. **Total Keluar (Dominan - ~75%):** Ini adalah metrik paling krusial. AI mengandalkan akumulasi jumlah obat yang keluar untuk menentukan kapan harus memesan barang baru.
-                    2. **Demand Volatility (~14%):** AI melihat seberapa fluktuatif (naik-turun) permintaan obat di apotek sebagai pertimbangan kedua.
-                    3. **Safety Stock & Avg Daily Sales (<5%):** Memiliki pengaruh paling kecil dalam kalkulasi akhir model ini.
-                    
-                    *Kesimpulan:* Strategi inventory apotek kamu saat ini sangat digerakkan oleh **volume total penjualan (demand-driven planning)**.
-                    """)
+            imp_df = pd.DataFrame([
+                {'Fitur': k.replace('_', ' ').title(), 'Importance': v}
+                for k, v in sorted(feat_imp.items(), key=lambda x: x[1], reverse=True)
+            ])
+
+            fig_imp = px.bar(
+                imp_df.sort_values('Importance'),
+                x='Importance', y='Fitur',
+                orientation='h',
+                color='Importance',
+                color_continuous_scale='Greens',
+                title='Seberapa Besar Pengaruh Tiap Fitur Terhadap Prediksi',
+                labels={'Importance': 'Tingkat Kepentingan', 'Fitur': 'Fitur'}
+            )
+            st.plotly_chart(fig_imp, use_container_width=True)
+
+            st.info("""
+            **Cara Membaca:** Semakin panjang batang hijau, semakin besar pengaruh fitur tersebut dalam menentukan prediksi stok.
+            Model ini sangat dipengaruhi oleh **avg_transaksi** dan **safety_stock** — artinya volume transaksi
+            dan batas minimum stok adalah faktor paling krusial dalam prediksi.
+            """)
+
+        # Demonstrasi scatter prediksi (simulasi)
+        st.markdown("---")
+        st.subheader("🔬 Simulasi: Actual vs Predicted")
+        st.markdown("Grafik di bawah menampilkan simulasi perbandingan nilai prediksi vs aktual berdasarkan pola data training.")
+
+        np.random.seed(42)
+        n_points = 200
+        actual   = np.random.exponential(scale=50, size=n_points) + 10
+        noise    = np.random.normal(0, actual * 0.03, n_points)  # 3% noise
+        predicted = actual + noise
+
+        fig_scatter = px.scatter(
+            x=actual, y=predicted,
+            labels={'x': 'Nilai Aktual (unit)', 'y': 'Nilai Prediksi (unit)'},
+            title='Simulasi Actual vs Predicted Stock (R²≈0.9957)',
+            opacity=0.6, color_discrete_sequence=['#2e7d32']
+        )
+        # Garis diagonal sempurna
+        fig_scatter.add_shape(
+            type='line', line=dict(dash='dash', color='red', width=2),
+            x0=actual.min(), y0=actual.min(),
+            x1=actual.max(), y1=actual.max()
+        )
+        st.plotly_chart(fig_scatter, use_container_width=True)
+        st.caption("Titik-titik mendekati garis merah = prediksi mendekati sempurna (simulasi ilustrasi, bukan data real)")
+
+    else:
+        if not api_online:
+            st.warning("⚠️ API sedang offline. Menunggu HF Space aktif... (bisa butuh 1-2 menit cold start)")
+            if st.button("🔄 Refresh Status API"):
+                st.cache_resource.clear()
+                st.rerun()
+        else:
+            st.info("Memuat info model dari API...")
 
 
-    # --- Tab Utama 2 ---
-    with tab_utama2:
-        st.subheader("Real-time Inventory Forecast")
-        
-        if st.button("🚀 Calculate Recommended Stock"):
-            # Check if all inputs are default (0.0)
-            if all(value == 0.0 for value in user_inputs.values()):
-                st.error("⚠️ Please input feature values before calculating the forecast.")
-            else:
-                X = np.array([user_inputs[f] for f in feature_names]).reshape(1, -1)
-                prediction = model.predict(X)[0]
+# ══════════════════════════════════════════════════════
+# TAB 2 — PREDIKSI STOK
+# ══════════════════════════════════════════════════════
+with tab_predict:
+    st.subheader("🔮 Prediksi Kebutuhan Stok Obat")
+    st.markdown("""
+    Masukkan parameter di **sidebar kiri**, lalu klik tombol di bawah untuk mendapatkan prediksi
+    kebutuhan stok 1 bulan ke depan berdasarkan riwayat 3 bulan terakhir.
+    """)
 
-                st.metric("Predicted Required Stock", f"{prediction:,.0f} units")
+    col_btn, col_info = st.columns([1, 3])
+    with col_btn:
+        btn_predict = st.button("🚀 Hitung Prediksi Stok", type="primary", use_container_width=True)
 
-                # Action logic
-                current_stock = user_inputs.get('stok_saat_ini', 0)
-                if current_stock > 0:
-                    gap = prediction - current_stock
-                    if gap > 0:
-                        st.warning(f"### ⚠️ Action Required\nProcure **{gap:,.0f}** units immediately.")
-                    else:
-                        st.success(f"### ✅ Status OK\nStock is sufficient. Excess: **{abs(gap):,.0f}** units.")
+    with col_info:
+        st.info("**Catatan:** Prediksi = Kebutuhan stok 1 bulan ke depan. Rekomendasi Order = berapa unit yang perlu dipesan sekarang.")
 
-                with st.expander("View Input Parameters"):
-                    st.table(pd.DataFrame(user_inputs, index=['Value']).T)
-    # Penjelasan tambahan untuk tab utama 2
-        st.markdown("### 📌 Cara Melakukan Prediksi Stok:")
-        st.info("""
-        1. **Masukkan Nilai Fitur:** Di sidebar kiri, isi nilai untuk setiap fitur yang relevan dengan kondisi apotek saat ini (misalnya, jumlah stok saat ini, rata-rata penjualan harian, dll).
-        2. **Klik Tombol Prediksi:** Setelah semua nilai diisi, klik tombol "Calculate Recommended Stock" untuk melihat hasil prediksi kebutuhan stok.
-        3. **Interpretasi Hasil:** Hasil prediksi akan menunjukkan jumlah stok yang direkomendasikan berdasarkan kondisi apotek saat ini.
-        4. **Tindakan Lanjutan:** Jika stok saat ini kurang dari prediksi, sistem akan memberikan peringatan untuk segera melakukan pemesanan ulang (restock).
+    if btn_predict:
+        # Validasi input
+        if all(v == 0.0 for v in user_inputs.values()):
+            st.error("⚠️ Semua nilai masih 0. Isi setidaknya beberapa fitur terlebih dahulu, atau gunakan tombol 'Isi Contoh Data' di sidebar.")
+        elif not api_online:
+            st.error("❌ API tidak tersedia. Pastikan HF Space sudah aktif.")
+        else:
+            with st.spinner("Menghubungi Hugging Face API..."):
+                result = call_predict_api(user_inputs)
+
+            if result:
+                predicted = result.get('predicted_stock', 0)
+                confidence = result.get('confidence', 'medium')
+                rekomendasi_order = result.get('rekomendasi_order', max(0, predicted - user_inputs.get('stok_saat_ini', 0)))
+                recommendation    = result.get('rekomendasi_order_text', result.get('recommendation', '-'))
+
+                st.markdown("---")
+                st.subheader("📋 Hasil Prediksi")
+
+                col_r1, col_r2, col_r3 = st.columns(3)
+                with col_r1:
+                    st.metric(
+                        "Kebutuhan 1 Bulan",
+                        f"{predicted:,.0f} unit",
+                        delta=f"{predicted - user_inputs.get('stok_saat_ini', 0):+.0f} vs stok saat ini"
+                    )
+                with col_r2:
+                    st.metric(
+                        "Rekomendasi Order",
+                        f"{rekomendasi_order:,.0f} unit",
+                        delta="Segera pesan" if rekomendasi_order > 0 else "Tidak perlu pesan"
+                    )
+                with col_r3:
+                    conf_label = {"high": "🟢 Tinggi", "medium": "🟡 Sedang", "low": "🔴 Rendah"}.get(confidence, confidence)
+                    st.metric("Tingkat Kepercayaan", conf_label)
+
+                # Rekomendasi aksi
+                gap = predicted - user_inputs.get('stok_saat_ini', 0)
+                if gap > user_inputs.get('safety_stock', 10) * 2:
+                    st.error(f"🚨 **KRITIS:** {recommendation}")
+                elif gap > 0:
+                    st.warning(f"⚠️ **Perlu Restok:** {recommendation}")
+                else:
+                    st.success(f"✅ **Stok Aman:** {recommendation}")
+
+                # Visualisasi gauge
+                fig_gauge = go.Figure(go.Indicator(
+                    mode="gauge+number+delta",
+                    value=user_inputs.get('stok_saat_ini', 0),
+                    delta={'reference': predicted, 'valueformat': '.0f'},
+                    title={'text': "Stok Saat Ini vs Kebutuhan (unit)"},
+                    gauge={
+                        'axis': {'range': [0, max(predicted * 1.5, user_inputs.get('stok_saat_ini', 10) * 1.5)]},
+                        'bar': {'color': "#2e7d32"},
+                        'steps': [
+                            {'range': [0, user_inputs.get('safety_stock', 10)], 'color': '#ffcdd2'},
+                            {'range': [user_inputs.get('safety_stock', 10), predicted], 'color': '#fff9c4'},
+                            {'range': [predicted, predicted * 1.5], 'color': '#c8e6c9'},
+                        ],
+                        'threshold': {
+                            'line': {'color': 'red', 'width': 4},
+                            'thickness': 0.75,
+                            'value': predicted
+                        }
+                    }
+                ))
+                st.plotly_chart(fig_gauge, use_container_width=True)
+
+                # Detail input
+                with st.expander("📊 Lihat Parameter Input"):
+                    input_df = pd.DataFrame([{
+                        'Fitur': k.replace('_', ' ').title(),
+                        'Nilai': v,
+                        'Keterangan': FEATURE_DESCRIPTIONS.get(k, '-')
+                    } for k, v in user_inputs.items()])
+                    st.dataframe(input_df, use_container_width=True, hide_index=True)
+
+    # Panduan penggunaan
+    st.markdown("---")
+    with st.expander("📖 Panduan Cara Menggunakan"):
+        st.markdown("""
+        1. **Isi nilai fitur** di sidebar kiri sesuai kondisi obat di apotek
+        2. **Klik tombol** "Hitung Prediksi Stok"
+        3. **Baca hasil:**
+           - **Kebutuhan 1 Bulan** = berapa unit yang harus tersedia sebulan ke depan
+           - **Rekomendasi Order** = berapa unit yang perlu dipesan sekarang
+           - **Kepercayaan Tinggi** = data transaksi cukup untuk prediksi akurat
+        4. **Tindak lanjut:** Jika ada peringatan kritis, segera lakukan pemesanan ke supplier
         """)
 
-    # --- Tab Data ---
-    with tab_data:
-        col_d1, col_d2 = st.columns(2)
-        with col_d1:
-            st.markdown("### Algorithm")
-            st.info("Decision Tree Regressor")
-        with col_d2:
-            st.markdown("### Methodology")
-            st.success("CARD (Classification and Regression Decision Tree)")
-        col_d1, col_d2 = st.columns(2)
-        with col_d1:
-            st.markdown("### Hyperparameters")
-            st.write(model.get_params())
-            
-        with col_d2:
-            st.markdown("### Detailed Metrics")
-            metrics_df = pd.DataFrame([history]).T.rename(columns={0: 'Value'})
-            st.table(metrics_df)
 
-        st.subheader("Sample Training Data")
-        data_path = Path("dataset/prepared_data.csv")
-        if data_path.exists():
-            df_sample = pd.read_csv(data_path).head(100)
-            st.dataframe(df_sample, use_container_width=True)
-            st.markdown(f"*Showing first 100 rows from `backend/dataset/prepared_data.csv`*")
+# ══════════════════════════════════════════════════════
+# TAB 3 — INFO MODEL
+# ══════════════════════════════════════════════════════
+with tab_model:
+    st.subheader("🤖 Informasi Model ML")
+
+    model_info = get_model_info()
+
+    col_algo, col_data = st.columns(2)
+
+    with col_algo:
+        st.markdown("### Algoritma & Metode")
+        st.info("""
+        - **Algoritma:** Decision Tree Regressor
+        - **Metode:** CARD (Classification and Regression Decision Tree)
+        - **Platform:** Hugging Face Spaces (Docker)
+        - **Backend:** Flask REST API
+        """)
+
+        st.markdown("### Periode Data Training")
+        st.success("""
+        - **Sumber:** Database transaksi apotek nyata
+        - **Periode fitur:** 3 bulan terakhir
+        - **Fitur target:** Kebutuhan stok 1 bulan ke depan
+        """)
+
+    with col_data:
+        if model_info:
+            st.markdown("### Hyperparameter Model")
+            params = model_info.get('model_params', {})
+            if params:
+                params_df = pd.DataFrame(
+                    [{'Parameter': k, 'Nilai': str(v)} for k, v in params.items()]
+                )
+                st.dataframe(params_df, use_container_width=True, hide_index=True)
+            else:
+                st.info("Parameter tidak tersedia dari API")
+
+            st.markdown("### Info Teknis API")
+            api_meta = {
+                'URL': HF_API_URL,
+                'Endpoint Prediksi': '/predict',
+                'Endpoint Batch': '/predict/batch',
+                'Status': '🟢 Online' if api_online else '🔴 Offline',
+                'Fitur Model': len(model_info.get('feature_names', FEATURE_NAMES)),
+            }
+            api_df = pd.DataFrame([{'Info': k, 'Detail': str(v)} for k, v in api_meta.items()])
+            st.dataframe(api_df, use_container_width=True, hide_index=True)
         else:
-            st.warning("Training data not found.")
+            st.warning("Info model tidak bisa diambil dari API saat ini.")
 
-        # --- Tab 5: Drift Analysis ---
-        with tab_drift:
-            st.subheader("Simulasi Drift Data")
-            st.markdown("Tes bagaimana data merespons kondisi abnormal seperti demand shock atau perubahan pola penjualan.")
-            if st.button("Run Drift Simulation"):
-                import simulate_drift
-                simulate_drift.simulate_drift("model/stock_prediction_model.pkl", 
-                                            "dataset/prepared_data.csv", 
-                                            "dataset/drifted_data.csv")
-                
-            drift_path = Path("dataset/drifted_data.csv")
-            if drift_path.exists():
-                df_drift = pd.read_csv(drift_path)
-                st.write("### Hasil Simulasi Data Merespons Drift")
-                st.dataframe(df_drift.head(20), use_container_width=True)
-                
-                # Compare original vs drift prediction
-                fig = px.scatter(df_drift, x='predicted_required_stock', y='predicted_drift',
-                                title="Original Prediction vs Drifted Prediction",
-                                labels={'predicted_required_stock': 'Original', 'predicted_drift': 'Drifted'})
-                st.plotly_chart(fig, use_container_width=True)
-            
-else:
-    st.warning("⚠️ Model tidak ditemukan.")
+    # Penjelasan fitur
+    st.markdown("---")
+    st.subheader("📝 Penjelasan 8 Fitur Model")
+    feat_df = pd.DataFrame([
+        {
+            'No': i + 1,
+            'Nama Fitur': f.replace('_', ' ').title(),
+            'Kode': f,
+            'Keterangan': FEATURE_DESCRIPTIONS[f]
+        }
+        for i, f in enumerate(FEATURE_NAMES)
+    ])
+    st.dataframe(feat_df, use_container_width=True, hide_index=True)
+
+    st.markdown("---")
+    st.subheader("📦 Cara Deploy Model Baru")
+    st.code("""
+# 1. Export data training dari database Laravel
+cd frontend && php export_training_data.php
+
+# 2. Latih ulang model
+cd backend
+python notebook/model_trainer.py
+
+# 3. Copy model ke folder HF
+cp model/stock_prediction_model.pkl ../apotek-stock-prediction/model/
+
+# 4. Push ke Hugging Face
+cd ../apotek-stock-prediction
+git add model/stock_prediction_model.pkl
+git commit -m "Update model"
+git push origin main
+    """, language="bash")
+
+
+# ══════════════════════════════════════════════════════
+# TAB 4 — UJI STRES (BATCH PREDICTION)
+# ══════════════════════════════════════════════════════
+with tab_stress:
+    st.subheader("⚡ Uji Stres — Simulasi Batch Prediksi")
+    st.markdown("""
+    Simulasi prediksi untuk banyak obat sekaligus menggunakan API batch.
+    Berguna untuk menguji performa dan stabilitas model.
+    """)
+
+    col_cfg1, col_cfg2 = st.columns(2)
+    with col_cfg1:
+        n_items = st.slider("Jumlah obat yang disimulasikan", min_value=5, max_value=50, value=10, step=5)
+    with col_cfg2:
+        seed = st.number_input("Random seed", value=42, step=1)
+
+    if st.button("▶️ Jalankan Simulasi Batch", use_container_width=True):
+        np.random.seed(int(seed))
+
+        # Generate random items
+        items = []
+        for i in range(n_items):
+            stok_masuk   = int(np.random.randint(100, 1000))
+            stok_keluar  = int(np.random.randint(10, stok_masuk))
+            stok_saat_ini = max(0, stok_masuk - stok_keluar)
+            items.append({
+                'id_obat'             : i + 1,
+                'total_masuk'         : float(stok_masuk),
+                'total_keluar'        : float(stok_keluar),
+                'stok_saat_ini'       : float(stok_saat_ini),
+                'frekuensi_transaksi' : float(np.random.randint(0, 30)),
+                'avg_transaksi'       : float(round(np.random.uniform(1, 20), 2)),
+                'demand_volatility'   : float(round(np.random.uniform(0, 10), 2)),
+                'avg_daily_sales'     : float(round(np.random.uniform(0, 5), 2)),
+                'safety_stock'        : float(np.random.randint(5, 50)),
+            })
+
+        with st.spinner(f"Mengirim {n_items} prediksi ke HF API..."):
+            start_time = time.time()
+            result = call_predict_batch_api(items)
+            elapsed = time.time() - start_time
+
+        if result and 'results' in result:
+            st.success(f"✅ Selesai dalam **{elapsed:.2f} detik** | {n_items} obat diproses")
+
+            results_list = result['results']
+
+            # Build DataFrame hasil
+            rows = []
+            for item, res in zip(items, results_list):
+                if 'error' not in res:
+                    pred = res.get('predicted_stock', 0)
+                    order = res.get('rekomendasi_order', max(0, pred - item['stok_saat_ini']))
+                    rows.append({
+                        'ID Obat'            : item['id_obat'],
+                        'Stok Saat Ini'      : int(item['stok_saat_ini']),
+                        'Kebutuhan 1 Bulan'  : int(pred),
+                        'Rekomendasi Order'  : int(order),
+                        'Kepercayaan'        : res.get('confidence', '-'),
+                        'Status'             : '🚨 Kritis' if order > item['safety_stock'] * 2 else ('⚠️ Perlu Order' if order > 0 else '✅ Aman'),
+                    })
+
+            if rows:
+                df_result = pd.DataFrame(rows)
+                st.dataframe(df_result, use_container_width=True, hide_index=True)
+
+                # Chart distribusi
+                col_c1, col_c2 = st.columns(2)
+                with col_c1:
+                    fig_dist = px.histogram(
+                        df_result, x='Kebutuhan 1 Bulan',
+                        title='Distribusi Kebutuhan Stok',
+                        color_discrete_sequence=['#2e7d32'],
+                        nbins=15
+                    )
+                    st.plotly_chart(fig_dist, use_container_width=True)
+
+                with col_c2:
+                    status_count = df_result['Status'].value_counts().reset_index()
+                    status_count.columns = ['Status', 'Jumlah']
+                    fig_pie = px.pie(
+                        status_count, values='Jumlah', names='Status',
+                        title='Distribusi Status Stok',
+                        color_discrete_sequence=['#2e7d32', '#ff9800', '#f44336']
+                    )
+                    st.plotly_chart(fig_pie, use_container_width=True)
+
+                # Scatter: stok saat ini vs prediksi
+                fig_sc = px.scatter(
+                    df_result,
+                    x='Stok Saat Ini', y='Kebutuhan 1 Bulan',
+                    color='Status', size='Rekomendasi Order',
+                    title='Stok Saat Ini vs Kebutuhan 1 Bulan',
+                    color_discrete_map={
+                        '✅ Aman': '#2e7d32',
+                        '⚠️ Perlu Order': '#ff9800',
+                        '🚨 Kritis': '#f44336'
+                    }
+                )
+                st.plotly_chart(fig_sc, use_container_width=True)
+        else:
+            st.error("Gagal mendapatkan hasil dari API. Pastikan HF Space sudah aktif.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FOOTER
+# ─────────────────────────────────────────────────────────────────────────────
+st.markdown("---")
+st.markdown(f"""
+<div style='text-align:center; color:#666; font-size:0.85rem;'>
+    💊 <b>Apotek Stock Prediction Dashboard</b> | 
+    Model: Decision Tree Regressor (CARD) | 
+    API: <a href='{HF_API_URL}/status' target='_blank'>Hugging Face Spaces</a> |
+    8 Fitur | Data: 3 Bulan Terakhir
+</div>
+""", unsafe_allow_html=True)

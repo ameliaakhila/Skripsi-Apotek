@@ -12,9 +12,16 @@ use Illuminate\Support\Facades\Log;
  */
 class MLPredictionService
 {
-    private $api_url = 'http://localhost:5000';
-    private $api_timeout = 2; // Kurangi timeout agar fallback lebih cepat
-    private $is_available = null;
+    private string $api_url;
+    private int $api_timeout;
+    private ?bool $is_available = null;
+
+    public function __construct()
+    {
+        // Ambil dari .env → ML_API_URL dan ML_API_TIMEOUT
+        $this->api_url     = rtrim(env('ML_API_URL', 'http://localhost:5000'), '/');
+        $this->api_timeout = (int) env('ML_API_TIMEOUT', 30);
+    }
 
     /**
      * Check if ML API is available (with static cache per request)
@@ -26,9 +33,9 @@ class MLPredictionService
         }
 
         try {
-            // Gunakan timeout yang sangat singkat untuk cek status
-            $response = Http::timeout(1)->get("{$this->api_url}/status");
-            $this->is_available = $response->successful();
+            // HF Spaces bisa ada cold start, gunakan timeout yang cukup
+            $response = Http::timeout(10)->get("{$this->api_url}/status");
+            $this->is_available = $response->successful() && $response->json('status') === 'healthy';
             return $this->is_available;
         } catch (\Exception $e) {
             $this->is_available = false;
@@ -39,28 +46,40 @@ class MLPredictionService
     /**
      * Get prediction for a single drug
      *
-     * @param array $features 12 features for prediction
-     * @return array|null
+     * @param array $features Array fitur dari StockFeatureService
+     * @return array|null  Array berisi predicted_stock, confidence, rekomendasi_order
      */
     public function predict(array $features): ?array
     {
         try {
-            // Validate required features
+            // 8 fitur inti yang digunakan model Decision Tree Regressor
+            // Urutan harus sama dengan feature_names saat model dilatih
             $required_features = [
-                'total_masuk', 'total_keluar', 'stok_saat_ini', 'frekuensi_transaksi',
-                'avg_transaksi', 'kedaluwarsa_risk', 'accuracy_deviation', 'safety_stock_ratio',
-                'demand_volatility', 'trend_indicator', 'safety_stock', 'avg_daily_sales'
+                'total_masuk',
+                'total_keluar',
+                'stok_saat_ini',
+                'frekuensi_transaksi',
+                'avg_transaksi',
+                'demand_volatility',
+                'avg_daily_sales',
+                'safety_stock',
             ];
 
+            // Bangun payload hanya dengan fitur yang diperlukan
+            $payload = [];
             foreach ($required_features as $feature) {
-                if (!isset($features[$feature])) {
-                    Log::error("Missing feature: {$feature}");
-                    return null;
+                if (!array_key_exists($feature, $features)) {
+                    Log::warning("Feature tidak tersedia: {$feature} — menggunakan 0");
+                    $payload[$feature] = 0;
+                } else {
+                    $payload[$feature] = $features[$feature];
                 }
             }
+            // Sertakan stok_saat_ini untuk kalkulasi rekomendasi_order di Flask
+            $payload['stok_saat_ini'] = $features['stok_saat_ini'] ?? 0;
 
             $response = Http::timeout($this->api_timeout)
-                ->post("{$this->api_url}/predict", $features);
+                ->post("{$this->api_url}/predict", $payload);
 
             if (!$response->successful()) {
                 Log::error("API prediction failed: {$response->status()}");
@@ -75,17 +94,36 @@ class MLPredictionService
     }
 
     /**
-     * Get batch predictions for multiple drugs
+     * Get batch predictions untuk banyak obat sekaligus
+     * Hanya mengirim 8 fitur inti + id_obat + stok_saat_ini ke API
      *
-     * @param array $predictions_list Array of feature sets
+     * @param array $predictions_list Array of feature sets dari StockFeatureService
      * @return array|null
      */
     public function predictBatch(array $predictions_list): ?array
     {
+        // 8 fitur yang dikirim ke model
+        $required_features = [
+            'total_masuk', 'total_keluar', 'stok_saat_ini',
+            'frekuensi_transaksi', 'avg_transaksi',
+            'demand_volatility', 'avg_daily_sales', 'safety_stock',
+        ];
+
         try {
+            // Filter setiap item agar hanya mengandung 8 fitur + id_obat
+            $filtered = array_map(function ($item) use ($required_features) {
+                $payload = ['id_obat' => $item['id_obat'] ?? null];
+                foreach ($required_features as $f) {
+                    $payload[$f] = $item[$f] ?? 0;
+                }
+                // Sertakan stok_saat_ini untuk kalkulasi rekomendasi_order di Flask
+                $payload['stok_saat_ini'] = $item['stok_saat_ini'] ?? 0;
+                return $payload;
+            }, $predictions_list);
+
             $response = Http::timeout($this->api_timeout * 2)
                 ->post("{$this->api_url}/predict/batch", [
-                    'predictions' => $predictions_list
+                    'predictions' => $filtered
                 ]);
 
             if (!$response->successful()) {

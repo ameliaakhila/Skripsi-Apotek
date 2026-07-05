@@ -46,17 +46,33 @@ class StockPredictionModel:
 
     def load_data(self, csv_path):
         """Load prepared data from CSV"""
-        print("📂 Loading data...")
+        print("Loading data...")
         df = pd.read_csv(csv_path)
 
+        # Kolom fitur numerik yang digunakan model (8 fitur)
+        # Kolom id_obat dan nama_obat di-drop agar tidak jadi fitur
+        feature_cols = [
+            'total_masuk', 'total_keluar', 'stok_saat_ini',
+            'frekuensi_transaksi', 'avg_transaksi',
+            'demand_volatility', 'avg_daily_sales', 'safety_stock'
+        ]
+        target_col = 'predicted_required_stock'
+
+        # Validasi kolom ada di CSV
+        available_features = [c for c in feature_cols if c in df.columns]
+        missing = [c for c in feature_cols if c not in df.columns]
+        if missing:
+            print(f"[WARNING] Kolom tidak ditemukan di CSV: {missing}")
+
         # Separate features and target
-        self.X = df.drop('predicted_required_stock', axis=1)
-        self.y = df['predicted_required_stock']
+        self.X = df[available_features].copy()
+        self.y = df[target_col].copy()
         self.feature_names = self.X.columns.tolist()
 
-        print(f"✅ Data loaded:")
-        print(f"   Features shape: {self.X.shape}")
-        print(f"   Target shape: {self.y.shape}")
+        print(f"Data loaded:")
+        print(f"   Rows: {len(df)}, Features: {len(self.feature_names)}")
+        print(f"   Features: {self.feature_names}")
+        print(f"   Target: {target_col}")
 
         return self.X, self.y
 
@@ -100,32 +116,35 @@ class StockPredictionModel:
 
         return correlations
 
-    def feature_selection(self, min_correlation=0.05):
-        """Select features with meaningful correlation to target and remove problematic ones"""
-        print(f"\n🔍 Feature Selection (min correlation: {min_correlation})")
+    def feature_selection(self, min_correlation=0.0):
+        """
+        Select features for training.
+
+        CATATAN PENTING: Jangan hapus zero-variance features!
+        Meskipun di data training banyak nilai 0 (karena obat belum ada transaksi),
+        fitur-fitur seperti frekuensi_transaksi dan avg_daily_sales TETAP PENTING
+        saat production dengan data transaksi nyata.
+
+        Model harus dilatih dengan SEMUA 8 fitur agar bisa menerima input lengkap
+        dari Laravel saat production.
+        """
+        print(f"\n🔍 Feature Selection (mode: keep all 8 features for production)")
         print("=" * 60)
 
-        # Problematic features that cause spurious correlations
-        drop_features = ['safety_stock_ratio']
-        
-        existing_drop = [f for f in drop_features if f in self.X.columns]
-        if existing_drop:
-            print(f"🚫 Dropping problematic features: {existing_drop}")
-            self.X = self.X.drop(columns=existing_drop)
-            self.feature_names = self.X.columns.tolist()
-
+        # Analisis korelasi untuk informasi saja
         correlations = self.analyze_correlations()
 
-        # Select features with meaningful correlation
-        selected_features = correlations[correlations.abs() >= min_correlation].index.tolist()
+        # TIDAK menghapus zero-variance features
+        # Alasan: fitur seperti frekuensi_transaksi, avg_daily_sales bernilai 0
+        # di training karena data kurang, tapi AKAN berisi nilai nyata di production.
+        # Menghapusnya akan membuat model tidak bisa menerima data production.
+        zero_variance = [col for col in self.X.columns if self.X[col].std() == 0]
+        if zero_variance:
+            print(f"\nℹ️  Zero-variance features (TIDAK dihapus, tetap digunakan): {zero_variance}")
+            print(f"   Alasan: Fitur ini akan berisi nilai nyata saat production")
+            print(f"   dengan lebih banyak data transaksi obat keluar.")
 
-        if len(selected_features) < len(self.feature_names):
-            print(f"\n✅ Selected {len(selected_features)} features (removed {len(self.feature_names) - len(selected_features)})")
-            self.X = self.X[selected_features]
-            self.feature_names = selected_features
-        else:
-            print(f"\n✅ Keeping all {len(selected_features)} features")
-
+        print(f"\n✅ Using {len(self.feature_names)} features: {self.feature_names}")
         return self.X
 
     def split_data(self, test_size=0.2, random_state=42):
@@ -300,12 +319,14 @@ class StockPredictionModel:
         # Ensure directory exists
         Path(model_path).parent.mkdir(parents=True, exist_ok=True)
 
+        import sklearn as _sklearn
         # Save model
         model_dict = {
             'model': self.model,
             'feature_names': self.feature_names,
             'training_history': self.training_history,
-            'trained_date': datetime.now().isoformat()
+            'trained_date': datetime.now().isoformat(),
+            'sklearn_version': _sklearn.__version__,  # PENTING untuk debug mismatch versi
         }
 
         with open(model_path, 'wb') as f:
@@ -362,6 +383,6 @@ class StockPredictionModel:
 if __name__ == "__main__":
     trainer = StockPredictionModel()
     model = trainer.run_training_pipeline(
-        data_path="dataset/prepared_data.csv",
+        data_path="dataset/training_data_from_db.csv",  # Data nyata dari database
         model_path="model/stock_prediction_model.pkl"
     )
