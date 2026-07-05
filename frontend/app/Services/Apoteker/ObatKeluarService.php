@@ -29,31 +29,30 @@ class ObatKeluarService
             ->orderBy('created_at', 'desc')
             ->simplePaginate(25);
 
-        $obatList = Cache::remember('obat_keluar_list_available', now()->addHours(2), function () {
-            return ObatMasuk::with(['Obat:id_obat,nama_obat'])
-                ->leftJoin('tb_stok_batch', function ($join) {
-                    $join->on('tb_obat_masuk.id_obat', '=', 'tb_stok_batch.id_obat')
-                        ->on('tb_obat_masuk.kode_batch', '=', 'tb_stok_batch.kode_batch');
-                })
+        // Get all batches with stock > 0 for all branches
+        $obatList = Cache::remember('obat_keluar_list_all_batches', now()->addHours(2), function () {
+            return StokBatch::with(['Obat:id_obat,nama_obat', 'DataCabang:id_cabang,nama_cabang'])
                 ->select(
-                    'tb_obat_masuk.id_obat_masuk',
-                    'tb_obat_masuk.id_obat',
-                    'tb_obat_masuk.kode_batch',
-                    'tb_obat_masuk.stok_masuk',
-                    'tb_obat_masuk.tanggal_kedaluwarsa',
-                    'tb_stok_batch.stok_sisa'
+                    'id_stok_batch',
+                    'id_obat',
+                    'id_cabang',
+                    'kode_batch',
+                    'stok_sisa',
+                    'tanggal_kedaluwarsa'
                 )
-                ->whereHas('Obat')
-                ->where('tb_stok_batch.stok_sisa', '>', 0)
-            ->orderBy('tb_obat_masuk.tanggal_kedaluwarsa', 'asc')
-                ->distinct()
+                ->where('stok_sisa', '>', 0)
+                ->orderBy('tanggal_kedaluwarsa', 'asc')
                 ->get();
         });
 
-
         $kodeBatch = $this->cacheService->getKodeBatchAvailable();
 
-        $cabang = $this->cacheService->getCabangList();
+        // Get list of branches that have stock
+        $cabang = Cache::remember('cabang_list_with_stock', now()->addHours(2), function () {
+            return DataCabang::whereHas('stokBatches', function($query) {
+                $query->where('stok_sisa', '>', 0);
+            })->select('id_cabang', 'nama_cabang')->get();
+        });
 
         return compact('data', 'obatList', 'kodeBatch', 'cabang');
     }
@@ -61,17 +60,22 @@ class ObatKeluarService
     public function simpan(array $validated): array
     {
         return DB::transaction(function () use ($validated): array {
-            $obatMasuk = ObatMasuk::with('Obat')->findOrFail($validated['id_obat_masuk']);
+            $stokBatch = StokBatch::with('Obat')->findOrFail($validated['id_stok_batch']);
+            
+            // Validasi tambahan: pastikan batch ada di cabang yang dipilih
+            if ($stokBatch->id_cabang != $validated['id_cabang']) {
+                throw new \RuntimeException("Batch obat tidak ditemukan di cabang yang dipilih.");
+            }
 
-            $stokBatch = StokBatch::where('kode_batch', $obatMasuk->kode_batch)
-                ->where('id_cabang', $validated['id_cabang'])
+            $obatMasuk = ObatMasuk::where('id_obat', $stokBatch->id_obat)
+                ->where('kode_batch', $stokBatch->kode_batch)
                 ->firstOrFail();
 
             if ($validated['stok_keluar'] > $stokBatch->stok_sisa) {
-                throw new \RuntimeException("Stok keluar tidak boleh melebihi stok sisa untuk cabang ini ({$stokBatch->stok_sisa} unit)");
+                throw new \RuntimeException("Stok keluar melebihi stok tersedia ({$stokBatch->stok_sisa} unit)");
             }
 
-            $validated['id_stok_batch'] = $stokBatch->id_stok_batch;
+            $validated['id_obat_masuk'] = $obatMasuk->id_obat_masuk;
 
             ObatKeluar::create($validated);
 
@@ -81,17 +85,15 @@ class ObatKeluarService
 
             ActivityLog::create([
                 'user_id' => Auth::id(),
-                'action' => 'Menambah Stok Keluar: ' . $obatMasuk->Obat->nama_obat
+                'action' => 'Menambah Stok Keluar: ' . ($stokBatch->Obat->nama_obat ?? 'Obat')
             ]);
 
             $this->sinkronkanStokObatMasuk($obatMasuk->id_obat_masuk);
             $this->invalidateCache();
 
-            $namaCabang = DataCabang::where('id_cabang', $validated['id_cabang'])->value('nama_cabang') ?? 'cabang';
-
             return [
-                'nama_obat' => $obatMasuk->Obat->nama_obat ?? 'obat',
-                'nama_cabang' => $namaCabang,
+                'nama_obat' => $stokBatch->Obat->nama_obat ?? 'obat',
+                'nama_cabang' => DataCabang::where('id_cabang', $validated['id_cabang'])->value('nama_cabang') ?? 'cabang',
             ];
         });
     }
@@ -99,30 +101,51 @@ class ObatKeluarService
     public function ubah(int $idObatKeluar, array $validated): void
     {
         DB::transaction(function () use ($idObatKeluar, $validated): void {
-            $obatKeluar = ObatKeluar::with('ObatMasuk.Obat')->findOrFail($idObatKeluar);
-            $stokBatch = $obatKeluar->StokBatch;
-
-            $selisihStok = $validated['stok_keluar'] - $obatKeluar->stok_keluar;
-
-            if ($selisihStok > 0 && $selisihStok > $stokBatch->stok_sisa) {
-                throw new \RuntimeException("Perubahan stok keluar untuk cabang ini melebihi batas. Stok sisa cabang: {$stokBatch->stok_sisa} unit");
+            $obatKeluar = ObatKeluar::with(['ObatMasuk.Obat', 'StokBatch'])->findOrFail($idObatKeluar);
+            $oldStokBatch = $obatKeluar->StokBatch;
+            $newStokBatch = StokBatch::findOrFail($validated['id_stok_batch']);
+            
+            // Validasi cabang
+            if ($newStokBatch->id_cabang != $validated['id_cabang']) {
+                throw new \RuntimeException("Batch obat tidak sesuai dengan cabang yang dipilih.");
             }
 
+            if ($oldStokBatch->id_stok_batch !== $newStokBatch->id_stok_batch) {
+                // Revert stok lama
+                $oldStokBatch->stok_keluar -= $obatKeluar->stok_keluar;
+                $oldStokBatch->stok_sisa = $oldStokBatch->stok_masuk - $oldStokBatch->stok_keluar;
+                $oldStokBatch->save();
+                
+                // Update stok baru
+                if ($validated['stok_keluar'] > $newStokBatch->stok_sisa) {
+                    throw new \RuntimeException("Stok tidak cukup di cabang terpilih.");
+                }
+                $newStokBatch->stok_keluar += $validated['stok_keluar'];
+                $newStokBatch->stok_sisa = $newStokBatch->stok_masuk - $newStokBatch->stok_keluar;
+                $newStokBatch->save();
+            } else {
+                $selisihStok = $validated['stok_keluar'] - $obatKeluar->stok_keluar;
+                if ($selisihStok > 0 && $selisihStok > $oldStokBatch->stok_sisa) {
+                    throw new \RuntimeException("Stok tidak cukup.");
+                }
+                $oldStokBatch->stok_keluar += $selisihStok;
+                $oldStokBatch->stok_sisa = $oldStokBatch->stok_masuk - $oldStokBatch->stok_keluar;
+                $oldStokBatch->save();
+            }
+
+            $obatMasuk = ObatMasuk::where('id_obat', $newStokBatch->id_obat)
+                ->where('kode_batch', $newStokBatch->kode_batch)
+                ->firstOrFail();
+
             $obatKeluar->update([
-                'stok_keluar' => $validated['stok_keluar'],
+                'id_stok_batch' => $newStokBatch->id_stok_batch,
+                'id_obat_masuk' => $obatMasuk->id_obat_masuk,
                 'id_cabang' => $validated['id_cabang'],
+                'stok_keluar' => $validated['stok_keluar'],
+                'tanggal_keluar' => $validated['tanggal_keluar'] ?? $obatKeluar->tanggal_keluar,
             ]);
-
-            $stokBatch->stok_keluar += $selisihStok;
-            $stokBatch->stok_sisa = $stokBatch->stok_masuk - $stokBatch->stok_keluar;
-            $stokBatch->save();
             
-            ActivityLog::create([
-                'user_id' => Auth::id(),
-                'action' => 'Mengubah Stok Keluar: ' . $obatKeluar->ObatMasuk->Obat->nama_obat
-            ]);
-
-            $this->sinkronkanStokObatMasuk($obatKeluar->id_obat_masuk);
+            $this->sinkronkanStokObatMasuk($obatMasuk->id_obat_masuk);
             $this->invalidateCache();
         });
     }
@@ -130,21 +153,18 @@ class ObatKeluarService
     public function hapus(int $idObatKeluar): void
     {
         DB::transaction(function () use ($idObatKeluar): void {
-            $obatKeluar = ObatKeluar::with('ObatMasuk.Obat')->findOrFail($idObatKeluar);
+            $obatKeluar = ObatKeluar::findOrFail($idObatKeluar);
             $stokBatch = $obatKeluar->StokBatch;
             $obatMasuk = $obatKeluar->ObatMasuk;
             $stokKeluar = $obatKeluar->stok_keluar;
 
-            ActivityLog::create([
-                'user_id' => Auth::id(),
-                'action' => 'Menghapus Stok Keluar: ' . $obatKeluar->ObatMasuk->Obat->nama_obat
-            ]);
-
             $obatKeluar->delete();
 
-            $stokBatch->stok_keluar -= $stokKeluar;
-            $stokBatch->stok_sisa = $stokBatch->stok_masuk - $stokBatch->stok_keluar;
-            $stokBatch->save();
+            if ($stokBatch) {
+                $stokBatch->stok_keluar -= $stokKeluar;
+                $stokBatch->stok_sisa = $stokBatch->stok_masuk - $stokBatch->stok_keluar;
+                $stokBatch->save();
+            }
 
             if ($obatMasuk) {
                 $this->sinkronkanStokObatMasuk($obatMasuk->id_obat_masuk);
@@ -157,18 +177,13 @@ class ObatKeluarService
     private function sinkronkanStokObatMasuk(int $idObatMasuk): void
     {
         $obatMasuk = ObatMasuk::find($idObatMasuk);
-
-        if (!$obatMasuk) {
-            return;
+        if ($obatMasuk) {
+            $totalKeluar = (int) ObatKeluar::where('id_obat_masuk', $idObatMasuk)->sum('stok_keluar');
+            $obatMasuk->update([
+                'stok_keluar' => $totalKeluar,
+                'stok_sisa' => max(0, $obatMasuk->stok_masuk - $totalKeluar),
+            ]);
         }
-
-        $totalKeluar = (int) ObatKeluar::where('id_obat_masuk', $idObatMasuk)->sum('stok_keluar');
-        $stokSisa = max(0, (int) $obatMasuk->stok_masuk - $totalKeluar);
-
-        $obatMasuk->update([
-            'stok_keluar' => $totalKeluar,
-            'stok_sisa' => $stokSisa,
-        ]);
     }
 
     private function invalidateCache(): void

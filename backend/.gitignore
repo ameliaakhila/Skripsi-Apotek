@@ -47,7 +47,7 @@ dataset/training_data_*.csv
 dataset/prepared_data.csv
 !dataset/.gitkeep
 
-# Model files (trained models)
+# # Model files (trained models)
 model/*.pkl
 !model/.gitkeep
 

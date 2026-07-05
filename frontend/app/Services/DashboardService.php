@@ -24,6 +24,7 @@ class DashboardService
                 'totalDataMaster' => $this->countMasterData(),
                 'totalUsers' => User::count(),
                 'monthlySalesChart' => $this->getMonthlySalesData(),
+                'expiringMedicines' => $this->getExpiredMedicinesList(),
                 'statusCards' => [
                     'obat' => Obat::count(),
                     'cabang' => DataCabang::count(),
@@ -174,6 +175,19 @@ class DashboardService
     }
 
     /**
+     * Get Count of Medicines expiring within the next 30 days
+     *
+     * @return int
+     */
+    private function getUpcomingExpiredCount(): int
+    {
+        return StokBatch::where('tanggal_kedaluwarsa', '>', Carbon::today())
+            ->where('tanggal_kedaluwarsa', '<=', Carbon::today()->addDays(30))
+            ->where('stok_sisa', '>', 0)
+            ->count();
+    }
+
+    /**
      * Get Count of Expired Medicines
      *
      * @return int
@@ -307,18 +321,18 @@ class DashboardService
     }
 
     /**
-     * Get Upcoming Expired Medicines (7-30 days)
-     * Useful for Apoteker early warning
+     * Get Expired/Soon-to-Expire Medicines List
      *
-     * @return int
+     * @return \Illuminate\Support\Collection
      */
-    public function getUpcomingExpiredCount(): int
+    public function getExpiredMedicinesList(): \Illuminate\Support\Collection
     {
-        $today = Carbon::today();
-        $thirtyDaysLater = $today->copy()->addDays(30);
-
-        return StokBatch::whereBetween('tanggal_kedaluwarsa', [$today, $thirtyDaysLater])
+        return StokBatch::with(['Obat', 'DataCabang'])
+            ->where('tanggal_kedaluwarsa', '<=', Carbon::now()->addDays(30))
             ->where('stok_sisa', '>', 0)
-            ->count();
+            ->orderBy('tanggal_kedaluwarsa', 'asc')
+            ->limit(5)
+            ->get();
     }
+
 }

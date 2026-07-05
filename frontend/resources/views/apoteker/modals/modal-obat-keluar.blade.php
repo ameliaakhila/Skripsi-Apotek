@@ -10,47 +10,60 @@
                 <div class="modal-body modal-body-custom">
                     <form action="{{ url('/obat-keluar-tambah') }}" method="POST">
                         @csrf
-                        <table class="table table-sm table-borderless">
-                            {{-- Tanggal Keluar --}}
-                            <tr>
-                                <td><strong>Tanggal Keluar</strong></td>
-                                <td>
-                                    <input type="date" name="tanggal_keluar" id="tanggal_keluar" value="{{ now()->format('Y-m-d') }}"
-                                        class="form-control form-control-sm" readonly>
-                                </td>
-                            </tr>
-
-                            {{-- Nama Obat --}}
-                            <tr>
-                                <td><strong class="required-field">Nama Obat</strong></td>
-                                <td>
-                                    <select name="id_obat_masuk" id="single-select-supplier" class="form-control form-control-sm" required>
-                                        <option value="">Pilih Obat</option>
-                                        @foreach($obatList as $item)
-                                            <option value="{{ $item->id_obat_masuk }}">
-                                                {{ $item->Obat->nama_obat }} ({{ $item->kode_batch }}) | Exp:
-                                                {{ \Carbon\Carbon::parse($item->tanggal_kedaluwarsa)->format('d M Y') }} | Stok:
-                                                {{ $item->stok_sisa }}
-                                            </option>
-                                        @endforeach
+                            <table class="table table-sm table-borderless">
+                                {{-- Pilih Cabang --}}
+                                <tr>
+                                    <td><strong class="required-field">Pilih Cabang</strong></td>
+                                    <td>
+                                        <select name="id_cabang" id="single-select-cabang-tambah" class="form-control form-control-sm" required>
+                                            <option value="">Pilih Cabang Asal Stok</option>
+                                            @foreach($cabang as $c)
+                                                <option value="{{ $c->id_cabang }}">{{ $c->nama_cabang }}</option>
+                                            @endforeach
                                         </select>
-                                        {{-- Hidden field untuk id_obat_masuk --}}
-                                        <input type="hidden" name="id_stok_batch" id="id_stok_batch">
-                                </td>
-                            </tr>
-                            {{-- Cabang Tujuan --}}
-                            <tr>
-                                <td><strong class="required-field">Cabang Tujuan</strong></td>
-                                <td>
-                                    <select name="id_cabang" id="single-select-cabang" required>
-                                        <option value="">Pilih Cabang</option>
-                                        @foreach($cabang as $c)
-                                            <option value="{{ $c->id_cabang }}">{{ $c->nama_cabang }}</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                            </tr>
-                        </table>
+                                        </td>
+                                        </tr>
+                                {{-- Pilih Stok Obat --}}
+                                <tr>
+                                    <td><strong class="required-field">Pilih Stok Obat</strong></td>
+                                    <td>
+                                        <select name="id_stok_batch" id="single-select-obat-tambah" class="form-control form-control-sm" required disabled>
+                                            <option value="">Pilih Cabang Terlebih Dahulu</option>
+                                            @foreach($obatList as $item)
+                                                <option value="{{ $item->id_stok_batch }}" data-id-cabang="{{ $item->id_cabang }}" data-kode="{{ $item->kode_batch }}"
+                                                    data-obat="{{ $item->Obat->nama_obat ?? '-' }}" data-exp="{{ $item->tanggal_kedaluwarsa }}"
+                                                    data-stok="{{ $item->stok_sisa }}" class="d-none batch-option">
+                                                    {{ $item->Obat->nama_obat ?? '-' }} ({{ $item->kode_batch }}) | Stok:
+                                                    {{ $item->stok_sisa }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    </tr>
+                                    {{-- Stok Tersedia --}}
+                                    <tr>
+                                        <td><strong>Stok Tersedia</strong></td>
+                                        <td>
+                                            <input type="text" data-field="stok_sisa" id="stok-sisa-tambah" class="form-control form-control-sm" readonly
+                                                placeholder="0">
+                                        </td>
+                                    </tr>
+                                    {{-- Tanggal Keluar --}}
+                                    <tr>
+                                        <td><strong>Tanggal Keluar</strong></td>
+                                        <td>
+                                            <input type="date" name="tanggal_keluar" id="tanggal_keluar" value="{{ now()->format('Y-m-d') }}"
+                                                class="form-control form-control-sm" readonly>
+                                        </td>
+                                    </tr>
+                                    {{-- Stok Keluar --}}
+                                    <tr>
+                                    <td><strong class="required-field">Stok Keluar</strong></td>
+                                    <td>
+                                        <input type="number" name="stok_keluar" data-field="stok_keluar" class="form-control form-control-sm" min="1" required>
+                                        </td>
+                                        </tr>
+                                        </table>
                         <div class="modal-footer" style="background-color: #f8f9fa; border-top: 1px solid #e9ecef;">
                             <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal"><i
                                     class="fas fa-times me-2"></i>Batal</button>
@@ -126,43 +139,49 @@
                         @csrf
                         @method('PUT')
                         <table class="table table-sm table-borderless">
-                            {{-- Kode Batch --}}
-                            <tr>
-                                <td><strong>Kode Batch</strong></td>
-                                <td>
-                                    <input type="text" data-field="batch" class="form-control form-control-sm" readonly>
-                                </td>
-                            </tr>
-                            {{-- Nama Obat --}}
-                            <tr>
-                                <td><strong>Nama Obat</strong></td>
-                                <td>
-                                    <select name="id_obat_masuk" id="single-select-supplier" class="form-control form-control-sm" required>
+                            {{-- Pilih Cabang --}}
+                            <table class="table table-sm table-borderless">
+                                {{-- Pilih Cabang --}}
+                                <tr>
+                                    <td><strong>Pilih Cabang</strong></td>
+                                    <td>
+                                        <select name="id_cabang" id="single-select-cabang-edit" data-field="id_cabang" class="form-control form-control-sm"
+                                            required>
+                                            @foreach($cabang as $c)
+                                                <option value="{{ $c->id_cabang }}">{{ $c->nama_cabang }}</option>
+                                            @endforeach
+                                        </select>
+                                        </td>
+                                        </tr>
+                                {{-- Pilih Stok Obat --}}
+                                <tr>
+                                    <td><strong>Pilih Stok Obat</strong></td>
+                                    <td>
+                                        <select name="id_stok_batch" id="single-select-obat-edit" data-field="id_stok_batch"
+                                            class="form-control form-control-sm" required>
                                         @foreach($obatList as $item)
-                                            <option value="{{ $item->id_obat_masuk }}"\>
-                                                 {{ $item->Obat->nama_obat }} ({{ $item->kode_batch }}) | Exp:
-                                                {{ \Carbon\Carbon::parse($item->tanggal_kedaluwarsa)->format('d M Y') }} | Stok:
+                                            <option value="{{ $item->id_stok_batch }}" data-id-cabang="{{ $item->id_cabang }}" data-kode="{{ $item->kode_batch }}"
+                                                data-obat="{{ $item->Obat->nama_obat ?? '-' }}" data-exp="{{ $item->tanggal_kedaluwarsa }}"
+                                                data-stok="{{ $item->stok_sisa }}">
+                                                {{ $item->Obat->nama_obat ?? '-' }} ({{ $item->kode_batch }}) | Stok:
                                                 {{ $item->stok_sisa ?? '-' }}
                                             </option>
                                         @endforeach
                                     </select>
-                                    {{-- Hidden field untuk id_obat_masuk --}}
-                                    <input type="hidden" name="id_stok_batch" id="id_stok_batch">
+                                </td>
+                                </tr>
+                                {{-- Stok Tersedia --}}
+                                <tr>
+                                    <td><strong>Stok Tersedia</strong></td>
+                                    <td>
+                                        <input type="text" data-field="stok_sisa" class="form-control form-control-sm" readonly placeholder="0">
                                 </td>
                             </tr>
                             {{-- Tanggal Keluar --}}
                             <tr>
                                 <td><strong>Tanggal Keluar</strong></td>
                                 <td>
-                                    <input type="date" data-field="tanggalKeluar" class="form-control form-control-sm"
-                                        required>
-                                </td>
-                            </tr>
-                            {{-- Tanggal Kedaluwarsa --}}
-                            <tr>
-                                <td><strong>Tanggal Kedaluwarsa</strong></td>
-                                <td>
-                                    <input type="date" data-field="tanggalKedaluwarsa" class="form-control form-control-sm"
+                                    <input type="date" data-field="tanggal_keluar" class="form-control form-control-sm"
                                         required>
                                 </td>
                             </tr>
@@ -170,7 +189,7 @@
                             <tr>
                                 <td><strong class="required-field">Stok Keluar</strong></td>
                                 <td>
-                                    <input type="number" name="stok_keluar" data-field="stokKeluar"
+                                    <input type="number" name="stok_keluar" data-field="stok_keluar"
                                         class="form-control form-control-sm" min="1" required>
                                 </td>
                             </tr>

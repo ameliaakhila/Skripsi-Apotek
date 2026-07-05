@@ -17,4 +17,9 @@ class DataCabang extends Model
         'tipe',
         'alamat_cabang'
     ];
+
+    public function stokBatches()
+    {
+        return $this->hasMany(StokBatch::class, 'id_cabang', 'id_cabang');
+    }
 }

@@ -38,14 +38,14 @@ class ObatKeluarController extends Controller
     {
         try {
             $validated = $request->validate([
-                'id_obat_masuk' => 'required|exists:tb_obat_masuk,id_obat_masuk',
+                'id_stok_batch' => 'required|exists:tb_stok_batch,id_stok_batch',
                 'id_cabang' => 'required|exists:tb_cabang,id_cabang',
                 'tanggal_keluar' => 'required|date',
                 'stok_keluar' => 'required|integer|min:1',
             ], [
-                'id_obat_masuk.required' => 'Obat harus dipilih',
-                'id_obat_masuk.exists' => 'Obat tidak valid',
-                'id_cabang.required' => 'Cabang harus dipilih',
+                'id_stok_batch.required' => 'Obat dan Batch harus dipilih',
+                'id_stok_batch.exists' => 'Data stok tidak valid',
+                'id_cabang.required' => 'Cabang asal harus dipilih',
                 'id_cabang.exists' => 'Cabang tidak valid',
                 'tanggal_keluar.required' => 'Tanggal keluar harus diisi',
                 'tanggal_keluar.date' => 'Tanggal keluar harus berupa tanggal yang valid',
@@ -56,7 +56,7 @@ class ObatKeluarController extends Controller
             $result = $this->obatKeluarService->simpan($validated);
 
             return redirect('/obat-keluar')->with([
-                'success' => 'Data Obat Keluar ' . $result['nama_obat'] . ' ke ' . $result['nama_cabang'] . ' berhasil ditambahkan',
+                'success' => 'Data Obat Keluar ' . $result['nama_obat'] . ' di ' . $result['nama_cabang'] . ' berhasil ditambahkan',
             ]);
 
         } catch (\Exception $e) {
@@ -89,14 +89,19 @@ class ObatKeluarController extends Controller
     {
         try {
             $validated = $request->validate([
+                'id_stok_batch' => 'required|exists:tb_stok_batch,id_stok_batch',
                 'id_cabang' => 'required|exists:tb_cabang,id_cabang',
                 'stok_keluar' => 'required|integer|min:1',
+                'tanggal_keluar' => 'required|date',
             ], [
-                'id_cabang.required' => 'Cabang harus dipilih',
+                'id_stok_batch.required' => 'Obat dan Batch harus dipilih',
+                'id_stok_batch.exists' => 'Data stok tidak valid',
+                'id_cabang.required' => 'Cabang asal harus dipilih',
                 'id_cabang.exists' => 'Cabang tidak valid',
                 'stok_keluar.required' => 'Stok keluar harus diisi',
                 'stok_keluar.integer' => 'Stok keluar harus berupa angka',
                 'stok_keluar.min' => 'Stok keluar minimal 1',
+                'tanggal_keluar.required' => 'Tanggal keluar harus diisi',
             ]);
 
             $this->obatKeluarService->ubah((int) $id_obat_keluar, $validated);

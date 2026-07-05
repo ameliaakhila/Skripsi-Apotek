@@ -64,29 +64,42 @@
                 </div>
             </div>
 
-            {{-- Recent Activity Log --}}
+            {{-- Expiring Medicines Alert --}}
             <div class="col-lg-4">
-                <div class="card chart-card mb-4">
-                    <div class="card-header border-0 pt-4">
-                        <h4 class="card-title font-weight-bold">Aktivitas Sistem Terbaru</h4>
+                <div class="card chart-card mb-4 border-top border-bottom border-danger">
+                    <div class="card-header border-0 pt-4 pb-0">
+                        <h4 class="card-title font-weight-bold text-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Obat Mendekati Kedaluwarsa
+                        </h4>
                     </div>
-                    <div class="card-body p-0">
+                    <div class="card-body p-0 pt-3">
                         <ul class="list-group list-group-flush">
-                            @forelse($recentLogs ?? [] as $log)
+                            @forelse($expiringMedicines ?? [] as $medicine)
                                 <li class="list-group-item px-4 py-3">
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1 font-weight-bold">{{ $log->user?->username ?? 'System' }}</h6>
-                                        <small class="text-muted">{{ $log->created_at->diffForHumans() }}</small>
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <h6 class="mb-1 font-weight-bold">{{ optional($medicine->Obat)->nama_obat ?? 'Unknown' }}</h6>
+                                        <span
+                                            class="badge {{ ($medicine->tanggal_kedaluwarsa && \Carbon\Carbon::parse($medicine->tanggal_kedaluwarsa)->isPast()) ? 'bg-danger' : 'bg-warning' }} text-white">
+                                            {{ $medicine->tanggal_kedaluwarsa ? \Carbon\Carbon::parse($medicine->tanggal_kedaluwarsa)->format('d M Y') : '-' }}
+                                        </span>
                                     </div>
-                                    <p class="mb-0 text-muted small">{{ $log->action }}</p>
+                                    <p class="mb-0 text-muted small">Batch: {{ $medicine->kode_batch }} | Cabang:
+                                        {{ optional($medicine->DataCabang)->nama_cabang ?? '-' }}
+                                    </p>
                                 </li>
                             @empty
-                                <li class="list-group-item px-4 py-3 text-center text-muted">Tidak ada aktivitas.</li>
+                                <li class="list-group-item px-4 py-4 text-center text-muted">
+                                    <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                                    <p class="mb-0">Tidak ada obat mendekati kedaluwarsa.</p>
+                                </li>
                             @endforelse
                         </ul>
                     </div>
                 </div>
             </div>
+                    </div>
+                    </div>
+                    </div>
         </div>
     </div>
 

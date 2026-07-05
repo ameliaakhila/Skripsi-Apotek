@@ -33,14 +33,21 @@ class StokOpnameSeeder extends Seeder
 
         foreach ($obats as $obat) {
             foreach ($cabangs as $cabang_id) {
+                $stokSistem = rand(50, 500);
+                $stokFisik = rand(40, 510); // Biarkan ada selisih
+                $selisih = $stokFisik - $stokSistem;
+                
+                $ket = 'Sesuai';
+                if ($selisih < 0) $ket = 'Menipis';
+                elseif ($selisih > 0) $ket = 'Lebih';
+
                 $stok_opnames[] = [
-                    // Format kode opname: OP0001, OP0002, dst (6 karakter max)
                     'kode_opname' => 'OP' . str_pad($counter, 4, '0', STR_PAD_LEFT),
                     'tanggal_opname' => now()->subDays(rand(0, 30)),
-                    'stok_sistem' => rand(0, 500),
-                    'stok_fisik' => rand(0, 500),
-                    'selisih' => rand(-50, 50),
-                    'keterangan' => $keterangan[array_rand($keterangan)],
+                    'stok_sistem' => $stokSistem,
+                    'stok_fisik' => $stokFisik,
+                    'selisih' => $selisih,
+                    'keterangan' => $ket,
                     'id_stok_batch' => $stok_batches->random(),
                     'id_user' => $users,
                     'id_obat' => $obat,

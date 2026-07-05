@@ -1,238 +1,196 @@
 <x-app :title="'Dashboard Apoteker - Sistem Apotek Sena Farma'">
     <div class="container-fluid">
-        {{-- Dashboard Header --}}
-        <div class="row mb-4">
-            <div class="col-12 d-flex justify-content-between align-items-center">
-                <div>
-                    <h2 class="font-weight-bold">Selamat Datang, Apoteker! 👋</h2>
-                    <p class="text-muted">Pantau stok obat dan aktivitas transaksi harian.</p>
-                </div>
-                <div class="text-right">
-                    <p class="mb-0 font-weight-bold">{{ now()->translatedFormat('l, d F Y') }}</p>
-                    <span id="live-clock" class="badge badge-primary">00:00:00</span>
-                </div>
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="font-weight-bold text-dark">Dashboard Apoteker</h2>
             </div>
-        </div>
-
-        {{-- Statistics Cards --}}
-        <div class="row">
-            <div class="col-md-6 col-xl-3 mb-4">
-                <div class="card stat-card bg-primary text-white">
-                    <div class="card-body">
-                        <h6 class="text-uppercase mb-2 opacity-8">Total Jenis Obat</h6>
-                        <h2 class="mb-0 font-weight-bold">{{ $statusCards['obat'] ?? 0 }}</h2>
-                        <i class="fas fa-pills"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 col-xl-3 mb-4">
-                <div class="card stat-card bg-success text-white">
-                    <div class="card-body">
-                        <h6 class="text-uppercase mb-2 opacity-8">Transaksi Hari Ini</h6>
-                        <h2 class="mb-0 font-weight-bold">{{ $statusCards['transaksi'] ?? 0 }}</h2>
-                        <i class="fas fa-exchange-alt"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 col-xl-3 mb-4">
-                <div class="card stat-card bg-warning text-white">
-                    <div class="card-body">
-                        <h6 class="text-uppercase mb-2 opacity-8">Stok Rendah</h6>
-                        <h2 class="mb-0 font-weight-bold">{{ $statusCards['stok_rendah'] ?? 0 }}</h2>
-                        <i class="fas fa-layer-group"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 col-xl-3 mb-4">
-                <div class="card stat-card bg-danger text-white">
-                    <div class="card-body">
-                        <h6 class="text-uppercase mb-2 opacity-8">Telah Kedaluwarsa</h6>
-                        <h2 class="mb-0 font-weight-bold">{{ $statusCards['kedaluwarsa'] ?? 0 }}</h2>
-                        <i class="fas fa-calendar-times"></i>
-                    </div>
-                </div>
+            <div class="text-right">
+                <p class="mb-0 font-weight-bold text-dark">{{ now()->translatedFormat('l, d F Y') }}</p>
+                <div id="live-clock" class="text-primary font-weight-bold" style="font-size: 1.1rem;">--:--:--</div>
             </div>
         </div>
 
         <div class="row">
-            {{-- Quick Actions --}}
-            <div class="col-lg-8">
-                <div class="card chart-card mb-4">
-                    <div class="card-header border-0 pt-4">
-                        <h4 class="card-title font-weight-bold">⚡ Akses Cepat Operasional</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-6 col-md-3 mb-3">
-                                <a href="{{ route('obat-masuk.index') }}" class="action-card" style="background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);">
-                                    <i class="fas fa-file-import mb-2" style="font-size: 1.5rem;"></i><br>Obat Masuk
-                                </a>
+            @php
+                $cards = [
+                    ['title' => 'Total Jenis Obat', 'value' => $statusCards['obat'] ?? 0, 'icon' => 'fas fa-pills', 'class' => 'bg-primary'],
+                    ['title' => 'Transaksi Hari Ini', 'value' => $statusCards['transaksi'] ?? 0, 'icon' => 'fas fa-exchange-alt', 'class' => 'bg-success'],
+                    ['title' => 'Stok Rendah', 'value' => $statusCards['stok_rendah'] ?? 0, 'icon' => 'fas fa-layer-group', 'class' => 'bg-warning'],
+                    ['title' => 'Mendekati Expired', 'value' => $statusCards['hampir_kedaluwarsa'] ?? 0, 'icon' => 'fas fa-hourglass-half', 'class' => 'bg-info'],
+                ];
+            @endphp
+            @foreach($cards as $card)
+                <div class="col-lg-3">
+                    <div class="card stat-card {{ $card['class'] }} text-white mb-3">
+                        <div class="card-body d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-uppercase mb-0 small font-weight-bold">{{ $card['title'] }}</h6>
+                                <h3 class="mb-0 font-weight-bolder">{{ $card['value'] }}</h3>
                             </div>
-                            <div class="col-6 col-md-3 mb-3">
-                                <a href="{{ route('obat-keluar.index') }}" class="action-card" style="background: linear-gradient(135deg, #fd7e14 0%, #d96b01 100%);">
-                                    <i class="fas fa-file-export mb-2" style="font-size: 1.5rem;"></i><br>Obat Keluar
-                                </a>
-                            </div>
-                            <div class="col-6 col-md-3 mb-3">
-                                <a href="{{ route('stok-cabang.index') }}" class="action-card" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);">
-                                    <i class="fas fa-boxes mb-2" style="font-size: 1.5rem;"></i><br>Stok Cabang
-                                </a>
-                            </div>
-                            <div class="col-6 col-md-3 mb-3">
-                                <a href="{{ route('obat-kedaluwarsa.index') }}" class="action-card" style="background: linear-gradient(135deg, #dc3545 0%, #a71d2a 100%);">
-                                    <i class="fas fa-history mb-2" style="font-size: 1.5rem;"></i><br>Data Expired
-                                </a>
-                            </div>
+                            <i class="{{ $card['icon'] }} opacity-50" style="font-size: 1.5rem;"></i>
                         </div>
                     </div>
                 </div>
+            @endforeach
+        </div>
 
-                {{-- Main Chart --}}
-                <div class="card chart-card mb-4">
-                    <div class="card-header border-0 pt-4 d-flex justify-content-between align-items-center">
-                        <h4 class="card-title font-weight-bold">📊 Grafik Transaksi Minggu Ini</h4>
+        <div class="row">
+            <div class="col-lg-9">
+                <div class="row">
+                    <div class="col-lg-7 card chart-card mb-4">
+                        <div class="card-header">Grafik Transaksi Minggu Ini</div>
+                        <div class="card-body">
+                            <div class="chart-container" style="height: 250px;">
+                                <canvas id="transactionChart"></canvas>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="chart-container" style="height: 300px;">
-                            <canvas id="transactionChart"></canvas>
+                    <div class="col-lg-5">
+                        <div class="card chart-card mb-4">
+                            <div class="card-header">Status Ketersediaan Stok</div>
+                            <div class="card-body">
+                                <div style="height: 200px;">
+                                    <canvas id="stockDistChart"></canvas>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <div class="col-lg-3">
+                <style>
+                    /* ... existing styles ... */
 
-            {{-- Side Panel --}}
-            <div class="col-lg-4">
-                {{-- Stock Distribution Chart --}}
-                <div class="card chart-card mb-4">
-                    <div class="card-header border-0 pt-4">
-                        <h4 class="card-title font-weight-bold">📦 Status Ketersediaan Stok</h4>
-                    </div>
-                    <div class="card-body">
-                        <div style="height: 200px;">
-                            <canvas id="stockDistChart"></canvas>
-                        </div>
-                    </div>
-                </div>
+                    /* Timeline styling */
+                    .activity-timeline {
+                        position: relative;
+                        padding-left: 15px;
+                        border-left: 2px solid #e3e6f0;
+                    }
+
+                    .activity-item {
+                        position: relative;
+                        margin-bottom: 1.5rem;
+                    }
+
+                    .activity-item::before {
+                        content: '';
+                        position: absolute;
+                        left: -22px;
+                        top: 0;
+                        width: 12px;
+                        height: 12px;
+                        background: #fff;
+                        border: 2px solid var(--primary);
+                        border-radius: 50%;
+                    }
+
+                    .activity-item:last-child {
+                        margin-bottom: 0;
+                    }
+                </style>
 
                 {{-- Recent Activities --}}
                 <div class="card chart-card mb-4">
-                    <div class="card-header border-0 pt-4">
-                        <h4 class="card-title font-weight-bold">🕒 Aktivitas Terakhir</h4>
-                    </div>
+                    <div class="card-header">Aktivitas Terakhir</div>
                     <div class="card-body">
-                        {{-- Activity timeline markup ... --}}
+                        <div id="activity-container" style="max-height: 250px; overflow-y: hidden; transition: max-height 0.3s ease;">
+                            <div class="activity-timeline">
+                                @forelse($recentActivities as $index => $activity)
+                                    <div class="activity-item {{ $index >= 5 ? 'd-none' : '' }} activity-row">
+                                        <p class="mb-0 font-weight-bold text-dark small">{{ $activity['title'] }}</p>
+                                        <p class="mb-0 text-muted small">{{ $activity['description'] }}</p>
+                                        <span class="text-primary small font-italic">{{ $activity['time'] }}</span>
+                                    </div>
+                                @empty
+                                    <p class="text-muted small">Tidak ada aktivitas.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                        @if(count($recentActivities) > 5)
+                            <button id="see-more-btn" class="btn btn-sm btn-link btn-block mt-2" onclick="toggleActivities()">Lihat Semua</button>
+                        @endif
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-    <!-- Scripts -->
-
-
-    @push('scripts')
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                // Live Clock
-                function updateClock() {
-                    const now = new Date();
-                    const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
-                                     now.getMinutes().toString().padStart(2, '0') + ':' + 
-                                     now.getSeconds().toString().padStart(2, '0');
-                    document.getElementById('live-clock').textContent = timeString;
-                }
-                setInterval(updateClock, 1000);
-                updateClock();
-
-                // Main Transaction Chart
-                const transCtx = document.getElementById('transactionChart').getContext('2d');
-                new Chart(transCtx, {
-                    type: 'line',
-                    data: {
-                        labels: {{ json_encode($weeklyTransactionChart['labels'] ?? []) }},
-                        datasets: [{
-                            label: 'Obat Masuk',
-                            data: {{ json_encode($weeklyTransactionChart['incoming'] ?? []) }},
-                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                            borderColor: '#28a745',
-                            borderWidth: 3,
-                            tension: 0.4,
-                            fill: true,
-                            pointBackgroundColor: '#28a745',
-                            pointRadius: 4
-                        }, {
-                            label: 'Obat Keluar',
-                            data: {{ json_encode($weeklyTransactionChart['outgoing'] ?? []) }},
-                            backgroundColor: 'rgba(253, 126, 20, 0.1)',
-                            borderColor: '#fd7e14',
-                            borderWidth: 3,
-                            tension: 0.4,
-                            fill: true,
-                            pointBackgroundColor: '#fd7e14',
-                            pointRadius: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: {
-                            intersect: false,
-                            mode: 'index',
-                        },
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                                align: 'end',
-                                labels: {
-                                    usePointStyle: true,
-                                    padding: 20,
-                                    font: { family: "'Nunito', sans-serif", size: 12, weight: '600' }
-                                }
-                            },
-                            tooltip: {
-                                padding: 10,
-                                cornerRadius: 8,
-                                bodyFont: { family: "'Nunito', sans-serif" },
-                                titleFont: { family: "'Nunito', sans-serif", weight: 'bold' }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false },
-                                ticks: { font: { family: "'Nunito', sans-serif" } }
-                            },
-                            x: {
-                                grid: { display: false },
-                                ticks: { font: { family: "'Nunito', sans-serif" } }
-                            }
-                        }
+        @push('scripts')
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    // Fixed Live Clock
+                    function updateClock() {
+                        const now = new Date();
+                        document.getElementById('live-clock').textContent = now.toLocaleTimeString('id-ID', { hour12: false });
                     }
-                });
+                    setInterval(updateClock, 1000);
+                    updateClock();
 
-                // Stock Distribution Pie Chart
-                const distCtx = document.getElementById('stockDistChart').getContext('2d');
-                new Chart(distCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: {{ json_encode($stockDistribution['labels'] ?? []) }},
-                        datasets: [{
-                            data: {{ json_encode($stockDistribution['data'] ?? []) }},
-                            backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
-                            borderWidth: 0,
-                            hoverOffset: 10
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        cutout: '75%',
-                        plugins: {
-                            legend: { display: false }
+                    // Main Transaction Chart
+                    const transCtx = document.getElementById('transactionChart').getContext('2d');
+                    new Chart(transCtx, {
+                        type: 'line',
+                        data: {
+                            labels: {!! json_encode($weeklyTransactionChart['labels'] ?? []) !!},
+                            datasets: [{
+                                label: 'Obat Masuk',
+                                data: {!! json_encode($weeklyTransactionChart['incoming'] ?? []) !!},
+                                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                                borderColor: '#28a745',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true
+                            }, {
+                                label: 'Obat Keluar',
+                                    data: {!! json_encode($weeklyTransactionChart['outgoing'] ?? []) !!},
+                                    backgroundColor: 'rgba(253, 126, 20, 0.1)',
+                                    borderColor: '#fd7e14',
+                                    borderWidth: 2,
+                                    tension: 0.4,
+                                    fill: true
+                                }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                    });
+
+                    // Recent Activities Toggle
+                    window.toggleActivities = function() {
+                        const container = document.getElementById('activity-container');
+                        const btn = document.getElementById('see-more-btn');
+                        const hiddenItems = document.querySelectorAll('.activity-row.d-none');
+
+                        if (hiddenItems.length > 0) {
+                            // Show all
+                            container.style.maxHeight = '350px';
+                            container.style.overflowY = 'auto';
+                            hiddenItems.forEach(item => item.classList.remove('d-none'));
+                            btn.textContent = 'Sembunyikan';
+                        } else {
+                            // Hide extra
+                            container.style.maxHeight = '250px';
+                            container.style.overflowY = 'hidden';
+                            document.querySelectorAll('.activity-row').forEach((item, index) => {
+                                if (index >= 5) item.classList.add('d-none');
+                            });
+                            btn.textContent = 'Lihat Semua';
                         }
-                    }
+                    };
+
+                    // Stock Distribution Pie Chart
+                    const distCtx = document.getElementById('stockDistChart').getContext('2d');
+                    new Chart(distCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: {!! json_encode($stockDistribution['labels'] ?? []) !!},
+                            datasets: [{
+                                data: {!! json_encode($stockDistribution['data'] ?? []) !!},
+                                backgroundColor: {!! json_encode($stockDistribution['backgroundColor'] ?? ['#28a745', '#ffc107', '#dc3545']) !!},
+                                borderWidth: 0
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+                    });
                 });
-            });
-        </script>
-    @endpush
+            </script>
+        @endpush
 </x-app>

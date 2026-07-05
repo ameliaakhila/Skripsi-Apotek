@@ -110,6 +110,15 @@ class StokOpnameController extends Controller
                     'id_user' => $user->id_user,
                 ]);
 
+                // Update stock fields based on difference to maintain formula: sisa = masuk - keluar
+                if ($selisih > 0) {
+                    // Surplus: increase incoming stock
+                    $stokBatch->stok_masuk += $selisih;
+                } elseif ($selisih < 0) {
+                    // Shortage: increase outgoing stock
+                    $stokBatch->stok_keluar += abs($selisih);
+                }
+
                 $stokBatch->stok_sisa = $stokFisik;
                 $stokBatch->status_stok = StokStatusHelper::getStatus(
                     $stokFisik,
@@ -183,11 +192,11 @@ class StokOpnameController extends Controller
 
     private function generateKodeOpname(): string
     {
-        $prefix = 'OP' . now()->format('dmyy');
+        $prefix = 'OP' . now()->format('dmy'); // 2 (OP) + 6 (dmy) = 8 chars
 
         do {
             $suffix = strtoupper(str_pad(base_convert(random_int(0, 1295), 10, 36), 2, '0', STR_PAD_LEFT));
-            $kode = $prefix . $suffix;
+            $kode = $prefix . $suffix; // 8 + 2 = 10 chars total
         } while (StokOpname::where('kode_opname', $kode)->exists());
 
         return $kode;

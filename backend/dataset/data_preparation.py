@@ -27,7 +27,7 @@ class StockPredictionDataPrep:
 
     def load_data(self):
         """Load CSV data"""
-        print("📂 Loading CSV data...")
+        print(" Loading CSV data...")
         try:
             self.df = pd.read_csv(self.csv_file)
             print(f"✅ Loaded {len(self.df)} records from {self.csv_file}")
@@ -39,7 +39,7 @@ class StockPredictionDataPrep:
 
     def explore_data(self):
         """Perform exploratory data analysis"""
-        print("\n📊 Exploratory Data Analysis")
+        print("\n Exploratory Data Analysis")
         print("=" * 60)
 
         print("\n1. Data Shape & Info:")
@@ -63,7 +63,7 @@ class StockPredictionDataPrep:
 
     def clean_data(self):
         """Handle missing values, duplicates, and outliers"""
-        print("\n🧹 Data Cleaning")
+        print("\n Data Cleaning")
         print("=" * 60)
 
         # Remove duplicates
@@ -100,7 +100,7 @@ class StockPredictionDataPrep:
 
     def validate_data(self):
         """Validate data consistency"""
-        print("\n✔️ Data Validation")
+        print("\n Data Validation")
         print("=" * 60)
 
         # Check for negative values in quantities
@@ -118,7 +118,7 @@ class StockPredictionDataPrep:
 
         # Validate target variable
         if 'predicted_required_stock' in self.df.columns:
-            print(f"\n📈 Target variable (predicted_required_stock):")
+            print(f"\n Target variable (predicted_required_stock):")
             print(f"   Min: {self.df['predicted_required_stock'].min():.2f}")
             print(f"   Max: {self.df['predicted_required_stock'].max():.2f}")
             print(f"   Mean: {self.df['predicted_required_stock'].mean():.2f}")
@@ -128,12 +128,12 @@ class StockPredictionDataPrep:
 
     def prepare_features(self):
         """Prepare features for modeling"""
-        print("\n🔧 Feature Preparation")
+        print("\n Feature Preparation")
         print("=" * 60)
 
         # Select feature columns (exclude id, name, and target)
-        exclude_cols = ['id_obat', 'nama_obat', 'predicted_required_stock']
-        feature_cols = [col for col in self.df.columns if col not in exclude_cols]
+        # exclude_cols = ['id_obat', 'nama_obat', 'predicted_required_stock']
+        feature_cols = ['total_masuk', 'total_keluar', 'stok_saat_ini', 'frekuensi_transaksi', 'demand_volatility', 'avg_transaksi','avg_daily_sales', 'safety_stock']
 
         self.X = self.df[feature_cols].copy()
         self.y = self.df['predicted_required_stock'].copy()
@@ -150,7 +150,7 @@ class StockPredictionDataPrep:
 
     def get_feature_statistics(self):
         """Display feature statistics"""
-        print("\n📊 Feature Statistics")
+        print("\n Feature Statistics")
         print("=" * 60)
 
         for col in self.X.columns:
@@ -168,7 +168,7 @@ class StockPredictionDataPrep:
 
     def export_prepared_data(self, output_path):
         """Export prepared data to CSV"""
-        print(f"\n💾 Exporting prepared data to {output_path}")
+        print(f"\n Exporting prepared data to {output_path}")
 
         prepared_df = pd.concat([self.X, self.y], axis=1)
         prepared_df.to_csv(output_path, index=False)

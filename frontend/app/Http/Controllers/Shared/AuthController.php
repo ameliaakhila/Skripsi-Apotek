@@ -23,16 +23,21 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
-        // Add status check: Only 'Aktif' accounts can login
-        $credentials['status'] = 'Aktif';
-
         if (Auth::attempt($credentials)) {
+            // Check status after verifying credentials
+            if (Auth::user()->status !== 'Aktif') {
+                Auth::logout();
+                return back()->withErrors([
+                    'username' => 'Akun tidak aktif',
+                ])->onlyInput('username');
+            }
+
             $request->session()->regenerate();
             return redirect()->intended('/dashboard');
         }
 
         return back()->withErrors([
-            'username' => 'Username/Password salah atau akun tidak aktif',
+            'username' => 'Username/Password salah',
         ])->onlyInput('username');
     }
     public function logout(Request $request)

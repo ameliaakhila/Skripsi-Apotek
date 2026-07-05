@@ -83,15 +83,15 @@
                                             {{-- ! UPDATE --}}
                                             <button type="button" class="btn btn-primary shadow btn-xs sharp me-1"
                                                 data-bs-toggle="modal" data-bs-target="#modalEditObatKeluar"
-                                                data-id="{{ $d->id_obat_keluar }}" data-id-obat="{{ $d->id_obat }}"
+                                                data-id="{{ $d->id_obat_keluar }}"
+                                                data-id_stok_batch="{{ $d->id_stok_batch }}"
+                                                data-id_cabang="{{ $d->id_cabang }}"
                                                 data-batch="{{ $d->StokBatch->kode_batch ?? '-' }}"
-                                                data-nama-obat="{{ $d->sisa }}"
-                                                data-stok-keluar="{{ $d->stok_keluar }}"
-                                                data-stok-sisa="{{ $d->StokBatch->stok_sisa ?? '-' }}"
-                                                data-tanggal-keluar="{{ $d->tanggal_keluar ?? '-' }}"
-                                                data-tanggal-kedaluwarsa="{{ $d->ObatMasuk->tanggal_kedaluwarsa ?? '-' }}"
-                                                data-id-cabang="{{ $d->id_cabang }}"
-                                                data-id-obat-masuk="{{ $d->id_obat_masuk }}"
+                                                data-stok_keluar="{{ $d->stok_keluar }}"
+                                                data-stok_sisa="{{ $d->StokBatch->stok_sisa ?? '-' }}"
+                                                data-nama_cabang="{{ $d->DataCabang->nama_cabang ?? '-' }}"
+                                                data-tanggal_keluar="{{ $d->tanggal_keluar ?? '-' }}"
+                                                data-tanggal_kedaluwarsa="{{ $d->ObatMasuk->tanggal_kedaluwarsa ?? '-' }}"
                                                 data-action="{{ Route::has('obat-keluar.update-legacy') ? route('obat-keluar.update-legacy', $d->id_obat_keluar) : url('/obat-keluar-edit/' . $d->id_obat_keluar) }}">
                                                 <i class="fas fa-pencil-alt"></i>
                                             </button>
@@ -126,4 +126,80 @@
             </div>
         </div>
     </div>
+
+    @push('scripts')
+        <script>
+            // Filter logic for Medicine selection based on Branch
+            function filterObatByCabang(modalId, idCabang) {
+                let $modal = $(`#${modalId}`);
+                let $obatSelect = $modal.find('select[name="id_stok_batch"]');
+                
+                // Reset medicine selection if branch changes
+                $obatSelect.val('').trigger('change').prop('disabled', !idCabang);
+                
+                if (idCabang) {
+                    $obatSelect.find('option').addClass('d-none');
+                    $obatSelect.find('option[value=""]').removeClass('d-none').text('Pilih Obat - Batch');
+                    $obatSelect.find(`option[data-id-cabang="${idCabang}"]`).removeClass('d-none');
+                } else {
+                    $obatSelect.find('option[value=""]').text('Pilih Cabang Terlebih Dahulu');
+                }
+                
+                // Re-init Select2 if it's being used
+                if ($obatSelect.hasClass("select2-hidden-accessible")) {
+                    $obatSelect.select2('destroy').select2({
+                        dropdownParent: $modal,
+                        width: '100%'
+                    });
+                }
+            }
+
+            // Handler for Branch Selection in TAMBAH Modal
+            $(document).on('change', '#single-select-cabang-tambah', function() {
+                filterObatByCabang('tambah', $(this).val());
+            });
+
+            // Handler for Branch Selection in EDIT Modal
+            $(document).on('change', '#single-select-cabang-edit', function() {
+                filterObatByCabang('modalEditObatKeluar', $(this).val());
+            });
+
+            // Global Handler for Medicine Selection (Both modals)
+            $(document).on('change', 'select[name="id_stok_batch"]', function() {
+                let option = $(this).find(':selected');
+                let modal = $(this).closest('.modal');
+
+                let exp = option.data('exp');
+                let stok = option.data('stok');
+
+                // Populate auto-filled fields
+                modal.find('[data-field="tanggal_kedaluwarsa"]').val(exp);
+                modal.find('[data-field="stok_sisa"]').val(stok);
+                modal.find('[data-field="stok_keluar"]').attr('max', stok);
+            });
+
+            // Handle EDIT modal data initialization
+            document.addEventListener('DOMContentLoaded', function() {
+                const editModal = document.getElementById('modalEditObatKeluar');
+                if (editModal) {
+                    editModal.addEventListener('show.bs.modal', function(event) {
+                        const button = event.relatedTarget;
+                        const idCabang = button.dataset.id_cabang;
+                        const idStokBatch = button.dataset.id_stok_batch;
+                        const $modal = $(editModal);
+
+                        // First, set the branch
+                        const $branchSelect = $modal.find('select[name="id_cabang"]');
+                        $branchSelect.val(idCabang).trigger('change');
+                        
+                        // Small delay to ensure filter logic finished and select2 is ready
+                        setTimeout(() => {
+                            let $obatSelect = $modal.find('select[name="id_stok_batch"]');
+                            $obatSelect.val(idStokBatch).trigger('change');
+                        }, 100);
+                    });
+                }
+            });
+        </script>
+    @endpush
 </x-app>
