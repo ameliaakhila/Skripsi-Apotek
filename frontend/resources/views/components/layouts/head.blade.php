@@ -13,7 +13,7 @@
     <meta name="description" content="Sistem Apotek Sena Farma" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title === 'Apotek Sena Farma' ? $title : $title . ' | Apotek Sena Farma' }}</title>
-    <link rel="icon" type="image/png" href="./assets/images/logosf.png">
+    <link rel="icon" type="image/png" href="./assets/images/favicon.ico">
 
     {{-- ! System Fonts Only - No external CDN (local development) --}}
     <style>
