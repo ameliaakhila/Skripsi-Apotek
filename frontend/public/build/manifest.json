@@ -1,0 +1,24 @@
+{
+  "_vendor.CZ8oOnp1.js": {
+    "file": "assets/js/vendor.CZ8oOnp1.js",
+    "name": "vendor"
+  },
+  "resources/css/app.css": {
+    "file": "assets/css/app.DKKLiKty.css",
+    "src": "resources/css/app.css",
+    "isEntry": true,
+    "name": "app",
+    "names": [
+      "app.css"
+    ]
+  },
+  "resources/js/app.js": {
+    "file": "assets/js/app.H3O9xaTI.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true,
+    "imports": [
+      "_vendor.CZ8oOnp1.js"
+    ]
+  }
+}
