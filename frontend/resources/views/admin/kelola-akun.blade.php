@@ -3,7 +3,7 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h4 class="card-title">Daftar Akun Pengguna</h4>
+                    <h4 class="card-title text-primary">Daftar Akun Pengguna</h4>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -15,7 +15,7 @@
                                 <strong>Sukses!</strong> {{ session('success') }}
                             </div>
                         @endif
-                        
+
                         {{-- Alert Error --}}
                         @if ($errors->any())
                             <div class="alert alert-danger alert-dismissible fade show">

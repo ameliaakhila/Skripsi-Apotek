@@ -3,6 +3,11 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
+                    <div class="card-header">
+                        <div class="card-title text-primary">
+                            {{ $title ?? 'Data Stok Batch Kedaluwarsa' }}
+                        </div>
+                    </div>
                     @if(session('success'))
                         <div class="alert alert-success alert-dismissible fade show" role="alert">
                             {{ session('success') }}

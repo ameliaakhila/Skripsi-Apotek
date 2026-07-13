@@ -252,8 +252,56 @@ body.modal-active {
     cursor: pointer;
 }
 
-/* ? Custom striped untuk modal table */
+/* Responsive Header for Prediction Page & other pages */
+.card-header-container {
+    display: flex;
+    flex-direction: column;
+    /* Stack on mobile by default */
+    justify-content: space-between;
+    align-items: flex-start;
+    /* Align left on mobile */
+    padding: 1.25rem;
+    gap: 1rem;
+    /* Space between title and actions when stacked */
+    border-bottom: 1px solid #e9ecef;
+}
 
+.header-actions {
+    display: flex;
+    flex-direction: column;
+    /* Stack buttons on mobile */
+    gap: 0.5rem;
+    width: 100%;
+    /* Full width on mobile */
+}
+
+.header-actions .btn,
+.header-actions form {
+    width: 100%;
+}
+
+.header-actions .btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Medium screens and up (tablets, desktops) */
+@media (min-width: 768px) {
+    .card-header-container {
+        flex-direction: row;
+        /* Side-by-side on larger screens */
+        align-items: center;
+    }
+
+    .header-actions {
+        flex-direction: row;
+        /* Buttons side-by-side */
+        width: auto;
+        /* Auto width for content */
+    }
+}
+/* ? Custom striped untuk modal table */
 
 /* ? Style Card Penjualan Obat */
 .card .bg-primaryl,

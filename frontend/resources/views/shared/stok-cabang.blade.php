@@ -2,14 +2,18 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
+                <div class="card-header">
+                    <div class="card-title text-primary">
+                        {{ $title ?? 'Data Stok Cabang' }}
+                    </div>
+                </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        @if(session('success'))
-                            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                {{ session('success') }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        @endif
+                    @if(session('success'))
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
 
                         @if(session('error'))
                             <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -25,10 +29,10 @@
                             </div>
 
                             <form method="GET"
-                                action="{{ Route::has('admin.stok-cabang.index') ? route('admin.stok-cabang.index') : url('/stok-cabang') }}"
-                                class="d-flex align-items-end gap-2">
-                                <div>
-                                    <label for="id_cabang" class="form-label mb-1">Filter Cabang</label>
+                            action="{{ Route::has('admin.stok-cabang.index') ? route('admin.stok-cabang.index') : url('/stok-cabang') }}"
+                            class="d-flex align-items-end gap-2">
+                            <div>
+                                <label for="id_cabang" class="form-label mb-1">Filter Cabang</label>
                                     <select id="single-select-cabang" name="id_cabang" class="form-control form-control-sm js-example-data-array"
                                         onchange="this.form.submit()">
                                         <option value="">Semua Cabang</option>
@@ -42,6 +46,7 @@
                             </form>
                         </div>
 
+                        <div class="table-responsive">
                         <table id="example3" class="table table-bordered align-middle">
                             <thead>
                                 <tr>

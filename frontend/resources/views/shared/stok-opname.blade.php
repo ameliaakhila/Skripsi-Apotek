@@ -5,11 +5,15 @@
                 <strong>Pengingat:</strong> Lakukan stok opname berkala untuk memastikan stok sistem dan stok fisik tetap
                 sinkron.
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                </div>
-
+            </div>
+            </div>
         <div class="col-12">
             <div class="card">
+                <div class="card-header">
+                    <div class="card-title text-primary">
+                        {{ $title ?? 'Data Stok Opname' }}
+                    </div>
+                </div>
                 <div class="card-body">
                     @if(session('success'))
                         <div class="alert alert-success alert-dismissible fade show" role="alert">

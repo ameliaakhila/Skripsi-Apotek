@@ -133,10 +133,10 @@
             function filterObatByCabang(modalId, idCabang) {
                 let $modal = $(`#${modalId}`);
                 let $obatSelect = $modal.find('select[name="id_stok_batch"]');
-                
+
                 // Reset medicine selection if branch changes
                 $obatSelect.val('').trigger('change').prop('disabled', !idCabang);
-                
+
                 if (idCabang) {
                     $obatSelect.find('option').addClass('d-none');
                     $obatSelect.find('option[value=""]').removeClass('d-none').text('Pilih Obat - Batch');
@@ -144,7 +144,7 @@
                 } else {
                     $obatSelect.find('option[value=""]').text('Pilih Cabang Terlebih Dahulu');
                 }
-                
+
                 // Re-init Select2 if it's being used
                 if ($obatSelect.hasClass("select2-hidden-accessible")) {
                     $obatSelect.select2('destroy').select2({
@@ -191,7 +191,7 @@
                         // First, set the branch
                         const $branchSelect = $modal.find('select[name="id_cabang"]');
                         $branchSelect.val(idCabang).trigger('change');
-                        
+
                         // Small delay to ensure filter logic finished and select2 is ready
                         setTimeout(() => {
                             let $obatSelect = $modal.find('select[name="id_stok_batch"]');

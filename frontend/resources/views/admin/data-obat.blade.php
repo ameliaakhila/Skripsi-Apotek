@@ -3,8 +3,12 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
+                <div class="card-header">
+                    <div class="card-title text-primary">
+                        {{ $title ?? 'Data Obat' }}
+                    </div>
+                </div>
                 <div class="card-body">
-                    <div class="table-responsive">
                         @if(session('success'))
                             <div class="d-flex align-items-center alert alert-success solid alert-dismissible fade show">
                                 <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"
@@ -36,6 +40,7 @@
                             <i class="fas fa-plus me-2"></i>
                             Tambah</button>
 
+                        <div class="table-responsive">
                         <table id="example3" class="table table-borderd">
                             <thead>
                                 <tr>

@@ -3,7 +3,11 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <div class="table-responsive">
+                    <div class="card-header">
+                        <div class="card-title text-primary">
+                            {{ $title ?? 'Data Obat Masuk' }}
+                        </div>
+                    </div>
                         @if(session('success'))
                             <div
                                 class="d-flex align-items-center alert alert-success solid alert-dismissible fade show">
@@ -44,6 +48,7 @@
                             Tambah
                         </button>
 
+                        <div class="table-responsive">
                         <table id="example3" class="table table-borderd">
                             <thead>
                                 <tr>

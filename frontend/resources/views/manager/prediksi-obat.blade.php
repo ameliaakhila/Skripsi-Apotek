@@ -34,7 +34,7 @@
                             </a>
                         </button>
                     </div>
-                    </div>
+                </div>
 
                 @if(session('success'))
                     <div class="alert alert-success alert-dismissible fade show mx-4 mt-3" role="alert">
