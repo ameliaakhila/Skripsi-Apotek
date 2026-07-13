@@ -198,7 +198,7 @@ for feature in FEATURE_NAMES:
     helptext = FEATURE_DESCRIPTIONS.get(feature, '')
     user_inputs[feature] = st.sidebar.number_input(
         label,
-        value=0.0,
+        value=st.session_state.get(f"input_{feature}", 0.0),
         min_value=0.0,
         step=1.0,
         help=helptext,
