@@ -319,7 +319,10 @@ with tab_overview:
         # Demonstrasi scatter prediksi (simulasi)
         st.markdown("---")
         st.subheader("🔬 Simulasi: Actual vs Predicted")
-        st.markdown("Grafik di bawah menampilkan simulasi perbandingan nilai prediksi vs aktual berdasarkan pola data training.")
+        st.info(
+            "**Catatan:** Grafik di bawah adalah **simulasi** untuk ilustrasi, bukan dari data uji nyata. "
+            "Ini menunjukkan bagaimana sebaran titik akan terlihat jika model memiliki akurasi (R²) yang sangat tinggi."
+        )
 
         np.random.seed(42)
         n_points = 200
