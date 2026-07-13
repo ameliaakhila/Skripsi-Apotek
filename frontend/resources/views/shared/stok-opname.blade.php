@@ -90,7 +90,7 @@
                                     </option>
                                 @endforeach
                             </select>
-                            <small class="text-muted">Penyesuaian hanya akan mengubah stok_sisa pada batch ini dan mencatat histori
+                            <small class="text-muted">Penyesuaian hanya akan mengubah stok sisa pada batch ini dan mencatat histori
                                 opname.</small>
                         </div>
 
@@ -103,61 +103,62 @@
                         </div>
                     </div>
                     <h4 class="mb-3">Histori Stok Opname</h4>
-                    <table id="example3" class="table table-bordered table-striped align-middle">
-                        <thead>
-                            <tr>
-                                <th style="width: 60px">No</th>
-                                <th>Kode Opname</th>
-                                <th>Cabang</th>
-                                <th>Obat</th>
-                                <th>Batch</th>
-                                <th class="text-center">Sistem</th>
-                                <th class="text-center">Fisik</th>
-                                <th class="text-center">Selisih</th>
-                                <th class="text-center">Keterangan</th>
-                                <th class="text-center">Tanggal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($data as $opname)
+                    <div class="table-responsive">
+                        <table id="example3" class="table table-bordered table-striped align-middle">
+                            <thead>
                                 <tr>
-                                    <td>{{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}</td>
-                                    <td>
-                                        {{ $opname->kode_opname }}
-                                    </td>
-                                    <td>{{ $opname->DataCabang->nama_cabang ?? '-' }}</td>
-                                    <td>{{ $opname->Obat->nama_obat ?? '-' }}</td>
-                                    <td>{{ $opname->StokBatch->kode_batch ?? '-' }}</td>
-                                    <td class="text-center">{{ number_format($opname->stok_sistem) }}</td>
-                                    <td class="text-center">{{ number_format($opname->stok_fisik) }}</td>
-                                    <td class="text-center">
-                                        @if($opname->selisih > 0)
-                                            <span class="text-warning fw-bold">+{{ number_format($opname->selisih) }}</span>
-                                        @elseif($opname->selisih < 0)
-                                            <span class="text-danger fw-bold">{{ number_format($opname->selisih) }}</span>
-                                        @else
-                                            <span class="text-success fw-bold">0</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-center">
-                                        @if($opname->selisih === 0)
-                                            <span class="badge badge-success">Sesuai</span>
-                                        @elseif($opname->selisih < 0)
-                                            <span class="badge badge-danger">Menipis</span>
-                                        @else
-                                            <span class="badge badge-warning">Lebih</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-center">{{ $opname->tanggal_opname_formatted }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="10" class="text-center text-muted">Belum ada histori stok opname.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-
+                                    <th>No</th>
+                                    <th>Kode Opname</th>
+                                    <th>Cabang</th>
+                                    <th>Obat</th>
+                                    <th>Batch</th>
+                                    <th class="text-center">Sistem</th>
+                                    <th class="text-center">Fisik</th>
+                                    <th class="text-center">Selisih</th>
+                                    <th class="text-center">Keterangan</th>
+                                    <th class="text-center">Tanggal</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($data as $opname)
+                                            <tr>
+                                                <td>{{ ($data->currentPage() - 1) * $data->perPage() + $loop->iteration }}</td>
+                                                <td>
+                                                    {{ $opname->kode_opname }}
+                                                </td>
+                                                <td>{{ $opname->DataCabang->nama_cabang ?? '-' }}</td>
+                                                <td>{{ $opname->Obat->nama_obat ?? '-' }}</td>
+                                                <td>{{ $opname->StokBatch->kode_batch ?? '-' }}</td>
+                                                <td class="text-center">{{ number_format($opname->stok_sistem) }}</td>
+                                                <td class="text-center">{{ number_format($opname->stok_fisik) }}</td>
+                                                <td class="text-center">
+                                                    @if($opname->selisih > 0)
+                                                        <span class="text-warning fw-bold">+{{ number_format($opname->selisih) }}</span>
+                                                    @elseif($opname->selisih < 0)
+                                                        <span class="text-danger fw-bold">{{ number_format($opname->selisih) }}</span>
+                                                    @else
+                                                        <span class="text-success fw-bold">0</span>
+                                                    @endif
+                                                </td>
+                                                <td class="text-center">
+                                                    @if($opname->selisih === 0)
+                                                        <span class="badge badge-success">Sesuai</span>
+                                                    @elseif($opname->selisih < 0)
+                                                        <span class="badge badge-danger">Menipis</span>
+                                                    @else
+                                                        <span class="badge badge-warning">Lebih</span>
+                                                    @endif
+                                                </td>
+                                                <td class="text-center">{{ $opname->tanggal_opname_formatted }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="10" class="text-center text-muted">Belum ada histori stok opname.</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                    </table>
+                    </div>
                     <div class="mt-2">
                         {{ $data->links() }}
                     </div>

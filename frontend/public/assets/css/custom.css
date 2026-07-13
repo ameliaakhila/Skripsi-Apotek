@@ -1025,6 +1025,9 @@ body.modal-active {
         padding: 15px;
     }
 
+                .nav-header .brand-title {
+                    display: none !important;
+                }
     .pharmacy-login-wrapper {
         padding: 15px;
     }
@@ -1266,6 +1269,26 @@ body .pharmacy-login-page {
    ! NAVBAR BRAND HEADER SPACING FIX
    ============================================ */
 
+/* [SOLUSI] Sembunyikan brand-title pada layar tablet dan mobile (lebar di bawah 992px) */
+@media (max-width: 991.98px) {
+    .nav-header .brand-title {
+        display: none !important;
+    }
+}
+
+/* [SOLUSI] Tampilkan dan atur brand-title HANYA pada layar desktop (lebar 992px ke atas) */
+@media (min-width: 992px) {
+
+    /* Mengatur alignment vertical container agar presisi di tengah nav-header */
+    .nav-header .brand-title {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        margin-top: 0 !important;
+        height: 100% !important;
+        margin-left: 1rem !important;
+    }
+}
 /* Menormalkan line-height yang diset 0 di style.min.css untuk mencegah tampilan 'dempet' */
 .nav-header .brand-title h2 {
     line-height: 1.2 !important;
@@ -1273,19 +1296,12 @@ body .pharmacy-login-page {
     display: block !important;
 }
 
+.nav-header .logo-apotek {
+    width: 2rem !important;
+}
 /* Memastikan subtitle memiliki jarak yang konsisten dan tidak tertumpuk */
 .nav-header .brand-title .brand-sub-title {
     display: block !important;
     line-height: 1.1 !important;
     margin-top: 0 !important;
-}
-
-/* Mengatur alignment vertical container agar presisi di tengah nav-header */
-.nav-header .brand-title {
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important;
-    margin-top: 0 !important;
-    height: 100% !important;
-    margin-left: 1rem !important;
 }

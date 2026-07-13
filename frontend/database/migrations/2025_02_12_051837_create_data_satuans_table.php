@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('tb_satuan', function (Blueprint $table) {
             $table->id('id_satuan');
-            $table->string('nama_satuan');
+            $table->string('nama_satuan')->uniquie();
             $table->timestamps();
         });
     }

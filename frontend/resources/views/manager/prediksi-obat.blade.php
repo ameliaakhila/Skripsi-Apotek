@@ -71,15 +71,12 @@
                                         <th>Nama Obat</th>
                                         <th style="text-align: center;">Stok Saat Ini</th>
                                         <th style="text-align: center;">Terjual</th>
-                                        <th style="text-align: center;">Avg/Hari</th>
                                         <th>Status</th>
                                         <th style="text-align: center;">
                                             Kebutuhan 1 Bulan
-                                            {{-- <br><small class="text-muted fw-normal">(Prediksi)</small> --}}
                                         </th>
                                         <th style="text-align: center;">
                                             Rekomendasi Order
-                                            {{-- <br><small class="text-muted fw-normal">(Unit Pesan)</small> --}}
                                         </th>
                                         <th style="text-align: center;">Kepercayaan</th>
                                     </tr>
@@ -103,11 +100,6 @@
                                                 </td>
                                                 <td style="text-align: center;">
                                                     {{ number_format($d['stok_terjual'] ?? 0, 0) }}
-                                                </td>
-                                                <td style="text-align: center;">
-                                                    <span class="text-secondary">
-                                                        {{ number_format($d['avg_daily_sales'] ?? 0, 1) }}
-                                                    </span>
                                                 </td>
                                                 <td>
                                                     @if (($d['status'] ?? '') === 'menipis')

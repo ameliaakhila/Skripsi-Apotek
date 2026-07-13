@@ -130,7 +130,7 @@
                         <p class="footer-info">
                             <i class="fas fa-shield-alt"></i> Login aman dan terenkripsi
                         </p>
-                        <p class="footer-copyright">© 2024 Apotek Sena Farma</p>
+                        <p class="footer-copyright">©{{ now()->year }} Apotek Sena Farma</p>
                     </div>
                 </div>
             </div>

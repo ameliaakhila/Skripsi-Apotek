@@ -1,7 +1,7 @@
 {{-- ? Navbar Brand & Header Start --}}
 <div class="nav-header">
     <a href="{{ route('dashboard') }}" class="brand-logo">
-        <img src="{{ asset('assets/images/logosf.png') }}" alt="logo-apotek" class="w-25">
+        <img src="{{ asset('assets/images/logosf.png') }}" class="logo-apotek" alt="logo-apotek">
         <div class="brand-title">
             <h2>Sistem</h2>
             <span class="brand-sub-title fs-4">Apotek Sena Farma</span>

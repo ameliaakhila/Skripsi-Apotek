@@ -1339,6 +1339,9 @@ progress {
     .container-sm {
         max-width: 540px
     }
+                .brand-title {
+                    display: none;
+                }
 }
 
 @media (min-width:768px) {
@@ -13056,7 +13059,7 @@ h6 {
 }
 
 @media only screen and (max-width:47.9375rem) {
-    [data-sidebar-style=overlay] .nav-header .logo-abbr {
+    [data-sidebar-style=overlay] .nav-header .logo-apotek {
         display: block
     }
 }
@@ -13077,20 +13080,20 @@ h6 {
     z-index: 5
 }
 
-.nav-header .logo-abbr {
-    max-width: 2.9375rem
+.nav-header .logo-apotek {
+    max-width: 2rem !important;
+    width: 2rem !important
 }
 
 @media only screen and (max-width:87.5rem) {
-    .nav-header .logo-abbr {
-        max-width: 2.8125rem
+    .nav-header .logo-apotek {
+            max-width: 1rem !important
     }
 }
 
 @media only screen and (max-width:35.9375rem) {
-    .nav-header .logo-abbr {
-        width: 2.1875rem;
-        height: 2.1875rem
+    .nav-header .logo-apotek {
+            width: 2rem !important;
     }
 }
 
@@ -13304,8 +13307,8 @@ h6 {
     display: none
 }
 
-[data-sidebar-style=full][data-layout=vertical] .menu-toggle .nav-header .logo-abbr,
-[data-sidebar-style=mini] .nav-header .logo-abbr {
+[data-sidebar-style=full][data-layout=vertical] .menu-toggle .nav-header .logo-apotek,
+[data-sidebar-style=mini] .nav-header .logo-apotek {
     display: block
 }
 
@@ -17801,7 +17804,7 @@ svg.pulse-svg .third-circle {
     }
 
     [data-sidebar-style=icon-hover][data-layout=vertical] .iconhover-toggle .dlabnav .metismenu li.mm-active>ul,
-    [data-sidebar-style=icon-hover][data-layout=vertical] .nav-header .brand-logo .logo-abbr {
+                                                                [data-sidebar-style=icon-hover][data-layout=vertical] .nav-header .brand-logo .logo-apotek {
         display: block
     }
 

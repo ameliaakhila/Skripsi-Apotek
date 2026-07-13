@@ -51,6 +51,13 @@ class ObatKeluarSeeder extends Seeder
                 ->limit($perPage)
                 ->get();
 
+            // ! Tentukan range tanggal untuk stok_keluar (misal: 1 Jan 2025 - sekarang)
+            $startDate = \Carbon\Carbon::create(2025, 1, 1);
+            $endDate = now();
+
+            $startTimeStamp = $startDate->timestamp;
+            $endTimeStamp = $endDate->timestamp;
+
             if ($stok_batches->isEmpty()) {
                 break;
             }
@@ -66,11 +73,14 @@ class ObatKeluarSeeder extends Seeder
                     continue;
                 }
 
+                $randomTimestamp = rand($startTimeStamp, $endTimeStamp);
+                $randomDate = \Carbon\Carbon::createFromTimestamp($randomTimestamp);
+
                 $data_keluar[] = [
                     'id_stok_batch' => $batch->id_stok_batch,
                     'id_obat_masuk' => $id_obat_masuk,
                     'id_cabang' => $batch->id_cabang,
-                    'tanggal_keluar' => now()->subDays(rand(0, 30)),
+                    'tanggal_keluar' => $randomDate,
                     'stok_keluar' => $qty_keluar,
                     'created_at' => now(),
                     'updated_at' => now(),

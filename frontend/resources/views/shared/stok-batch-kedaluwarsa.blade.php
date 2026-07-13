@@ -57,7 +57,7 @@
                         </div>
                     </form>
 
-                    <div class="table-responsive">
+
                         <div class="d-flex flex-wrap justify-content-between gap-3">
                             <div>
                                 <h4 class="mb-1">Detail Batch</h4>
@@ -66,14 +66,15 @@
 
                             <a href="{{ Route::has('admin.stok-cabang.index') ? route('admin.stok-cabang.index') : url('/stok-cabang') }}"
                                 class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-arrow-left"></i>Kembali ke Stok Cabang
+                                <i class="fas fa-arrow-left"></i> Kembali ke Stok Cabang
                             </a>
                         </div>
 
-                        <table id="example3" class="table table-bordered align-middle">
+                    <div class="table-responsive my-3">
+                        <table id="example3" class="table table-bordered table-striped align-middle">
                             <thead>
                                 <tr>
-                                    <th style="width: 60px">No</th>
+                                    <th>No</th>
                                     <th>Cabang</th>
                                     <th>Nama Obat</th>
                                     <th>Kode Batch</th>

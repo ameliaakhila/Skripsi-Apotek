@@ -97,7 +97,7 @@ def model_info():
         'model_type': 'Decision Tree Regressor',
         'methodology': 'CARD (Classification and Regression Decision Tree)',
         'output_type': 'Numeric (stock quantity)',
-        'features_count': len(_feature_names),
+        'total features': len(_feature_names),
         'features': _feature_names,
         'training_metrics': _training_history,
         'loaded_at': datetime.now().isoformat()

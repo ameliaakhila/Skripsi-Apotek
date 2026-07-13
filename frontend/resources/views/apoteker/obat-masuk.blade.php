@@ -58,16 +58,15 @@
 
                             <tbody>
                                 @foreach ($data as $d)
-                                    <tr>
+                                    <tr class="align-center">
                                         <td>{{ $loop->iteration }}</td>
                                         <td>{{ $d->kode_batch }}</td>
                                         <td>
                                             {{ $d->Obat->nama_obat ?? '-' }}
                                             {{ $d->Obat->DataSatuan->nama_satuan ?? '-' }}
                                         </td>
-                                        </td>
-                                        <td>{{ $d->tanggal_masuk_formatted }}</td>
-                                        <td>{{ $d->stok_masuk }}</td>
+                                        <td class="text-center">{{ $d->tanggal_masuk_formatted }}</td>
+                                        <td class="text-center">{{ $d->stok_masuk }}</td>
                                         <td class="text-center d-flex justify-content-center align-items-center">
                                             {{-- ! READ --}}
                                             <button type="button" class="btn btn-info shadow btn-xs sharp me-1"

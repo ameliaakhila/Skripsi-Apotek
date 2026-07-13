@@ -64,7 +64,7 @@ class ObatMasukController extends Controller
         $validated = $request->validate([
             'kode_batch' => 'required|string',
             'tanggal_masuk' => 'required|date',
-            'tanggal_kedaluwarsa' => 'required|date|after:tanggal_masuk',
+            'tanggal_kedaluwarsa' => 'required|date',
             'stok_masuk' => 'required|integer|min:1',
             'id_obat' => 'required|exists:tb_obat,id_obat',
         ], [
@@ -72,7 +72,7 @@ class ObatMasukController extends Controller
             'tanggal_masuk.date' => 'Format tanggal masuk tidak valid',
             'tanggal_kedaluwarsa.required' => 'Tanggal kedaluwarsa harus diisi',
             'tanggal_kedaluwarsa.date' => 'Format tanggal kedaluwarsa tidak valid',
-            'tanggal_kedaluwarsa.after' => 'Tanggal kedaluwarsa harus lebih besar dari tanggal masuk',
+            // 'tanggal_kedaluwarsa.after' => 'Tanggal kedaluwarsa harus lebih besar dari tanggal masuk',
         ]);
 
         try {
