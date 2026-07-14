@@ -15,11 +15,13 @@ import requests
 from pathlib import Path
 import os
 import time
+import base64
 
 # ─────────────────────────────────────────────────────────────────────────────
 # KONFIGURASI
 # ─────────────────────────────────────────────────────────────────────────────
 HF_API_URL = "https://ameliaakhila29-apotek-stock-prediction.hf.space"
+# LOCAL_API_URL = "http://localhost:7860"
 
 # 8 Fitur model (harus konsisten dengan training)
 FEATURE_NAMES = [
@@ -50,7 +52,7 @@ FEATURE_DESCRIPTIONS = {
 st.set_page_config(
     page_title="Apotek Stock Prediction Dashboard",
     layout="wide",
-    page_icon="💊",
+    page_icon="favicon.ico",
     initial_sidebar_state="expanded"
 )
 
@@ -93,6 +95,11 @@ st.markdown("""
     .api-loading { background:#fff3cd; color:#856404; padding:6px 14px; border-radius:20px; font-weight:bold; }
     </style>
 """, unsafe_allow_html=True)
+
+def get_base64_image(image_path):
+    with open(image_path, "rb") as image_file:
+        encoded = base64.b64encode(image_file.read()).decode()
+    return f"data:image/png;base64,{encoded}"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -165,9 +172,13 @@ def call_predict_batch_api(items: list) -> dict | None:
 # ─────────────────────────────────────────────────────────────────────────────
 col_title, col_status = st.columns([4, 1])
 with col_title:
-    st.title("💊 Pharmacy Inventory Intelligence")
-    st.markdown("*Prediksi stok obat berbasis AI — powered by Decision Tree Regressor (CARD)*")
-
+    # Buat kolom untuk ikon dan teks judul
+    col_icon, col_text = st.columns([1, 3], gap="medium")
+    with col_icon:
+        img_base64 = get_base64_image("logo.png")
+        st.markdown(f"<img src='{img_base64}' width='50' />", unsafe_allow_html=True)
+    with col_text:
+        st.title("Pharmacy Inventory Intelligence")
 with col_status:
     with st.spinner("Cek API..."):
         api_online, api_status = check_api_health()
@@ -188,7 +199,7 @@ st.markdown("---")
 # ─────────────────────────────────────────────────────────────────────────────
 # SIDEBAR — INPUT FITUR
 # ─────────────────────────────────────────────────────────────────────────────
-st.sidebar.header("⚙️ Input Fitur Prediksi")
+st.sidebar.header("Input Fitur Prediksi")
 st.sidebar.markdown("Masukkan data apotek untuk mendapatkan prediksi stok.")
 st.sidebar.markdown("---")
 
@@ -205,28 +216,14 @@ for feature in FEATURE_NAMES:
         key=f"input_{feature}"
     )
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("**Contoh data untuk test:**")
-if st.sidebar.button("🔢 Isi Contoh Data"):
-    # Set contoh data via session state
-    st.session_state['input_total_masuk']          = 500.0
-    st.session_state['input_total_keluar']         = 120.0
-    st.session_state['input_stok_saat_ini']        = 380.0
-    st.session_state['input_frekuensi_transaksi']  = 15.0
-    st.session_state['input_avg_transaksi']        = 8.0
-    st.session_state['input_demand_volatility']    = 2.5
-    st.session_state['input_avg_daily_sales']      = 1.3
-    st.session_state['input_safety_stock']         = 20.0
-    st.rerun()
-
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN TABS
 # ─────────────────────────────────────────────────────────────────────────────
 tab_overview, tab_predict, tab_model, tab_stress = st.tabs([
-    "📊 Gambaran Umum",
-    "🔮 Prediksi Stok",
-    "🤖 Info Model",
-    "⚡ Uji Stres"
+    "Gambaran Umum",
+    "Prediksi Stok",
+    "Info Model",
+    "Tes Ketahanan Model"
 ])
 
 
@@ -234,7 +231,7 @@ tab_overview, tab_predict, tab_model, tab_stress = st.tabs([
 # TAB 1 — GAMBARAN UMUM
 # ══════════════════════════════════════════════════════
 with tab_overview:
-    st.subheader("📊 Gambaran Umum Sistem Prediksi")
+    st.subheader("Gambaran Umum Sistem Prediksi")
 
     # Ambil info model
     model_info = get_model_info()
@@ -249,13 +246,11 @@ with tab_overview:
             features_count = len(model_info.get('feature_names', FEATURE_NAMES))
             st.metric("Jumlah Fitur", features_count)
         with col4:
-            r2 = model_info.get('performance', {}).get('test_r2', 'N/A')
+            r2 = model_info.get('performance', {}).get('test_r2', 0)
             if isinstance(r2, float):
                 st.metric("R² Score (Test)", f"{r2:.4f}")
             else:
                 st.metric("R² Score (Test)", str(r2))
-
-        st.markdown("---")
 
         # Performa model
         perf = model_info.get('performance', {})
@@ -293,6 +288,7 @@ with tab_overview:
         if feat_imp:
             st.markdown("---")
             st.subheader("🎯 Kepentingan Fitur (Feature Importance)")
+            st.subheader("Kepentingan Fitur (Feature Importance)")
 
             imp_df = pd.DataFrame([
                 {'Fitur': k.replace('_', ' ').title(), 'Importance': v}
@@ -318,7 +314,7 @@ with tab_overview:
 
         # Demonstrasi scatter prediksi (simulasi)
         st.markdown("---")
-        st.subheader("🔬 Simulasi: Actual vs Predicted")
+        st.subheader("Simulasi: Actual vs Predicted")
         st.info(
             "**Catatan:** Grafik di bawah adalah **simulasi** untuk ilustrasi, bukan dari data uji nyata. "
             "Ini menunjukkan bagaimana sebaran titik akan terlihat jika model memiliki akurasi (R²) yang sangat tinggi."
@@ -333,7 +329,7 @@ with tab_overview:
         fig_scatter = px.scatter(
             x=actual, y=predicted,
             labels={'x': 'Nilai Aktual (unit)', 'y': 'Nilai Prediksi (unit)'},
-            title='Simulasi Actual vs Predicted Stock (R²≈0.9957)',
+            title=f'Simulasi Actual vs Predicted Stock (R² ≈ {r2:.4f})' if isinstance(r2, float) else 'Simulasi Actual vs Predicted Stock',
             opacity=0.6, color_discrete_sequence=['#2e7d32']
         )
         # Garis diagonal sempurna
@@ -359,7 +355,7 @@ with tab_overview:
 # TAB 2 — PREDIKSI STOK
 # ══════════════════════════════════════════════════════
 with tab_predict:
-    st.subheader("🔮 Prediksi Kebutuhan Stok Obat")
+    st.subheader("Prediksi Kebutuhan Stok Obat")
     st.markdown("""
     Masukkan parameter di **sidebar kiri**, lalu klik tombol di bawah untuk mendapatkan prediksi
     kebutuhan stok 1 bulan ke depan berdasarkan riwayat 3 bulan terakhir.
@@ -367,7 +363,7 @@ with tab_predict:
 
     col_btn, col_info = st.columns([1, 3])
     with col_btn:
-        btn_predict = st.button("🚀 Hitung Prediksi Stok", type="primary", use_container_width=True)
+        btn_predict = st.button("Hitung Prediksi Stok", type="primary", use_container_width=True)
 
     with col_info:
         st.info("**Catatan:** Prediksi = Kebutuhan stok 1 bulan ke depan. Rekomendasi Order = berapa unit yang perlu dipesan sekarang.")
@@ -389,7 +385,7 @@ with tab_predict:
                 recommendation    = result.get('rekomendasi_order_text', result.get('recommendation', '-'))
 
                 st.markdown("---")
-                st.subheader("📋 Hasil Prediksi")
+                st.subheader("Hasil Prediksi")
 
                 col_r1, col_r2, col_r3 = st.columns(3)
                 with col_r1:
@@ -441,7 +437,7 @@ with tab_predict:
                 st.plotly_chart(fig_gauge, use_container_width=True)
 
                 # Detail input
-                with st.expander("📊 Lihat Parameter Input"):
+                with st.expander("Lihat Parameter Input"):
                     input_df = pd.DataFrame([{
                         'Fitur': k.replace('_', ' ').title(),
                         'Nilai': v,
@@ -451,7 +447,7 @@ with tab_predict:
 
     # Panduan penggunaan
     st.markdown("---")
-    with st.expander("📖 Panduan Cara Menggunakan"):
+    with st.expander("Panduan Cara Menggunakan"):
         st.markdown("""
         1. **Isi nilai fitur** di sidebar kiri sesuai kondisi obat di apotek
         2. **Klik tombol** "Hitung Prediksi Stok"
@@ -467,7 +463,7 @@ with tab_predict:
 # TAB 3 — INFO MODEL
 # ══════════════════════════════════════════════════════
 with tab_model:
-    st.subheader("🤖 Informasi Model ML")
+    st.subheader("Informasi Model ML")
 
     model_info = get_model_info()
 
@@ -516,7 +512,7 @@ with tab_model:
 
     # Penjelasan fitur
     st.markdown("---")
-    st.subheader("📝 Penjelasan 8 Fitur Model")
+    st.subheader("Penjelasan 8 Fitur Model")
     feat_df = pd.DataFrame([
         {
             'No': i + 1,
@@ -553,7 +549,7 @@ git push origin main
 # TAB 4 — UJI STRES (BATCH PREDICTION)
 # ══════════════════════════════════════════════════════
 with tab_stress:
-    st.subheader("⚡ Uji Stres — Simulasi Batch Prediksi")
+    st.subheader("Tes Ketahanan Model")
     st.markdown("""
     Simulasi prediksi untuk banyak obat sekaligus menggunakan API batch.
     Berguna untuk menguji performa dan stabilitas model.
@@ -565,7 +561,7 @@ with tab_stress:
     with col_cfg2:
         seed = st.number_input("Random seed", value=42, step=1)
 
-    if st.button("▶️ Jalankan Simulasi Batch", use_container_width=True):
+    if st.button("Jalankan Simulasi Batch", use_container_width=True):
         np.random.seed(int(seed))
 
         # Generate random items
@@ -656,12 +652,13 @@ with tab_stress:
 # ─────────────────────────────────────────────────────────────────────────────
 # FOOTER
 # ─────────────────────────────────────────────────────────────────────────────
+img_base64 = get_base64_image("logo.png")
 st.markdown("---")
 st.markdown(f"""
 <div style='text-align:center; color:#666; font-size:0.85rem;'>
-    💊 <b>Apotek Stock Prediction Dashboard</b> | 
-    Model: Decision Tree Regressor (CARD) | 
-    API: <a href='{HF_API_URL}/status' target='_blank'>Hugging Face Spaces</a> |
-    8 Fitur | Data: 3 Bulan Terakhir
+<b><img src="{img_base64}" width="10"> Apotek Stock Prediction Dashboard</b> | 
+Model: Decision Tree Regressor (CARD) | 
+API: <a href='{HF_API_URL}/status' target='_blank'>Hugging Face Spaces</a> |
+8 Fitur | Data: 3 Bulan Terakhir
 </div>
 """, unsafe_allow_html=True)
