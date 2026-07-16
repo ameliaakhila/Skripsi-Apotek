@@ -13,12 +13,14 @@ Endpoints:
 import pickle
 import numpy as np
 import pandas as pd
-import json
-from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Union
 
-from flask import Flask, request, jsonify
+import matplotlib
+matplotlib.use('Agg')  # Use non-GUI backend for matplotlib
+import matplotlib.pyplot as plt
+from sklearn.tree import plot_tree
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import logging
 
@@ -302,6 +304,36 @@ def predict_batch():
     except Exception as e:
         logger.error(f"Batch prediction error: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/model/tree-image', methods=['GET'])
+def get_tree_image():
+    """Endpoint menghasilkan gambar struktur root node decision tree"""
+    if _model is None:
+        return jsonify({'error': 'Model not loaded'}), 500
+    
+    try:
+        # inisialisasi ukuran canvas untuk gambar
+        fig, ax = plt.subplots(figsize=(12, 6))
+
+        # gambar decision tree (dibatasi level max_depth=2 untuk menghindari terlalu banyak node)
+        plot_tree(_model,
+                    max_depth=2,
+                    feature_names=_feature_names,
+                    filled=True,
+                    rounded=True,
+                    prescision=2,
+                    ax=ax
+                )
+        
+        image_path = 'model/tree_structure.png'
+        plt.savefig(image_path, bbox_inches='tight', dpi=150)
+        plt.close(fig)  # tutup figure untuk menghemat memori
+
+        return send_file(image_path, mimetype='image/png')
+
+    except Exception as e:
+        logger.error(f"Error generating tree image: {str(e)}")
+        return jsonify({'error': f'Failed to generate tree image: {str(e)}'}), 500
 
 
 def calculate_confidence(prediction: float, features: Dict) -> str:

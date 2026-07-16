@@ -312,6 +312,12 @@ with tab_overview:
             dan batas minimum stok adalah faktor paling krusial dalam prediksi.
             """)
 
+        st.markdown("---")
+        st.subheader("Visualisasi Struktur Root Node Decision Tree")
+
+        tree_url = f"{HF_API_URL}/model/tree"
+        st.image(tree_url, caption="Struktur Root Node Decision Tree (dari API)", use_column_width=True)
+
         # Demonstrasi scatter prediksi (simulasi)
         st.markdown("---")
         st.subheader("Simulasi: Actual vs Predicted")
