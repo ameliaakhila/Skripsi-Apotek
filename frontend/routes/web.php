@@ -24,6 +24,9 @@ use Illuminate\Support\Facades\Route;
  * PUBLIC ROUTES - Authentication
  */
 Route::get('/', [AuthController::class, 'index'])->name('login');
+Route::get('/login-process', function () {
+    return redirect()->route('login');
+});
 Route::post('/login-process', [AuthController::class, 'login'])->name('login.process');
 
 

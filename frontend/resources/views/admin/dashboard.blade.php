@@ -13,7 +13,7 @@
             <div class="col-md-6 col-lg-3 mb-4">
                 <div class="card stat-card bg-primary text-white">
                     <div class="card-body">
-                        <h6 class="text-white font-weight-bolder opacity-5 text-uppercase mb-2">Total Obat</h6>
+                        <h6 class="text-white font-weight-bolder text-uppercase mb-2">Total Obat</h6>
                         <h3 class="mb-0 font-weight-bold">{{ $statusCards['obat'] ?? 0 }}</h3>
                         <i class="fas fa-pills"></i>
                     </div>
@@ -22,7 +22,7 @@
             <div class="col-md-6 col-lg-3 mb-4">
                 <div class="card stat-card bg-success text-white">
                     <div class="card-body">
-                        <h6 class="text-white font-weight-bolder opacity-5 text-uppercase mb-2">Total Cabang</h6>
+                        <h6 class="text-white font-weight-bolder text-uppercase mb-2">Total Cabang</h6>
                         <h3 class="mb-0 font-weight-bold">{{ $statusCards['cabang'] ?? 0 }}</h3>
                         <i class="fas fa-hospital"></i>
                     </div>
@@ -31,7 +31,7 @@
             <div class="col-md-6 col-lg-3 mb-4">
                 <div class="card stat-card bg-warning text-white">
                     <div class="card-body">
-                        <h6 class="text-white font-weight-bolder opacity-5 text-uppercase mb-2">Master Data</h6>
+                        <h6 class="text-white font-weight-bolder text-uppercase mb-2">Master Data</h6>
                         <h3 class="mb-0 font-weight-bold">{{ $statusCards['master'] ?? 0 }}</h3>
                         <i class="fas fa-database"></i>
                     </div>
@@ -40,7 +40,7 @@
             <div class="col-md-6 col-lg-3 mb-4">
                 <div class="card stat-card bg-danger text-white">
                     <div class="card-body">
-                        <h6 class="text-white font-weight-bolder opacity-5 text-uppercase mb-2">Total Users</h6>
+                        <h6 class="text-white font-weight-bolder text-uppercase mb-2">Total Users</h6>
                         <h3 class="mb-0 font-weight-bold">{{ $statusCards['users'] ?? 0 }}</h3>
                         <i class="fas fa-users"></i>
                     </div>
