@@ -5,3 +5,7 @@
 composer.json
 composer.lock
 README.md
+/backend/.venv
+/apotek-stock-prediction/.venv
+/frontend/node_module
+/frontend/vendor
