@@ -59,7 +59,11 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA') ? (
+                    (str_starts_with(env('MYSQL_ATTR_SSL_CA'), '/') || preg_match('/^[a-zA-Z]:/', env('MYSQL_ATTR_SSL_CA')))
+                    ? env('MYSQL_ATTR_SSL_CA')
+                    : base_path(env('MYSQL_ATTR_SSL_CA'))
+                ) : null,
                 // Add other SSL options if required by your database provider, e.g.:
                 // PDO::MYSQL_ATTR_SSL_KEY => env('MYSQL_ATTR_SSL_KEY'),
                 // PDO::MYSQL_ATTR_SSL_CERT => env('MYSQL_ATTR_SSL_CERT'),
