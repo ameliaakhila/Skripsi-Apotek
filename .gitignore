@@ -1,5 +1,6 @@
 *.log
-.env
+/frontend/.env
+/backend/.env
 /xhtml
 .prettierrc
 composer.json
