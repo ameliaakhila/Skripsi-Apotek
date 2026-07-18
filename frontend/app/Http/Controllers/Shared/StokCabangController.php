@@ -50,8 +50,8 @@ class StokCabangController extends Controller
             )
             ->orderBy('tb_cabang.nama_cabang', 'asc')
             ->orderBy('tb_obat.nama_obat', 'asc')
-            ->get()
-            ->map(function ($item) {
+            ->paginate(50)
+            ->through(function ($item) {
                 $item->status_stok = StokStatusHelper::getStatus(
                     (int) $item->total_stok_sisa,
                     (int) ($item->safety_stock ?? 0)

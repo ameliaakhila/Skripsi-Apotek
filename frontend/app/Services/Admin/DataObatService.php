@@ -6,7 +6,7 @@ use App\Models\Admin\DataKategori;
 use App\Models\Admin\DataSatuan;
 use App\Models\Admin\DataSupplier;
 use App\Models\Admin\Obat;
-use Illuminate\Pagination\CursorPaginator;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -18,8 +18,7 @@ class DataObatService
 
     public function ambilDataIndex(): array
     {
-        $data = Cache::remember('list_obat_paginated', 600, function (): CursorPaginator {
-            return Obat::with([
+        $data = Obat::with([
                 'DataKategori:id_kategori,nama_kategori',
                 'DataSupplier:id_supplier,nama_supplier',
                 'DataSatuan:id_satuan,nama_satuan',
@@ -33,8 +32,8 @@ class DataObatService
                     'id_supplier',
                     'created_at',
                 ])
-                ->cursorPaginate(2000);
-        });
+                ->orderBy('nama_obat', 'asc')
+                ->paginate(50);
 
         $masterData = Cache::remember('master_data_obat', 3600, function (): array {
             return [
@@ -102,7 +101,6 @@ class DataObatService
 
     private function invalidateCache(): void
     {
-        Cache::forget('list_obat_paginated');
         Cache::forget('master_data_obat');
         // ! OPTIMIZATION: Use centralized cache invalidation
         $this->cacheService->invalidateAll();

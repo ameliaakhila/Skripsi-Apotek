@@ -101,6 +101,9 @@
                                 <x-admin.modals.modal-data-obat id="modalEditObat" judul="Edit Data Obat" type="edit"
                                     :satuan="$satuan" :supplier="$supplier" :kategori="$kategori" />
                     </div>
+                    <div class="d-flex justify-content-center mt-3">
+                        {{ $data->links() }}
+                    </div>
                     </div>
                     </div>
                     </div>

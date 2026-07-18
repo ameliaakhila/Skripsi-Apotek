@@ -57,20 +57,23 @@ class MutasiStokController extends Controller
                 ->get();
         });
 
-        $dataStokBatch = StokBatch::with(['Obat:id_obat,nama_obat', 'MutasiStok.CabangTujuan:id_cabang,nama_cabang'])
-            ->select('id_stok_batch', 'kode_batch', 'id_obat', 'tanggal_kedaluwarsa', 'stok_sisa')
-            ->where('id_cabang', 1)  // Filter hanya sisa cabang pusat
-            ->where('stok_sisa', '>', 0)
-            ->orderBy('tanggal_kedaluwarsa', 'asc')
-            ->get()
-            ->map(function ($batch) {
-                // ambil semua nama cabang tujuan
-                $batch->nama_cabang = $batch->MutasiStok
-                    ->pluck('CabangTujuan.nama_cabang')
-                    ->filter()
-                    ->first();
-                return $batch;
-            });
+        $dataStokBatch = Cache::remember('mutasi_stok_batch_dropdown', now()->addMinutes(10), function () {
+            return StokBatch::with(['Obat:id_obat,nama_obat', 'MutasiStok.CabangTujuan:id_cabang,nama_cabang'])
+                ->select('id_stok_batch', 'kode_batch', 'id_obat', 'tanggal_kedaluwarsa', 'stok_sisa')
+                ->where('id_cabang', 1)  // Filter hanya sisa cabang pusat
+                ->where('stok_sisa', '>', 0)
+                ->orderBy('tanggal_kedaluwarsa', 'asc')
+                ->limit(200)
+                ->get()
+                ->map(function ($batch) {
+                    // ambil semua nama cabang tujuan
+                    $batch->nama_cabang = $batch->MutasiStok
+                        ->pluck('CabangTujuan.nama_cabang')
+                        ->filter()
+                        ->first();
+                    return $batch;
+                });
+        });
         // dd($dataStokBatch->toArray());
 
         return compact('dataCabangTujuan', 'dataCabangAsal', 'dataStokBatch');

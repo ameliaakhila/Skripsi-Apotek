@@ -56,7 +56,7 @@ class StokOpnameController extends Controller
             $batchQuery->where('id_cabang', $request->id_cabang);
         }
 
-        $dataStokBatch = $batchQuery->get();
+        $dataStokBatch = $batchQuery->limit(200)->get();
 
         return view('shared.stok-opname', compact('data', 'dataCabang', 'dataStokBatch'));
     }
