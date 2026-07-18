@@ -21,8 +21,7 @@ class ObatKeluarSeeder extends Seeder
 
     public function run(): void
     {
-        // ! STEP 1: Clear old data
-        DB::table('tb_obat_keluar')->truncate();
+        // ! Tidak menghapus data lama — hanya menambah data keluar baru
 
         // ! STEP 2: Get batch → obat_masuk mapping ONCE (tidak perlu loop)
         $batch_to_obat_masuk = DB::table('tb_obat_masuk')

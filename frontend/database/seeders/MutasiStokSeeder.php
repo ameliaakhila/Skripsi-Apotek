@@ -12,8 +12,7 @@ class MutasiStokSeeder extends Seeder
      */
     public function run(): void
     {
-        // ↓ STEP 1: Hapus semua data lama di tabel tb_mutasi_stok
-        DB::table('tb_mutasi_stok')->delete();
+        // Tidak menghapus data lama — hanya menambah 20 record mutasi baru
 
         // ↓ STEP 2: Ambil semua id_cabang dari tabel tb_cabang (return collection)
         // Contoh: [1, 2, 3, 4, 5]

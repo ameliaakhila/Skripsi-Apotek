@@ -14,8 +14,7 @@ class ObatMasukSeeder extends Seeder
 {
     public function run(): void
     {
-        // ? Hapus data lama (prevent duplicate)
-        DB::table('tb_obat_masuk')->delete();
+        // ? Tidak menghapus data lama — hanya menambah data baru di atas data yang sudah ada
 
         // ? Ambil semua data obat
         $obats = DB::table('tb_obat')->get();
@@ -29,7 +28,8 @@ class ObatMasukSeeder extends Seeder
         // ? Database transaction (rollback otomatis jika error)
         DB::transaction(function () use ($obats, $batchPerObat, &$data_obat_masuk) {
 
-            $batchCounter = 0; // Counter untuk unique kode batch
+            // ? Mulai counter dari ID terbesar yang sudah ada agar kode_batch tidak duplikat
+            $batchCounter = DB::table('tb_obat_masuk')->max('id_obat_masuk') ?? 0;
 
             foreach ($obats as $obat) {
 
