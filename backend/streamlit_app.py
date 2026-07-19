@@ -219,11 +219,13 @@ for feature in FEATURE_NAMES:
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN TABS
 # ─────────────────────────────────────────────────────────────────────────────
-tab_overview, tab_predict, tab_model, tab_stress = st.tabs([
+tab_overview, tab_predict, tab_model, tab_stress, tab_corr, tab_risk = st.tabs([
     "Gambaran Umum",
     "Prediksi Stok",
     "Info Model",
-    "Tes Ketahanan Model"
+    "Tes Ketahanan Model",
+    "Correlation Matrix",
+    "Matriks Risiko",
 ])
 
 
@@ -661,6 +663,382 @@ with tab_stress:
                 st.plotly_chart(fig_sc, use_container_width=True)
         else:
             st.error("Gagal mendapatkan hasil dari API. Pastikan HF Space sudah aktif.")
+
+
+# ══════════════════════════════════════════════════════
+# TAB 5 — CORRELATION MATRIX
+# ══════════════════════════════════════════════════════
+with tab_corr:
+    st.subheader("Correlation Matrix Antar Fitur")
+    st.markdown("""
+    Matriks korelasi menunjukkan **seberapa kuat hubungan** antara tiap pasang fitur yang digunakan model.
+    Nilai mendekati **+1** = korelasi positif kuat, **-1** = korelasi negatif kuat, **0** = tidak berkorelasi.
+    """)
+
+    # ── Simulasi dataset realistis berdasarkan distribusi apotek ──
+    np.random.seed(123)
+    n_sim = 300
+
+    total_masuk       = np.random.randint(200, 3000, n_sim).astype(float)
+    total_keluar      = total_masuk * np.random.uniform(0.05, 0.90, n_sim)
+    stok_saat_ini     = np.clip(total_masuk - total_keluar + np.random.normal(0, 20, n_sim), 0, None)
+    frekuensi         = np.clip(np.random.normal(15, 7, n_sim), 1, 30)
+    avg_transaksi     = total_keluar / np.maximum(frekuensi, 1) + np.random.normal(0, 1, n_sim)
+    demand_volatility = np.abs(np.random.normal(3, 2, n_sim))
+    avg_daily_sales   = total_keluar / 90 + np.random.normal(0, 0.5, n_sim)
+    safety_stock      = np.clip(avg_daily_sales * 7 + np.random.normal(0, 2, n_sim), 1, 100)
+
+    sim_df = pd.DataFrame({
+        'total_masuk'         : total_masuk,
+        'total_keluar'        : total_keluar,
+        'stok_saat_ini'       : stok_saat_ini,
+        'frekuensi_transaksi' : frekuensi,
+        'avg_transaksi'       : avg_transaksi,
+        'demand_volatility'   : demand_volatility,
+        'avg_daily_sales'     : avg_daily_sales,
+        'safety_stock'        : safety_stock,
+    })
+
+    corr = sim_df.corr()
+
+    # ── Heatmap dengan Plotly ──
+    col_heat, col_info_corr = st.columns([3, 1])
+
+    with col_heat:
+        labels_corr = [f.replace('_', ' ').title() for f in corr.columns]
+
+        fig_corr = go.Figure(go.Heatmap(
+            z=corr.values,
+            x=labels_corr,
+            y=labels_corr,
+            colorscale=[
+                [0.0,  '#b71c1c'],
+                [0.25, '#ef9a9a'],
+                [0.50, '#f5f5f5'],
+                [0.75, '#a5d6a7'],
+                [1.0,  '#1b5e20'],
+            ],
+            zmid=0,
+            zmin=-1, zmax=1,
+            text=corr.round(2).values,
+            texttemplate="%{text}",
+            textfont={"size": 11},
+            hovertemplate="%{y} ↔ %{x}<br>Korelasi: %{z:.3f}<extra></extra>",
+            showscale=True,
+            colorbar=dict(
+                title="Korelasi",
+                tickvals=[-1, -0.5, 0, 0.5, 1],
+                ticktext=["-1 (Negatif Kuat)", "-0.5", "0 (Tidak Ada)", "0.5", "+1 (Positif Kuat)"],
+            )
+        ))
+        fig_corr.update_layout(
+            title="Correlation Matrix — 8 Fitur Model",
+            height=520,
+            margin=dict(l=10, r=10, t=50, b=10),
+            xaxis=dict(tickangle=-30),
+            plot_bgcolor="#f0f4f0",
+            paper_bgcolor="#f0f4f0",
+            font=dict(color="#1b5e20"),
+        )
+        st.plotly_chart(fig_corr, use_container_width=True)
+
+    with col_info_corr:
+        st.markdown("### 🔍 Interpretasi")
+
+        # Temukan pasangan dengan korelasi tertinggi & terendah (off-diagonal)
+        corr_vals = corr.where(~np.eye(len(corr), dtype=bool))
+        max_pair  = corr_vals.stack().idxmax()
+        min_pair  = corr_vals.stack().idxmin()
+        max_val   = corr_vals.stack().max()
+        min_val   = corr_vals.stack().min()
+
+        st.success(f"""
+**Korelasi Tertinggi:**  
+`{max_pair[0].replace('_',' ').title()}` ↔  
+`{max_pair[1].replace('_',' ').title()}`  
+**r = {max_val:.2f}**
+""")
+        st.error(f"""
+**Korelasi Terendah:**  
+`{min_pair[0].replace('_',' ').title()}` ↔  
+`{min_pair[1].replace('_',' ').title()}`  
+**r = {min_val:.2f}**
+""")
+        st.markdown("---")
+        st.markdown("""
+**Panduan Warna:**
+- **Hijau tua** = korelasi positif kuat (mendekati +1)
+- **Abu-abu** = tidak berkorelasi (mendekati 0)
+- **Merah tua** = korelasi negatif kuat (mendekati -1)
+""")
+        st.info("""
+**Catatan:** Data pada heatmap ini adalah **simulasi realistis** (n=300) yang mencerminkan
+distribusi tipikal data apotek, bukan data training asli.
+""")
+
+    # ── Tabel ringkasan pasangan korelasi signifikan ──
+    st.markdown("---")
+    st.subheader("Pasangan Fitur dengan Korelasi Signifikan")
+
+    pairs = []
+    for i, r in enumerate(corr.index):
+        for j, c in enumerate(corr.columns):
+            if i < j:
+                val = corr.iloc[i, j]
+                pairs.append({
+                    'Fitur A' : r.replace('_',' ').title(),
+                    'Fitur B' : c.replace('_',' ').title(),
+                    'Korelasi': round(val, 3),
+                    'Kekuatan': (
+                        'Kuat Positif' if val >= 0.7 else
+                        'Sedang Positif' if val >= 0.4 else
+                        'Kuat Negatif' if val <= -0.7 else
+                        'Sedang Negatif' if val <= -0.4 else
+                        'Lemah'
+                    )
+                })
+
+    pairs_df = pd.DataFrame(pairs).sort_values('Korelasi', ascending=False)
+    st.dataframe(pairs_df, use_container_width=True, hide_index=True)
+
+    # ── Scatter matrix ──
+    st.markdown("---")
+    st.subheader("Scatter Plot Matrix (Pair Plot)")
+    st.markdown("Pilih fitur yang ingin dibandingkan:")
+
+    selected_feats = st.multiselect(
+        "Pilih fitur (2–4 fitur)",
+        options=list(sim_df.columns),
+        default=['total_keluar', 'avg_transaksi', 'demand_volatility', 'safety_stock'],
+        format_func=lambda x: x.replace('_',' ').title()
+    )
+
+    if len(selected_feats) >= 2:
+        fig_scatter_matrix = px.scatter_matrix(
+            sim_df[selected_feats],
+            dimensions=selected_feats,
+            color_discrete_sequence=['#2e7d32'],
+            labels={f: f.replace('_',' ').title() for f in selected_feats},
+            title="Scatter Matrix — Hubungan Antar Fitur",
+            opacity=0.5,
+        )
+        fig_scatter_matrix.update_traces(diagonal_visible=False)
+        fig_scatter_matrix.update_layout(
+            height=500,
+            plot_bgcolor="#f0f4f0",
+            paper_bgcolor="#f0f4f0",
+            font=dict(color="#1b5e20"),
+        )
+        st.plotly_chart(fig_scatter_matrix, use_container_width=True)
+    else:
+        st.warning("Pilih minimal 2 fitur untuk menampilkan scatter matrix.")
+
+
+# ══════════════════════════════════════════════════════
+# TAB 6 — MATRIKS RISIKO
+# ══════════════════════════════════════════════════════
+with tab_risk:
+    st.subheader("⚠️ Matriks Risiko Stok Obat")
+    st.markdown("""
+    Matriks risiko memetakan setiap obat ke dalam **zona risiko** berdasarkan dua dimensi:
+    - **Sumbu X — Demand Volatility:** seberapa fluktuatif permintaan harian obat tersebut
+    - **Sumbu Y — Gap Stok Kritis:** selisih antara kebutuhan prediksi vs stok saat ini (semakin tinggi = semakin kekurangan stok)
+    """)
+
+    st.markdown("---")
+
+    # ── Konfigurasi simulasi ──
+    col_risk_cfg1, col_risk_cfg2 = st.columns(2)
+    with col_risk_cfg1:
+        n_risk = st.slider("Jumlah obat yang divisualisasikan", min_value=10, max_value=100, value=40, step=5)
+    with col_risk_cfg2:
+        seed_risk = st.number_input("Random seed (Risiko)", value=77, step=1)
+
+    # ── Generate data risiko ──
+    np.random.seed(int(seed_risk))
+
+    obat_names = [
+        "Amoxicillin", "Paracetamol", "Ibuprofen", "Metformin", "Amlodipine",
+        "Omeprazole", "Cetirizine", "Simvastatin", "Captopril", "Glibenclamide",
+        "Ranitidin", "Antasida", "Vitamin C", "Vitamin B Comp", "Asam Mefenamat",
+        "Dexamethasone", "Cotrimoxazole", "Thiamphenicol", "Cefixime", "Azithromycin",
+        "Loratadine", "Salbutamol", "Furosemide", "Spironolactone", "Atorvastatin",
+        "Lisinopril", "Bisoprolol", "Lansoprazole", "Ranitidine", "Domperidone",
+        "Metronidazole", "Ciprofloxacin", "Levofloxacin", "Doxycycline", "Ambroxol",
+        "Guaifenesin", "Pseudoephedrine", "Chlorphenamine", "Betahistine", "Piracetam",
+        "Diazepam", "Alprazolam", "Clonazepam", "Haloperidol", "Risperidone",
+        "Eritromycin", "Klindamisin", "Ampicillin", "Tetracyclin", "Fluconazole"
+    ]
+    obat_sample = [obat_names[i % len(obat_names)] for i in range(n_risk)]
+
+    volatility_risk   = np.abs(np.random.normal(4, 3, n_risk))
+    stok_kini_risk    = np.random.randint(5, 500, n_risk).astype(float)
+    kebutuhan_risk    = stok_kini_risk * np.random.uniform(0.5, 2.5, n_risk)
+    gap_risk          = np.clip(kebutuhan_risk - stok_kini_risk, -200, 500)
+    safety_risk       = np.clip(np.random.uniform(5, 50, n_risk), 1, None)
+
+    def classify_risk(vol, gap, safety):
+        high_vol  = vol >= 5
+        kritis    = gap > safety * 2
+        waspada   = (gap > 0) and not kritis
+        aman      = gap <= 0
+        if high_vol and kritis:
+            return '🔴 Kritis Tinggi'
+        elif high_vol and waspada:
+            return '🟠 Tinggi'
+        elif (not high_vol) and kritis:
+            return '🟡 Menengah Kritis'
+        elif (not high_vol) and waspada:
+            return '🟡 Menengah'
+        else:
+            return '🟢 Rendah'
+
+    risk_labels = [
+        classify_risk(v, g, s)
+        for v, g, s in zip(volatility_risk, gap_risk, safety_risk)
+    ]
+
+    df_risk = pd.DataFrame({
+        'Nama Obat'          : obat_sample,
+        'Demand Volatility'  : volatility_risk.round(2),
+        'Gap Stok Kritis'    : gap_risk.round(1),
+        'Stok Saat Ini'      : stok_kini_risk.round(0).astype(int),
+        'Kebutuhan Prediksi' : kebutuhan_risk.round(1),
+        'Safety Stock'       : safety_risk.round(1),
+        'Level Risiko'       : risk_labels,
+    })
+
+    color_map_risk = {
+        '🔴 Kritis Tinggi'  : '#b71c1c',
+        '🟠 Tinggi'         : '#e65100',
+        '🟡 Menengah Kritis': '#f9a825',
+        '🟡 Menengah'       : '#fbc02d',
+        '🟢 Rendah'         : '#2e7d32',
+    }
+
+    # ── Scatter Risk Matrix ──
+    fig_risk = px.scatter(
+        df_risk,
+        x='Demand Volatility',
+        y='Gap Stok Kritis',
+        color='Level Risiko',
+        color_discrete_map=color_map_risk,
+        size=np.abs(gap_risk) + 10,
+        hover_name='Nama Obat',
+        hover_data={
+            'Stok Saat Ini'      : True,
+            'Kebutuhan Prediksi' : True,
+            'Safety Stock'       : True,
+            'Demand Volatility'  : ':.2f',
+            'Gap Stok Kritis'    : ':.1f',
+        },
+        title="Matriks Risiko Stok Obat — Volatilitas vs Kekritisan Stok",
+        labels={
+            'Demand Volatility': 'Demand Volatility (Fluktuasi Permintaan)',
+            'Gap Stok Kritis'  : 'Gap Stok Kritis (Kebutuhan − Stok Saat Ini)'
+        },
+        opacity=0.85,
+    )
+
+    # Zona risiko (background rectangles)
+    fig_risk.add_shape(type="rect", x0=0, x1=5, y0=-300, y1=0,
+                       fillcolor="#c8e6c9", opacity=0.18, layer="below", line_width=0)
+    fig_risk.add_shape(type="rect", x0=0, x1=5, y0=0, y1=500,
+                       fillcolor="#fff9c4", opacity=0.18, layer="below", line_width=0)
+    fig_risk.add_shape(type="rect", x0=5, x1=20, y0=-300, y1=0,
+                       fillcolor="#ffe0b2", opacity=0.18, layer="below", line_width=0)
+    fig_risk.add_shape(type="rect", x0=5, x1=20, y0=0, y1=500,
+                       fillcolor="#ffcdd2", opacity=0.22, layer="below", line_width=0)
+
+    # Garis pembatas zona
+    fig_risk.add_vline(x=5, line_dash="dash", line_color="#9e9e9e", line_width=1.5)
+    fig_risk.add_hline(y=0, line_dash="dash", line_color="#9e9e9e", line_width=1.5)
+
+    # Anotasi zona
+    annotations_risk = [
+        dict(x=2.5, y=-150, text="AMAN", font=dict(color="#2e7d32", size=13, family="Arial Black"), showarrow=False, opacity=0.5),
+        dict(x=2.5, y=350,  text="WASPADA", font=dict(color="#f9a825", size=13, family="Arial Black"), showarrow=False, opacity=0.5),
+        dict(x=12,  y=-150, text="VOLATIL AMAN", font=dict(color="#e65100", size=11, family="Arial Black"), showarrow=False, opacity=0.5),
+        dict(x=12,  y=350,  text="KRITIS TINGGI", font=dict(color="#b71c1c", size=13, family="Arial Black"), showarrow=False, opacity=0.5),
+    ]
+    fig_risk.update_layout(
+        annotations=annotations_risk,
+        height=560,
+        plot_bgcolor="#f0f4f0",
+        paper_bgcolor="#f0f4f0",
+        font=dict(color="#1b5e20"),
+        legend=dict(title="Level Risiko", orientation="v"),
+        margin=dict(l=10, r=10, t=60, b=10),
+    )
+    st.plotly_chart(fig_risk, use_container_width=True)
+
+    # ── Ringkasan per zona ──
+    st.markdown("---")
+    col_summary1, col_summary2 = st.columns([2, 3])
+
+    with col_summary1:
+        st.subheader("Ringkasan Level Risiko")
+        risk_summary = df_risk['Level Risiko'].value_counts().reset_index()
+        risk_summary.columns = ['Level Risiko', 'Jumlah Obat']
+        risk_summary['Persentase'] = (risk_summary['Jumlah Obat'] / n_risk * 100).round(1).astype(str) + '%'
+        st.dataframe(risk_summary, use_container_width=True, hide_index=True)
+
+        fig_donut = px.pie(
+            risk_summary,
+            values='Jumlah Obat',
+            names='Level Risiko',
+            hole=0.55,
+            color='Level Risiko',
+            color_discrete_map=color_map_risk,
+            title="Distribusi Level Risiko",
+        )
+        fig_donut.update_layout(
+            height=340,
+            plot_bgcolor="#f0f4f0",
+            paper_bgcolor="#f0f4f0",
+            font=dict(color="#1b5e20"),
+            margin=dict(l=0, r=0, t=40, b=0),
+            legend=dict(orientation="h", yanchor="bottom", y=-0.2)
+        )
+        st.plotly_chart(fig_donut, use_container_width=True)
+
+    with col_summary2:
+        st.subheader("Daftar Obat Risiko Kritis")
+        kritis_df = df_risk[
+            df_risk['Level Risiko'].isin(['🔴 Kritis Tinggi', '🟠 Tinggi'])
+        ].sort_values('Gap Stok Kritis', ascending=False)
+
+        if kritis_df.empty:
+            st.success("✅ Tidak ada obat dalam zona kritis saat ini.")
+        else:
+            st.error(f"⚠️ **{len(kritis_df)} obat** memerlukan perhatian segera!")
+            st.dataframe(
+                kritis_df[['Nama Obat','Level Risiko','Gap Stok Kritis','Demand Volatility','Stok Saat Ini','Kebutuhan Prediksi']],
+                use_container_width=True,
+                hide_index=True
+            )
+
+    # ── Tabel lengkap ──
+    st.markdown("---")
+    with st.expander("Lihat Tabel Lengkap Semua Obat"):
+        st.dataframe(
+            df_risk.sort_values('Level Risiko'),
+            use_container_width=True,
+            hide_index=True
+        )
+
+    # ── Panduan ──
+    st.markdown("---")
+    with st.expander("📘 Panduan Membaca Matriks Risiko"):
+        st.markdown("""
+        | Zona | Demand Volatility | Gap Stok | Interpretasi | Tindakan |
+        |------|:-----------------:|:--------:|:------------|:---------|
+        | 🟢 Rendah         | Rendah (< 5) | Negatif (stok surplus) | Stok aman, permintaan stabil | Pemantauan rutin |
+        | 🟡 Menengah       | Rendah (< 5) | Positif (butuh restok)  | Perlu restok tapi tidak mendesak | Jadwalkan pemesanan |
+        | 🟠 Tinggi         | Tinggi (≥ 5) | Negatif                 | Permintaan fluktuatif, stok masih cukup | Tingkatkan safety stock |
+        | 🟡 Menengah Kritis| Rendah (< 5) | Positif besar           | Stok hampir habis, permintaan stabil | Pesan segera |
+        | 🔴 Kritis Tinggi  | Tinggi (≥ 5) | Positif (kekurangan)    | Kombinasi terburuk — risiko stockout tinggi | **Tindakan darurat** |
+        """)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
