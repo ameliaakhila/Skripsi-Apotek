@@ -143,6 +143,9 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/obat-keluar-edit/{id_obat_keluar}', [ObatKeluarController::class, 'update'])->name('obat-keluar.update-legacy');
         Route::delete('/obat-keluar-hapus/{id_obat_keluar}', [ObatKeluarController::class, 'destroy'])->name('obat-keluar.destroy-legacy');
 
+        // Route for AJAX batch search
+        Route::get('/api/search/batch', [ObatKeluarController::class, 'searchBatch'])->name('api.search.batch');
+
         // Mutasi Stok
         Route::get('/mutasi-stok', [MutasiStokController::class, 'index'])->name('mutasi-stok.index');
         Route::post('/mutasi-stok-tambah', [MutasiStokController::class, 'store'])->name('mutasi-stok.store-legacy');
