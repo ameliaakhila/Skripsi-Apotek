@@ -312,6 +312,10 @@ with tab_overview:
             dan batas minimum stok adalah faktor paling krusial dalam prediksi.
             """)
 
+        st.markdown("---")
+        st.subheader("Visualisasi Struktur Root Node Decision Tree")
+
+        tree_url = f"{HF_API_URL}/model/tree-image"
         try:
             with st.spinner("Mengunduh gambar struktur pohon..."):
                 response = requests.get(tree_url, timeout=20)
