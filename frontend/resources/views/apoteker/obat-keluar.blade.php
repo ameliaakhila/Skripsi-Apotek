@@ -117,7 +117,7 @@
                             :obatList="$obatList" :cabang="$cabang" />
                         {{-- ! Modal Edit --}}
                         <x-admin.modals.modal-obat-keluar id="modalEditObatKeluar" judul="Edit Obat Keluar"
-                            type="edit" :kodeBatch="$kodeBatch" :cabang="$cabang" :obatList="$obatList" />
+                            type="edit" :cabang="$cabang" :obatList="$obatList" />
                         {{-- ! Modal Detail --}}
                         <x-admin.modals.modal-obat-keluar id="modalDetailObatKeluar" judul="Detail Obat Keluar"
                             type="detail" />

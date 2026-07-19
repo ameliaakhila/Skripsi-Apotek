@@ -19,9 +19,8 @@ class ObatMasukController extends Controller
         $indexData = $this->obatMasukService->ambilDataIndex();
         $data = $indexData['data'];
         $obat = $indexData['obat'];
-        $kodeBatch = $indexData['kodeBatch'];
 
-        return view('apoteker.obat-masuk', compact('data', 'obat', 'kodeBatch'));
+        return view('apoteker.obat-masuk', compact('data', 'obat'));
     }
 
     // ! ====================== CREATE =========================

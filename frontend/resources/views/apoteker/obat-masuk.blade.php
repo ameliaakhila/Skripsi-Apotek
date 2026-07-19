@@ -125,11 +125,11 @@
                         </table>
                         {{-- ! Modal Tambah --}}
                         <x-admin.modals.modal-obat-masuk judul="Tambah Obat Masuk" type="tambah" :obat="$obat"
-                        :kodeBatch="$kodeBatch" />
+                         />
 
                         {{-- ! Modal Edit --}}
                         <x-admin.modals.modal-obat-masuk id="modalEditObat" judul="Edit Obat Masuk" type="edit"
-                            :kodeBatch="$kodeBatch" :obat="$obat" />
+                            :obat="$obat" />
                         {{-- ! Modal Detail --}}
                         <x-admin.modals.modal-obat-masuk id="modalDetailObat" judul="Detail Obat Masuk"
                             type="detail" :kodeBatch="$kodeBatch" />
