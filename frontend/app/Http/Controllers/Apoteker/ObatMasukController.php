@@ -19,9 +19,8 @@ class ObatMasukController extends Controller
         $indexData = $this->obatMasukService->ambilDataIndex();
         $data = $indexData['data'];
         $obat = $indexData['obat'];
-        // Hapus kodeBatch dari sini. Ini akan menghentikan pemicu cache besar.
-        // Kita akan meneruskan collection kosong agar view tidak error.
-        return view('apoteker.obat-masuk', compact('data', 'obat'));
+        $kodeBatch = null; // Inisialisasi variabel agar tidak error di view
+        return view('apoteker.obat-masuk', compact('data', 'obat', 'kodeBatch'));
     }
 
     // ! ====================== CREATE =========================

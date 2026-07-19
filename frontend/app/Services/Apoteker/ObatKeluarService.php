@@ -45,7 +45,6 @@ class ObatKeluarService
                 ->get();
         });
 
-        $kodeBatch = $this->cacheService->getKodeBatchAvailable();
 
         // Get list of branches that have stock
         $cabang = Cache::remember('cabang_list_with_stock', now()->addHours(2), function () {
@@ -54,7 +53,7 @@ class ObatKeluarService
             })->select('id_cabang', 'nama_cabang')->get();
         });
 
-        return compact('data', 'obatList', 'kodeBatch', 'cabang');
+        return compact('data', 'obatList', 'cabang');
     }
 
     public function simpan(array $validated): array

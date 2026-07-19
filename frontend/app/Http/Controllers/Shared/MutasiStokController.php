@@ -33,10 +33,12 @@ class MutasiStokController extends Controller
             ->orderBy('updated_at', 'desc')
             ->simplePaginate(25);  // Increase per-page untuk reduce queries
 
-        // Share data modal sekali per request agar view tidak perlu kirim atribut data berulang.
-        view()->share($this->getModalMutasiStokData());
+        $modalData = $this->getModalMutasiStokData();
 
-        return view('shared.mutasi-stok', compact('data'));
+        return view('shared.mutasi-stok', array_merge(
+            compact('data'),
+            $modalData
+        ));
     }
 
     /**
@@ -57,9 +59,19 @@ class MutasiStokController extends Controller
                 ->get();
         });
 
-        // Hapus pengambilan dataStokBatch yang besar dari sini.
-        // Data ini akan diambil melalui AJAX.
-        return compact('dataCabangTujuan', 'dataCabangAsal');
+        $dataStokBatch = Cache::remember('master_stok_batch_available', now()->addMinutes(10), function () {
+            return StokBatch::with([
+                'Obat:id_obat,nama_obat',
+                'DataCabang:id_cabang,nama_cabang'
+            ])
+                ->where('stok_sisa', '>', 0)
+                ->orderBy('id_cabang', 'asc')
+                ->orderBy('tanggal_kedaluwarsa', 'asc')
+                ->limit(500) // Limit to prevent memory issues
+                ->get();
+        });
+
+        return compact('dataCabangTujuan', 'dataCabangAsal', 'dataStokBatch');
     }
 
     // ! ==================================== CREATE (STORE) ====================================
