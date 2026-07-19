@@ -78,7 +78,6 @@
                                         <th style="text-align: center;">
                                             Rekomendasi Order
                                         </th>
-                                        <th style="text-align: center;">Kepercayaan</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -137,7 +136,7 @@
                                                         <br><small class="text-muted">tidak perlu pesan</small>
                                                     @endif
                                                 </td>
-                                                <td style="text-align: center;">
+                                                {{-- <td style="text-align: center;">
                                                     @if(isset($d['confidence']))
                                                         @if($d['confidence'] === 'high')
                                                             <span class="badge badge-success"><i class="fas fa-star"></i> Tinggi</span>
@@ -151,7 +150,7 @@
                                                     @else
                                                         <span class="badge badge-secondary">-</span>
                                                     @endif
-                                                </td>
+                                                </td> --}}
                                             </tr>
                                         @endforeach
                                     </tbody>
