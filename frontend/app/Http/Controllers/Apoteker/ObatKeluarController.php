@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Apoteker;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin\StokBatch;
 use App\Models\Admin\ObatKeluar;
 use App\Services\Apoteker\ObatKeluarService;
 use Illuminate\Http\Request;
@@ -24,7 +25,10 @@ class ObatKeluarController extends Controller
         $obatList = $indexData['obatList'];
         $kodeBatch = $indexData['kodeBatch'];
         $cabang = $indexData['cabang'];
-        return view('apoteker.obat-keluar', compact('data', 'kodeBatch', 'obatList', 'cabang'));
+        // Hapus $kodeBatch dari compact, karena tidak lagi digunakan untuk memuat semua data
+        // Ini akan mencegah error "entry too large" karena data besar tidak lagi dilempar ke view
+        // dan tidak akan di-cache.
+        return view('apoteker.obat-keluar', compact('data', 'obatList', 'cabang'));
     }
 
 
@@ -133,5 +137,47 @@ class ObatKeluarController extends Controller
             return redirect()->back()
                 ->with('error', 'Gagal Hapus Data: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Search batch for Select2 AJAX
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function searchBatch(Request $request)
+    {
+        $search = $request->input('q');
+        $idCabang = $request->input('id_cabang');
+
+        $query = StokBatch::query()
+            ->with('Obat:id_obat,nama_obat')
+            ->where('stok_sisa', '>', 0) // Hanya tampilkan batch yang masih ada stok
+            ->select('id_stok_batch', 'kode_batch', 'id_obat', 'stok_sisa', 'tanggal_kedaluwarsa');
+
+        // Filter berdasarkan cabang jika diberikan
+        if ($idCabang) {
+            $query->where('id_cabang', $idCabang);
+        }
+
+        // Filter berdasarkan input pencarian user
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('kode_batch', 'LIKE', "%{$search}%")
+                  ->orWhereHas('Obat', function ($subq) use ($search) {
+                      $subq->where('nama_obat', 'LIKE', "%{$search}%");
+                  });
+            });
+        }
+
+        $batches = $query->limit(50)->get()->map(function ($batch) {
+            return [
+                'id' => $batch->id_stok_batch,
+                'text' => ($batch->Obat->nama_obat ?? 'N/A') . ' - ' . $batch->kode_batch . ' (Sisa: ' . $batch->stok_sisa . ')',
+                'exp' => $batch->tanggal_kedaluwarsa,
+                'stok' => $batch->stok_sisa,
+            ];
+        });
+
+        return response()->json(['results' => $batches]);
     }
 }

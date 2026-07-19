@@ -59,9 +59,9 @@
                                 @foreach ($data as $d)
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $d->StokBatch->kode_batch ?? '-' }}</td>
+                                        <td>{{ $d->StokBatch?->kode_batch ?? '-' }}</td>
                                         <td>
-                                            {{ $d->ObatMasuk->Obat->nama_obat ?? '-' }}
+                                            {{ $d->ObatMasuk?->Obat?->nama_obat ?? '-' }}
                                         </td>
                                         <td class="text-center">
                                             {{ $d->tanggal_keluar_formatted ?? '-' }}<br>
@@ -72,11 +72,11 @@
                                             <button type="button" class="btn btn-info shadow btn-xs sharp me-1"
                                                 data-bs-toggle="modal" data-bs-target="#modalDetailObatKeluar"
                                                 data-id="{{ $d->id_obat_keluar }}"
-                                                data-batch="{{ $d->StokBatch->kode_batch ?? '-' }}"
-                                                data-nama_obat="{{ $d->ObatMasuk->Obat->nama_obat ?? '-' }}"
+                                                data-batch="{{ $d->StokBatch?->kode_batch ?? '-' }}"
+                                                data-nama_obat="{{ $d->ObatMasuk?->Obat?->nama_obat ?? '-' }}"
                                                 data-tanggal_keluar="{{ $d->tanggal_keluar_formatted ?? '-' }}"
-                                                data-tanggal_kedaluwarsa="{{ $d->ObatMasuk->tanggal_kedaluwarsa_formatted ?? '-' }}"
-                                                data-nama_cabang="{{ $d->DataCabang->nama_cabang ?? '-' }}"
+                                                data-tanggal_kedaluwarsa="{{ $d->ObatMasuk?->tanggal_kedaluwarsa_formatted ?? '-' }}"
+                                                data-nama_cabang="{{ $d->DataCabang?->nama_cabang ?? '-' }}"
                                                 data-stok_keluar="{{ $d->stok_keluar }}"> <i class="fas fa-eye"></i>
                                             </button>
 
@@ -86,12 +86,12 @@
                                                 data-id="{{ $d->id_obat_keluar }}"
                                                 data-id_stok_batch="{{ $d->id_stok_batch }}"
                                                 data-id_cabang="{{ $d->id_cabang }}"
-                                                data-batch="{{ $d->StokBatch->kode_batch ?? '-' }}"
+                                                data-batch="{{ $d->StokBatch?->kode_batch ?? '-' }}"
                                                 data-stok_keluar="{{ $d->stok_keluar }}"
-                                                data-stok_sisa="{{ $d->StokBatch->stok_sisa ?? '-' }}"
-                                                data-nama_cabang="{{ $d->DataCabang->nama_cabang ?? '-' }}"
+                                                data-stok_sisa="{{ $d->StokBatch?->stok_sisa ?? '-' }}"
+                                                data-nama_cabang="{{ $d->DataCabang?->nama_cabang ?? '-' }}"
                                                 data-tanggal_keluar="{{ $d->tanggal_keluar ?? '-' }}"
-                                                data-tanggal_kedaluwarsa="{{ $d->ObatMasuk->tanggal_kedaluwarsa ?? '-' }}"
+                                                data-tanggal_kedaluwarsa="{{ $d->ObatMasuk?->tanggal_kedaluwarsa ?? '-' }}"
                                                 data-action="{{ Route::has('obat-keluar.update-legacy') ? route('obat-keluar.update-legacy', $d->id_obat_keluar) : url('/obat-keluar-edit/' . $d->id_obat_keluar) }}">
                                                 <i class="fas fa-pencil-alt"></i>
                                             </button>
@@ -114,7 +114,7 @@
 
                         {{-- ! Modal Tambah --}}
                         <x-admin.modals.modal-obat-keluar judul="Tambah Obat Keluar" type="tambah"
-                            :obatList="$obatList" :kodeBatch="$kodeBatch" :cabang="$cabang" />
+                            :obatList="$obatList" :cabang="$cabang" />
                         {{-- ! Modal Edit --}}
                         <x-admin.modals.modal-obat-keluar id="modalEditObatKeluar" judul="Edit Obat Keluar"
                             type="edit" :kodeBatch="$kodeBatch" :cabang="$cabang" :obatList="$obatList" />
@@ -129,74 +129,93 @@
 
     @push('scripts')
         <script>
-            // Filter logic for Medicine selection based on Branch
-            function filterObatByCabang(modalId, idCabang) {
-                let $modal = $(`#${modalId}`);
-                let $obatSelect = $modal.find('select[name="id_stok_batch"]');
+            document.addEventListener('DOMContentLoaded', function() {
+                // --- LOGIKA BARU DENGAN SELECT2 AJAX ---
 
-                // Reset medicine selection if branch changes
-                $obatSelect.val('').trigger('change').prop('disabled', !idCabang);
+                function initializeAjaxSelect2(modalId) {
+                    const $modal = $(`#${modalId}`);
+                    const $branchSelect = $modal.find('select[name="id_cabang"]');
+                    const $batchSelect = $modal.find('select[name="id_stok_batch"]');
 
-                if (idCabang) {
-                    $obatSelect.find('option').addClass('d-none');
-                    $obatSelect.find('option[value=""]').removeClass('d-none').text('Pilih Obat - Batch');
-                    $obatSelect.find(`option[data-id-cabang="${idCabang}"]`).removeClass('d-none');
-                } else {
-                    $obatSelect.find('option[value=""]').text('Pilih Cabang Terlebih Dahulu');
-                }
-
-                // Re-init Select2 if it's being used
-                if ($obatSelect.hasClass("select2-hidden-accessible")) {
-                    $obatSelect.select2('destroy').select2({
+                    $batchSelect.select2({
+                        placeholder: 'Pilih Cabang Terlebih Dahulu',
                         dropdownParent: $modal,
-                        width: '100%'
+                        width: '100%',
+                        ajax: {
+                            url: "{{ route('api.search.batch') }}",
+                            dataType: 'json',
+                            delay: 250,
+                            data: function(params) {
+                                return {
+                                    q: params.term, // search term
+                                    id_cabang: $branchSelect.val() // Pass selected branch
+                                };
+                            },
+                            processResults: function(data) {
+                                return {
+                                    results: data.results
+                                };
+                            },
+                            cache: true
+                        }
+                    }).prop('disabled', true);
+
+                    // Enable/disable batch select based on branch selection
+                    $branchSelect.on('change', function() {
+                        const idCabang = $(this).val();
+                        if (idCabang) {
+                            $batchSelect.prop('disabled', false).select2('open');
+                            $batchSelect.select2('data', null); // Clear previous selection
+                            $batchSelect.val(null).trigger('change');
+                        } else {
+                            $batchSelect.prop('disabled', true).val(null).trigger('change');
+                        }
+                    });
+
+                    // Auto-fill fields when a batch is selected
+                    $batchSelect.on('select2:select', function(e) {
+                        var data = e.params.data;
+                        if (data) {
+                            $modal.find('[data-field="tanggal_kedaluwarsa"]').val(data.exp);
+                            $modal.find('[data-field="stok_sisa"]').val(data.stok);
+                            $modal.find('[data-field="stok_keluar"]').attr('max', data.stok);
+                        }
                     });
                 }
-            }
 
-            // Handler for Branch Selection in TAMBAH Modal
-            $(document).on('change', '#single-select-cabang-tambah', function() {
-                filterObatByCabang('tambah', $(this).val());
-            });
+                // Initialize for both modals
+                initializeAjaxSelect2('tambah');
+                initializeAjaxSelect2('modalEditObatKeluar');
 
-            // Handler for Branch Selection in EDIT Modal
-            $(document).on('change', '#single-select-cabang-edit', function() {
-                filterObatByCabang('modalEditObatKeluar', $(this).val());
-            });
-
-            // Global Handler for Medicine Selection (Both modals)
-            $(document).on('change', 'select[name="id_stok_batch"]', function() {
-                let option = $(this).find(':selected');
-                let modal = $(this).closest('.modal');
-
-                let exp = option.data('exp');
-                let stok = option.data('stok');
-
-                // Populate auto-filled fields
-                modal.find('[data-field="tanggal_kedaluwarsa"]').val(exp);
-                modal.find('[data-field="stok_sisa"]').val(stok);
-                modal.find('[data-field="stok_keluar"]').attr('max', stok);
-            });
-
-            // Handle EDIT modal data initialization
-            document.addEventListener('DOMContentLoaded', function() {
+                // Handle EDIT modal data initialization
                 const editModal = document.getElementById('modalEditObatKeluar');
                 if (editModal) {
                     editModal.addEventListener('show.bs.modal', function(event) {
                         const button = event.relatedTarget;
                         const idCabang = button.dataset.id_cabang;
                         const idStokBatch = button.dataset.id_stok_batch;
+                        const batchText = button.dataset.batch; // e.g., "Paracetamol - BATCH123 (Sisa: 50)"
                         const $modal = $(editModal);
 
-                        // First, set the branch
+                        // Set the branch and trigger change to enable the batch select
                         const $branchSelect = $modal.find('select[name="id_cabang"]');
                         $branchSelect.val(idCabang).trigger('change');
 
-                        // Small delay to ensure filter logic finished and select2 is ready
-                        setTimeout(() => {
-                            let $obatSelect = $modal.find('select[name="id_stok_batch"]');
-                            $obatSelect.val(idStokBatch).trigger('change');
-                        }, 100);
+                        // Pre-populate the batch select with the existing value
+                        const $batchSelect = $modal.find('select[name="id_stok_batch"]');
+                        if (idStokBatch && batchText) {
+                            // Create a new option and append it to the select2
+                            var option = new Option(batchText, idStokBatch, true, true);
+                            $batchSelect.append(option).trigger('change');
+
+                            // Manually trigger the select2:select event to populate other fields
+                            $batchSelect.trigger({
+                                type: 'select2:select',
+                                params: {
+                                    data: { id: idStokBatch, text: batchText, exp: button.dataset.tanggal_kedaluwarsa, stok: button.dataset.stok_sisa }
+                                }
+                            });
+                        }
                     });
                 }
             });
