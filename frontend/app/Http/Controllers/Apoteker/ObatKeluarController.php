@@ -23,7 +23,6 @@ class ObatKeluarController extends Controller
         $indexData = $this->obatKeluarService->ambilDataIndex();
         $data = $indexData['data'];
         $obatList = $indexData['obatList'];
-        $kodeBatch = $indexData['kodeBatch'];
         $cabang = $indexData['cabang'];
         // Hapus $kodeBatch dari compact, karena tidak lagi digunakan untuk memuat semua data
         // Ini akan mencegah error "entry too large" karena data besar tidak lagi dilempar ke view
