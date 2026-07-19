@@ -35,7 +35,7 @@
     "env": {
         "APP_ENV": "production",
         "APP_DEBUG": "true",
-        "CACHE_DRIVER": "array",
+        "CACHE_STORE": "database",
         "SESSION_DRIVER": "cookie",
         "QUEUE_CONNECTION": "sync",
         "LOG_CHANNEL": "stderr",
