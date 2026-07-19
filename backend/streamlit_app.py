@@ -312,11 +312,15 @@ with tab_overview:
             dan batas minimum stok adalah faktor paling krusial dalam prediksi.
             """)
 
-        st.markdown("---")
-        st.subheader("Visualisasi Struktur Root Node Decision Tree")
-
-        tree_url = f"{HF_API_URL}/model/tree-image"
-        st.image(tree_url, caption="Struktur Root Node Decision Tree (dari API)", use_column_width=True)
+        try:
+            with st.spinner("Mengunduh gambar struktur pohon..."):
+                response = requests.get(tree_url, timeout=20)
+                if response.status_code == 200:
+                    st.image(response.content, caption="Struktur Root Node Decision Tree (dari API)", use_container_width=True)
+                else:
+                    st.warning(f"Gagal memuat visualisasi pohon (Status {response.status_code}). API mungkin sedang sibuk.")
+        except Exception as e:
+            st.error(f"Gagal menghubungi server API untuk mengambil gambar: {e}")
 
         # Demonstrasi scatter prediksi (simulasi)
         st.markdown("---")
