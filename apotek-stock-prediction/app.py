@@ -156,6 +156,7 @@ def model_info():
         'total features': len(_feature_names),
         'features': _feature_names,
         'training_metrics': _training_history,
+        'performance': _training_history,  # Ditambahkan agar cocok dengan pembacaan Streamlit
         'loaded_at': datetime.now().isoformat()
     }), 200
 
@@ -321,7 +322,7 @@ def get_tree_image():
                     feature_names=_feature_names,
                     filled=True,
                     rounded=True,
-                    prescision=2,
+                    precision=2,
                     ax=ax
                 )
         
