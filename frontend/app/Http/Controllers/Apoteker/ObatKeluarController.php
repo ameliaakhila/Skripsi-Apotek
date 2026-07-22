@@ -24,9 +24,6 @@ class ObatKeluarController extends Controller
         $data = $indexData['data'];
         $obatList = $indexData['obatList'];
         $cabang = $indexData['cabang'];
-        // Hapus $kodeBatch dari compact, karena tidak lagi digunakan untuk memuat semua data
-        // Ini akan mencegah error "entry too large" karena data besar tidak lagi dilempar ke view
-        // dan tidak akan di-cache.
         return view('apoteker.obat-keluar', compact('data', 'obatList', 'cabang'));
     }
 

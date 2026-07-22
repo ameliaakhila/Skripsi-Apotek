@@ -74,4 +74,3 @@ let dataSet = [
     });
 
 })(jQuery);
-

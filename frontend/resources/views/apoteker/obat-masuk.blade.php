@@ -124,7 +124,7 @@
                             </tbody>
                         </table>
                         {{-- ! Modal Tambah --}}
-                        <x-admin.modals.modal-obat-masuk judul="Tambah Obat Masuk" type="tambah" :obat="$obat"
+                        <x-admin.modals.modal-obat-masuk judul="Tambah Obat Masuk" type="tambah" :obat="$obat" kodeBatch="{{ $kodeBatch }}"
                         />
 
                         {{-- ! Modal Edit --}}

@@ -13,6 +13,7 @@ use App\Exports\ObatKeluarExport;
 use App\Exports\MutasiStokExport;
 use App\Exports\StokOpnameExport;
 use App\Exports\ObatSheet;
+use App\Exports\FullReportExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
@@ -25,7 +26,7 @@ class LaporanController extends Controller
         // Ambil data dari semua tabel dengan pagination
         $obat = Obat::with(['DataKategori', 'DataSupplier', 'DataSatuan'])
             ->orderBy('nama_obat', 'asc')
-            ->get();
+            ->simplePaginate(10, ['*'], 'obat');
 
         $obatMasuk = ObatMasuk::with([
             'Obat:id_obat,nama_obat',
@@ -112,7 +113,7 @@ class LaporanController extends Controller
     {
         try {
             return Excel::download(
-                new \App\Exports\ObatSheet(\App\Models\Admin\Obat::with(['DataKategori', 'DataSupplier', 'DataSatuan'])->get()->map(fn($i, $k) => [
+                new ObatSheet(Obat::with(['DataKategori', 'DataSupplier', 'DataSatuan'])->get()->map(fn($i, $k) => [
                     $k + 1, $i->nama_obat, $i->DataKategori->nama_kategori ?? '-', $i->DataSupplier->nama_supplier ?? '-', $i->DataSatuan->nama_satuan ?? '-'
                 ])),
                 'Laporan_Data_Obat_' . now()->format('d-m-Y') . '.xlsx'
@@ -131,9 +132,8 @@ class LaporanController extends Controller
         try {
             $startDate = $request->query('start_date');
             $endDate = $request->query('end_date');
-
             return Excel::download(
-                new \App\Exports\FullReportExport($startDate, $endDate),
+                new FullReportExport($startDate, $endDate),
                 'Laporan_Full_Manajemen_Stok_' . now()->format('d-m-Y') . '.xlsx'
             );
         } catch (\Exception $e) {

@@ -27,7 +27,7 @@ class ObatKeluarService
         ])
             ->select('tb_obat_keluar.*')
             ->orderBy('created_at', 'desc')
-            ->simplePaginate(25);
+            ->simplePaginate(10);
 
         // Get all batches with stock > 0 for all branches
         $obatList = Cache::remember('obat_keluar_list_all_batches', now()->addHours(2), function () {
@@ -60,7 +60,7 @@ class ObatKeluarService
     {
         return DB::transaction(function () use ($validated): array {
             $stokBatch = StokBatch::with('Obat')->findOrFail($validated['id_stok_batch']);
-            
+
             // Validasi tambahan: pastikan batch ada di cabang yang dipilih
             if ($stokBatch->id_cabang != $validated['id_cabang']) {
                 throw new \RuntimeException("Batch obat tidak ditemukan di cabang yang dipilih.");
@@ -103,7 +103,7 @@ class ObatKeluarService
             $obatKeluar = ObatKeluar::with(['ObatMasuk.Obat', 'StokBatch'])->findOrFail($idObatKeluar);
             $oldStokBatch = $obatKeluar->StokBatch;
             $newStokBatch = StokBatch::findOrFail($validated['id_stok_batch']);
-            
+
             // Validasi cabang
             if ($newStokBatch->id_cabang != $validated['id_cabang']) {
                 throw new \RuntimeException("Batch obat tidak sesuai dengan cabang yang dipilih.");
@@ -114,7 +114,7 @@ class ObatKeluarService
                 $oldStokBatch->stok_keluar -= $obatKeluar->stok_keluar;
                 $oldStokBatch->stok_sisa = $oldStokBatch->stok_masuk - $oldStokBatch->stok_keluar;
                 $oldStokBatch->save();
-                
+
                 // Update stok baru
                 if ($validated['stok_keluar'] > $newStokBatch->stok_sisa) {
                     throw new \RuntimeException("Stok tidak cukup di cabang terpilih.");
@@ -143,7 +143,7 @@ class ObatKeluarService
                 'stok_keluar' => $validated['stok_keluar'],
                 'tanggal_keluar' => $validated['tanggal_keluar'] ?? $obatKeluar->tanggal_keluar,
             ]);
-            
+
             $this->sinkronkanStokObatMasuk($obatMasuk->id_obat_masuk);
             $this->invalidateCache();
         });

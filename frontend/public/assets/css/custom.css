@@ -1353,3 +1353,25 @@ body .pharmacy-login-page {
     line-height: 1.1 !important;
     margin-top: 0 !important;
 }
+
+/* ============================================
+   ! DATATABLES PAGINATION SIZE OVERRIDE
+   ============================================ */
+
+/* Mengatur ukuran kotak tombol (padding) dan ukuran font angka di dalamnya */
+.dataTables_paginate .paginate_button {
+    padding: 0.5rem 0.9rem !important;
+    font-size: 0.9rem;
+}
+
+/* Mengatur ukuran ikon panah di dalam tombol 'next' dan 'previous' */
+.dataTables_paginate .paginate_button i {
+    font-size: 1rem;
+    vertical-align: middle;
+    /* Memastikan ikon tetap di tengah secara vertikal */
+}
+
+/* Opsional: Mengatur ukuran tombol saat aktif (misal halaman 1 sedang aktif) */
+.dataTables_paginate .paginate_button.current {
+    font-weight: bold;
+}

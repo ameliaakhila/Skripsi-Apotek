@@ -31,7 +31,7 @@ class MutasiStokController extends Controller
         ])
             ->select('id_mutasi', 'id_stok_batch', 'id_cabang_asal', 'id_cabang_tujuan', 'tanggal_mutasi', 'jumlah_mutasi', 'keterangan', 'created_at')
             ->orderBy('updated_at', 'desc')
-            ->simplePaginate(25);  // Increase per-page untuk reduce queries
+            ->simplePaginate(10);  // Increase per-page untuk reduce queries
 
         $modalData = $this->getModalMutasiStokData();
 

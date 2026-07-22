@@ -19,7 +19,7 @@ class ObatMasukController extends Controller
         $indexData = $this->obatMasukService->ambilDataIndex();
         $data = $indexData['data'];
         $obat = $indexData['obat'];
-        $kodeBatch = null; // Inisialisasi variabel agar tidak error di view
+        $kodeBatch = 'BAC' . now()->format('dmy') . 'SF' . str_pad(1, 3, '0', STR_PAD_LEFT);
         return view('apoteker.obat-masuk', compact('data', 'obat', 'kodeBatch'));
     }
 

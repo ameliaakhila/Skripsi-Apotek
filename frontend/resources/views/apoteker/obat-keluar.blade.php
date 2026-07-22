@@ -2,8 +2,12 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-body">
-                    <div class="table-responsive">
+                    <div class="card-header">
+                        <div class="card-title text-primary">
+                            {{ $title ?? 'Data Obat Keluar' }}
+                        </div>
+                    </div>
+                    <div class="card-body">
                         @if(session('success'))
                             <div
                                 class="d-flex align-items-center alert alert-success solid alert-dismissible fade show">
@@ -43,85 +47,81 @@
                             class="btn btn-primary btn-xs mb-2"><i class="fas fa-plus me-2"></i>
                             Tambah
                         </button>
-                        <table id="example3" class="table table-borderd">
-                            <thead>
-                                <tr>
-                                    <th>No</th>
-                                    <th>Batch</th>
-                                    <th style="width: 300px">Nama Obat</th>
-                                    <th class="text-center">Tanggal Keluar</th>
-                                    <th class="text-center">Stok Keluar</th>
-                                    <th class="text-center">Opsi</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                @foreach ($data as $d)
+                        <div class="table-responsive">
+                            <table id="example3" class="table table-borderd">
+                                <thead>
                                     <tr>
-                                        <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $d->StokBatch?->kode_batch ?? '-' }}</td>
-                                        <td>
-                                            {{ $d->ObatMasuk?->Obat?->nama_obat ?? '-' }}
-                                        </td>
-                                        <td class="text-center">
-                                            {{ $d->tanggal_keluar_formatted ?? '-' }}<br>
-                                        </td>
-                                        <td class="text-center">{{ $d->stok_keluar }}</td>
-                                        <td class="text-center d-flex justify-content-center align-items-center">
-                                            {{-- ! READ --}}
-                                            <button type="button" class="btn btn-info shadow btn-xs sharp me-1"
-                                                data-bs-toggle="modal" data-bs-target="#modalDetailObatKeluar"
-                                                data-id="{{ $d->id_obat_keluar }}"
-                                                data-batch="{{ $d->StokBatch?->kode_batch ?? '-' }}"
-                                                data-nama_obat="{{ $d->ObatMasuk?->Obat?->nama_obat ?? '-' }}"
-                                                data-tanggal_keluar="{{ $d->tanggal_keluar_formatted ?? '-' }}"
-                                                data-tanggal_kedaluwarsa="{{ $d->ObatMasuk?->tanggal_kedaluwarsa_formatted ?? '-' }}"
-                                                data-nama_cabang="{{ $d->DataCabang?->nama_cabang ?? '-' }}"
-                                                data-stok_keluar="{{ $d->stok_keluar }}"> <i class="fas fa-eye"></i>
-                                            </button>
-
-                                            {{-- ! UPDATE --}}
-                                            <button type="button" class="btn btn-primary shadow btn-xs sharp me-1"
-                                                data-bs-toggle="modal" data-bs-target="#modalEditObatKeluar"
-                                                data-id="{{ $d->id_obat_keluar }}"
-                                                data-id_stok_batch="{{ $d->id_stok_batch }}"
-                                                data-id_cabang="{{ $d->id_cabang }}"
-                                                data-batch="{{ $d->StokBatch?->kode_batch ?? '-' }}"
-                                                data-stok_keluar="{{ $d->stok_keluar }}"
-                                                data-stok_sisa="{{ $d->StokBatch?->stok_sisa ?? '-' }}"
-                                                data-nama_cabang="{{ $d->DataCabang?->nama_cabang ?? '-' }}"
-                                                data-tanggal_keluar="{{ $d->tanggal_keluar ?? '-' }}"
-                                                data-tanggal_kedaluwarsa="{{ $d->ObatMasuk?->tanggal_kedaluwarsa ?? '-' }}"
-                                                data-action="{{ Route::has('obat-keluar.update-legacy') ? route('obat-keluar.update-legacy', $d->id_obat_keluar) : url('/obat-keluar-edit/' . $d->id_obat_keluar) }}">
-                                                <i class="fas fa-pencil-alt"></i>
-                                            </button>
-
-                                            <form action="{{ Route::has('obat-keluar.destroy-legacy') ? route('obat-keluar.destroy-legacy', $d->id_obat_keluar) : url('obat-keluar-hapus/' . $d->id_obat_keluar) }}" method="POST"
-                                                style="display:inline-block;"
-                                                onsubmit="return confirm('Anda yakin hapus data obat keluar ini ?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit"
-                                                    class="btn btn-danger shadow btn-xs sharp me-1">
-                                                    <i class="fas fa-trash-alt"></i>
-                                                </button>
-                                            </form>
-                                        </td>
+                                        <th>No</th>
+                                        <th>Batch</th>
+                                        <th style="width: 300px">Nama Obat</th>
+                                        <th class="text-center">Tanggal Keluar</th>
+                                        <th class="text-center">Stok Keluar</th>
+                                        <th class="text-center">Opsi</th>
                                     </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                                </thead>
 
-                        {{-- ! Modal Tambah --}}
-                        <x-admin.modals.modal-obat-keluar judul="Tambah Obat Keluar" type="tambah"
-                            :obatList="$obatList" :cabang="$cabang" />
-                        {{-- ! Modal Edit --}}
-                        <x-admin.modals.modal-obat-keluar id="modalEditObatKeluar" judul="Edit Obat Keluar"
-                            type="edit" :cabang="$cabang" :obatList="$obatList" />
-                        {{-- ! Modal Detail --}}
-                        <x-admin.modals.modal-obat-keluar id="modalDetailObatKeluar" judul="Detail Obat Keluar"
-                            type="detail" />
-                    </div>
+                                <tbody>
+                                    @foreach ($data as $d)
+                                        <tr>
+                                            <td>{{ $loop->iteration }}</td>
+                                            <td>{{ $d->StokBatch?->kode_batch ?? '-' }}</td>
+                                            <td>
+                                                {{ $d->ObatMasuk?->Obat?->nama_obat ?? '-' }}
+                                            </td>
+                                            <td class="text-center">
+                                                {{ $d->tanggal_keluar_formatted ?? '-' }}<br>
+                                            </td>
+                                            <td class="text-center">{{ $d->stok_keluar }}</td>
+                                            <td class="text-center d-flex justify-content-center align-items-center">
+                                                {{-- ! READ --}}
+                                                <button type="button" class="btn btn-info shadow btn-xs sharp me-1"
+                                                    data-bs-toggle="modal" data-bs-target="#modalDetailObatKeluar"
+                                                    data-id="{{ $d->id_obat_keluar }}"
+                                                    data-batch="{{ $d->StokBatch?->kode_batch ?? '-' }}"
+                                                    data-nama_obat="{{ $d->ObatMasuk?->Obat?->nama_obat ?? '-' }}"
+                                                    data-tanggal_keluar="{{ $d->tanggal_keluar_formatted ?? '-' }}"
+                                                    data-tanggal_kedaluwarsa="{{ $d->ObatMasuk?->tanggal_kedaluwarsa_formatted ?? '-' }}"
+                                                    data-nama_cabang="{{ $d->DataCabang?->nama_cabang ?? '-' }}"
+                                                    data-stok_keluar="{{ $d->stok_keluar }}"> <i class="fas fa-eye"></i>
+                                                </button>
+
+                                                {{-- ! UPDATE --}}
+                                                <button type="button" class="btn btn-primary shadow btn-xs sharp me-1" data-bs-toggle="modal"
+                                                    data-bs-target="#modalEditObatKeluar" data-id="{{ $d->id_obat_keluar }}"
+                                                    data-id_stok_batch="{{ $d->id_stok_batch }}" data-id_cabang="{{ $d->id_cabang }}"
+                                                    data-batch="{{ $d->StokBatch?->kode_batch ?? '-' }}" data-stok_keluar="{{ $d->stok_keluar }}"
+                                                    data-stok_sisa="{{ $d->StokBatch?->stok_sisa ?? '-' }}" data-nama_cabang="{{ $d->DataCabang?->nama_cabang ?? '-' }}"
+                                                    data-tanggal_keluar="{{ $d->tanggal_keluar ?? '-' }}"
+                                                    data-tanggal_kedaluwarsa="{{ $d->ObatMasuk?->tanggal_kedaluwarsa ?? '-' }}"
+                                                    data-action="{{ Route::has('obat-keluar.update-legacy') ? route('obat-keluar.update-legacy', $d->id_obat_keluar) : url('/obat-keluar-edit/' . $d->id_obat_keluar) }}">
+                                                    <i class="fas fa-pencil-alt"></i>
+                                                </button>
+
+                                                <form
+                                                    action="{{ Route::has('obat-keluar.destroy-legacy') ? route('obat-keluar.destroy-legacy', $d->id_obat_keluar) : url('obat-keluar-hapus/' . $d->id_obat_keluar) }}"
+                                                    method="POST" style="display:inline-block;" onsubmit="return confirm('Anda yakin hapus data obat keluar ini ?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-danger shadow btn-xs sharp me-1">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                    </form>
+                                                    </td>
+                                                    </tr>
+                                    @endforeach
+                                                    </tbody>
+                                                    </table>
+
+                            {{-- ! Modal Tambah --}}
+                            <x-admin.modals.modal-obat-keluar judul="Tambah Obat Keluar" type="tambah"
+                                :obatList="$obatList" :cabang="$cabang" />
+                            {{-- ! Modal Edit --}}
+                            <x-admin.modals.modal-obat-keluar id="modalEditObatKeluar" judul="Edit Obat Keluar"
+                                type="edit" :cabang="$cabang" :obatList="$obatList" />
+                            {{-- ! Modal Detail --}}
+                            <x-admin.modals.modal-obat-keluar id="modalDetailObatKeluar" judul="Detail Obat Keluar"
+                                type="detail" />
+                        </div>
                 </div>
             </div>
         </div>
@@ -139,6 +139,7 @@
 
                     $batchSelect.select2({
                         placeholder: 'Pilih Cabang Terlebih Dahulu',
+                        hidden: true,
                         dropdownParent: $modal,
                         width: '100%',
                         ajax: {

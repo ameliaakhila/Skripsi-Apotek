@@ -16,7 +16,7 @@
                                     <td><strong class="required-field">Pilih Cabang</strong></td>
                                     <td>
                                         <select name="id_cabang" id="single-select-cabang-tambah" class="form-control form-control-sm" required>
-                                            <option value="">Pilih Cabang Asal Stok</option>
+                                            <option value="" disabled selected>Pilih Cabang Asal Stok</option>
                                             @foreach($cabang as $c)
                                                 <option value="{{ $c->id_cabang }}">{{ $c->nama_cabang }}</option>
                                             @endforeach
@@ -28,7 +28,7 @@
                                     <td><strong class="required-field">Pilih Stok Obat</strong></td>
                                     <td>
                                         <select name="id_stok_batch" id="single-select-obat-tambah" class="form-control form-control-sm" required disabled>
-                                            <option value="">Pilih Cabang Terlebih Dahulu</option>
+                                            <option value="" disabled selected>Pilih Cabang Terlebih Dahulu</option>
                                             @foreach($obatList as $item)
                                                 <option value="{{ $item->id_stok_batch }}" data-id-cabang="{{ $item->id_cabang }}" data-kode="{{ $item->kode_batch }}"
                                                     data-obat="{{ $item->Obat->nama_obat ?? '-' }}" data-exp="{{ $item->tanggal_kedaluwarsa }}"

@@ -58,6 +58,8 @@
                         </div>
                         <div class="col-md-1 d-grid">
                             <label class="form-label mb-1">&nbsp;</label>
+                            <button type="reset" class="btn btn-secondary btn-sm"
+                                onclick="window.location.href='{{ Route::has('admin.stok-batch-kedaluwarsa.index') ? route('admin.stok-batch-kedaluwarsa.index') : url('/stok-batch-kedaluwarsa') }}'">Reset</button>
                             <button type="submit" class="btn btn-primary btn-sm">Filter</button>
                         </div>
                     </form>

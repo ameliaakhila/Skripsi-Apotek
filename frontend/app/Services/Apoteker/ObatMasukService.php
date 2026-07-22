@@ -27,7 +27,7 @@ class ObatMasukService
             'Obat.DataSatuan:id_satuan,nama_satuan',
         ])
             ->orderBy('created_at', 'desc')
-            ->simplePaginate(25);
+            ->simplePaginate(10);
 
         // ! OPTIMIZATION: Use centralized cache service
         $obat = $this->cacheService->getObatListWithRelations();
@@ -120,7 +120,7 @@ class ObatMasukService
                     'id_cabang' => $validated['id_cabang'] ?? $stokBatch->id_cabang,
                 ]);
             }
-            
+
             ActivityLog::create([
                 'user_id' => Auth::id(),
                 'action' => 'Mengubah Stok Masuk: ' . $validated['kode_batch']
@@ -136,7 +136,7 @@ class ObatMasukService
     {
         DB::transaction(function () use ($idObatMasuk): void {
             $obatMasuk = ObatMasuk::findOrFail($idObatMasuk);
-            
+
             ActivityLog::create([
                 'user_id' => Auth::id(),
                 'action' => 'Menghapus Stok Masuk: ' . $obatMasuk->kode_batch
