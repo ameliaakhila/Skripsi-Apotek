@@ -25,3 +25,13 @@ node_modules/
 composer.json
 composer.lock
 README.md
+
+
+#agent
+.agents/*
+skills-lock.json
+
+# other
+CV Amelia Akhila Aqna.pdf
+TESTING.md
+start-grafana.bat

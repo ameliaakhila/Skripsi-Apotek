@@ -58,8 +58,7 @@ class ObatMasukService
                 'kode_batch' => $validated['kode_batch'],
                 'tanggal_kedaluwarsa' => $validated['tanggal_kedaluwarsa'],
                 'stok_masuk' => $validated['stok_masuk'],
-                'stok_sisa' => $stokSisa,
-                'status_stok' => $this->getStatusStok($stokSisa, $validated['id_obat']),
+                'stok_sisa' => $stokSisa, 'status_stok' => $this->getStatusStok($stokSisa, $validated['id_obat']),
                 'id_obat' => $validated['id_obat'],
                 'id_cabang' => 1,
             ]);
