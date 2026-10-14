@@ -1,37 +1,44 @@
-# Environment files
-*.env
-.env
-.env.*
-/frontend/.env
-/backend/.env
-
-# Node modules & dependencies
+# Dependencies & Package Managers
 node_modules/
 **/node_modules/
-/frontend/node_modules/
-/frontend/vendor/
-/backend/vendor/
-
-# Virtual Environments
 .venv/
 **/.venv/
-/backend/.venv
-/apotek-stock-prediction/.venv
+/app/vendor/
 
-# Logs & temp
+# Environment & Credentials
+.env
+.env.*
+!.env.example
+
+# Laravel Specific (Storage & Caches)
+/app/storage/
+/app/public/storage
+/app/bootstrap/cache/
+/app/public/hot
+/storage/*.key
+/storage/pail
+.phpunit.result.cache
+/.phpunit.cache
+
+# Python & Machine Learning
+__pycache__/
+*.pyc
+*.pkl
+
+# IDE & Editor Configs
+.vscode/
+.idea/
+/.fleet
+/.zed
+/.nova
+.DS_Store
+Thumbs.db
+
+# System & Agent Logs
 *.log
-/xhtml
-.prettierrc
-composer.json
-composer.lock
-README.md
-
-
-#agent
-.agents/*
+.agents/
 skills-lock.json
 
-# other
-CV Amelia Akhila Aqna.pdf
-TESTING.md
-start-grafana.bat
+# guard root
+Authentication.jmx
+fix_jmx_udv.py

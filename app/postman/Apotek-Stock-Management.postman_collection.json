@@ -1,0 +1,3492 @@
+{
+  "info": {
+    "_postman_id": "cc392df9-1385-476b-b4e3-17a3b7ab16d7",
+    "name": "Apotek Stock Management",
+    "description": "Postman Collection untuk aplikasi manajemen stok apotek (Laravel).\n\n## Cara Penggunaan\n\n### Variabel (Environment)\n- `skripsi-apotek` : URL aplikasi Laravel, contoh `http://localhost:8000`\n- `csrf_token` : Token CSRF (lihat Autentikasi)\n- `id_obat`, `id_satuan`, `id_kategori`, `id_cabang`, `id_supplier`, `id_user`, `id_obat_masuk`, `id_obat_keluar`, `id_stok_batch`, `id_mutasi`, `id_stok_opname` : ID data yang sedang diuji\n\n### Autentikasi & CSRF\nAplikasi menggunakan session-based auth Laravel:\n1. Login lewat `Authentication -> POST /login-process` untuk mendapat cookie session.\n2. Ambil token CSRF dari cookie `XSRF-TOKEN` di Postman (tab Cookies) lalu isi variabel `csrf_token`.\n3. Semua request POST/PUT/DELETE di collection ini sudah membawa header `X-CSRF-TOKEN: {{csrf_token}}` dan body `_token`.\n\n> ⚠️ `GET /login-process` HANYA redirect ke halaman login — tidak melakukan autentikasi. Login yang benar adalah `POST /login-process`.\n\n### Role\n- `admin` : semua fitur\n- `apoteker` : operasional + monitoring\n- `manajer` : monitoring + analytics (read-only)\n\n### Format Tanggal\nSemua field tanggal: `YYYY-MM-DD` (contoh: `2026-08-05`).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "40760864"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "GET / - Halaman Login",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                ""
+              ]
+            },
+            "description": "Menampilkan halaman login. Jika session aktif, redirect ke /dashboard."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /login-process (redirect saja)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/login-process?username=admin&password=password123",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "login-process"
+              ],
+              "query": [
+                {
+                  "key": "username",
+                  "value": "admin",
+                  "description": "⚠️ TIDAK diproses — hanya redirect ke halaman login"
+                },
+                {
+                  "key": "password",
+                  "value": "password123",
+                  "description": "⚠️ TIDAK diproses — hanya redirect ke halaman login"
+                }
+              ]
+            },
+            "description": "⚠️ Endpoint GET ini HANYA redirect ke halaman login. Username & password query string TIDAK dipakai. Gunakan method POST /login-process untuk login."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /login-process (Login)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "admin",
+                  "description": "Username user (required)",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "password123",
+                  "description": "Password user (required)",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/login-process",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "login-process"
+              ]
+            },
+            "description": "Melakukan autentikasi. Sukses => 302 redirect ke /dashboard dengan cookie session baru."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/logout",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "logout"
+              ]
+            },
+            "description": "Logout & hapus session. Perlu autentikasi."
+          },
+          "response": []
+        }
+      ],
+      "description": "Login, halaman login, dan logout."
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "GET /dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/dashboard",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "dashboard"
+              ]
+            },
+            "description": "Dashboard sesuai role. Perlu autentikasi."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /dashboard/refresh",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/dashboard/refresh",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "dashboard",
+                "refresh"
+              ]
+            },
+            "description": "Refresh data dashboard. Role: admin, manajer."
+          },
+          "response": []
+        }
+      ],
+      "description": "Dashboard berdasarkan role user."
+    },
+    {
+      "name": "Admin - Master Data",
+      "item": [
+        {
+          "name": "Data Obat",
+          "item": [
+            {
+              "name": "GET /data-obat (List)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-obat",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-obat"
+                  ]
+                },
+                "description": "Daftar obat + kategori, supplier, satuan."
+              },
+              "response": []
+            },
+            {
+              "name": "POST /data-obat (Tambah)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "nama_obat",
+                      "value": "Paracetamol 500mg",
+                      "description": "required|string|max:255",
+                      "type": "text"
+                    },
+                    {
+                      "key": "safety_stock",
+                      "value": "50",
+                      "description": "required|integer|min:1",
+                      "type": "text"
+                    },
+                    {
+                      "key": "id_supplier",
+                      "value": "1",
+                      "description": "required|exists:tb_supplier,id_supplier",
+                      "type": "text"
+                    },
+                    {
+                      "key": "id_satuan",
+                      "value": "1",
+                      "description": "required|exists:tb_satuan,id_satuan",
+                      "type": "text"
+                    },
+                    {
+                      "key": "id_kategori",
+                      "value": "1",
+                      "description": "required|exists:tb_kategori,id_kategori",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-obat",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-obat"
+                  ]
+                },
+                "description": "Tambah obat baru."
+              },
+              "response": []
+            },
+            {
+              "name": "PUT /data-obat/{id_obat} (Update)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "nama_obat",
+                      "value": "Paracetamol 500mg Updated",
+                      "type": "text"
+                    },
+                    {
+                      "key": "safety_stock",
+                      "value": "60",
+                      "type": "text"
+                    },
+                    {
+                      "key": "id_supplier",
+                      "value": "1",
+                      "type": "text"
+                    },
+                    {
+                      "key": "id_satuan",
+                      "value": "1",
+                      "type": "text"
+                    },
+                    {
+                      "key": "id_kategori",
+                      "value": "1",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_method",
+                      "value": "PUT",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-obat/{{id_obat}}",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-obat",
+                    "{{id_obat}}"
+                  ]
+                },
+                "description": "Update obat."
+              },
+              "response": []
+            },
+            {
+              "name": "DELETE /data-obat/{id_obat} (Hapus)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "_method",
+                      "value": "DELETE",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-obat/{{id_obat}}",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-obat",
+                    "{{id_obat}}"
+                  ]
+                },
+                "description": "Hapus obat."
+              },
+              "response": []
+            },
+            {
+              "name": "POST /data-obat-tambah (Legacy)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "nama_obat",
+                      "value": "Amoxicillin 500mg",
+                      "type": "text"
+                    },
+                    {
+                      "key": "safety_stock",
+                      "value": "30",
+                      "type": "text"
+                    },
+                    {
+                      "key": "id_supplier",
+                      "value": "1",
+                      "type": "text"
+                    },
+                    {
+                      "key": "id_satuan",
+                      "value": "1",
+                      "type": "text"
+                    },
+                    {
+                      "key": "id_kategori",
+                      "value": "1",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-obat-tambah",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-obat-tambah"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "PUT /data-obat-edit/{id_obat} (Legacy)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "nama_obat",
+                      "value": "Amoxicillin 500mg Updated",
+                      "type": "text"
+                    },
+                    {
+                      "key": "safety_stock",
+                      "value": "35",
+                      "type": "text"
+                    },
+                    {
+                      "key": "id_supplier",
+                      "value": "1",
+                      "type": "text"
+                    },
+                    {
+                      "key": "id_satuan",
+                      "value": "1",
+                      "type": "text"
+                    },
+                    {
+                      "key": "id_kategori",
+                      "value": "1",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_method",
+                      "value": "PUT",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-obat-edit/{{id_obat}}",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-obat-edit",
+                    "{{id_obat}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "DELETE /data-obat-hapus/{id_obat} (Legacy)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "_method",
+                      "value": "DELETE",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-obat-hapus/{{id_obat}}",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-obat-hapus",
+                    "{{id_obat}}"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Data Satuan",
+          "item": [
+            {
+              "name": "GET /data-satuan (List)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-satuan",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-satuan"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /data-satuan (Tambah)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "nama_satuan",
+                      "value": "Strip",
+                      "description": "required|string",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-satuan",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-satuan"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "DELETE /data-satuan/{id_satuan} (Hapus)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "_method",
+                      "value": "DELETE",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-satuan/{{id_satuan}}",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-satuan",
+                    "{{id_satuan}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /data-satuan-tambah (Legacy)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "nama_satuan",
+                      "value": "Botol",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-satuan-tambah",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-satuan-tambah"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "DELETE /data-satuan-hapus/{id_satuan} (Legacy)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "_method",
+                      "value": "DELETE",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-satuan-hapus/{{id_satuan}}",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-satuan-hapus",
+                    "{{id_satuan}}"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Data Kategori",
+          "item": [
+            {
+              "name": "GET /data-kategori (List)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-kategori",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-kategori"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /data-kategori (Tambah)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "nama_kategori",
+                      "value": "Antibiotik",
+                      "description": "required|string|max:100",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-kategori",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-kategori"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "DELETE /data-kategori/{id_kategori} (Hapus)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "_method",
+                      "value": "DELETE",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-kategori/{{id_kategori}}",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-kategori",
+                    "{{id_kategori}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /data-kategori-tambah (Legacy)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "nama_kategori",
+                      "value": "Vitamin",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-kategori-tambah",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-kategori-tambah"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "DELETE /data-kategori-hapus/{id_kategori} (Legacy)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "_method",
+                      "value": "DELETE",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-kategori-hapus/{{id_kategori}}",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-kategori-hapus",
+                    "{{id_kategori}}"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Data Cabang",
+          "item": [
+            {
+              "name": "GET /data-cabang (List)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-cabang",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-cabang"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /data-cabang (Tambah)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "kode_cabang",
+                      "value": "SF001",
+                      "description": "required|string|max:10|unique",
+                      "type": "text"
+                    },
+                    {
+                      "key": "nama_cabang",
+                      "value": "Apotek Sehat Farma",
+                      "description": "required|string|max:100",
+                      "type": "text"
+                    },
+                    {
+                      "key": "alamat_cabang",
+                      "value": "Jl. Merdeka No.1",
+                      "description": "required|string|max:255",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-cabang",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-cabang"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "PUT /data-cabang/{id_cabang} (Update)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "kode_cabang",
+                      "value": "SF001",
+                      "type": "text"
+                    },
+                    {
+                      "key": "nama_cabang",
+                      "value": "Apotek Sehat Farma Cab. 1",
+                      "type": "text"
+                    },
+                    {
+                      "key": "alamat_cabang",
+                      "value": "Jl. Merdeka No.2",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_method",
+                      "value": "PUT",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-cabang/{{id_cabang}}",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-cabang",
+                    "{{id_cabang}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "DELETE /data-cabang/{id_cabang} (Hapus)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "_method",
+                      "value": "DELETE",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-cabang/{{id_cabang}}",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-cabang",
+                    "{{id_cabang}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /data-cabang-tambah (Legacy)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "kode_cabang",
+                      "value": "SF002",
+                      "type": "text"
+                    },
+                    {
+                      "key": "nama_cabang",
+                      "value": "Apotek Sehat Farma 2",
+                      "type": "text"
+                    },
+                    {
+                      "key": "alamat_cabang",
+                      "value": "Jl. Sudirman No.5",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-cabang-tambah",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-cabang-tambah"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "PUT /data-cabang-edit/{id_cabang} (Legacy)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "kode_cabang",
+                      "value": "SF002",
+                      "type": "text"
+                    },
+                    {
+                      "key": "nama_cabang",
+                      "value": "Apotek Sehat Farma 2 Updated",
+                      "type": "text"
+                    },
+                    {
+                      "key": "alamat_cabang",
+                      "value": "Jl. Sudirman No.6",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_method",
+                      "value": "PUT",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-cabang-edit/{{id_cabang}}",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-cabang-edit",
+                    "{{id_cabang}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "DELETE /data-cabang-hapus/{id_cabang} (Legacy)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "_method",
+                      "value": "DELETE",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-cabang-hapus/{{id_cabang}}",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-cabang-hapus",
+                    "{{id_cabang}}"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Data Supplier",
+          "item": [
+            {
+              "name": "GET /data-supplier (List)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-supplier",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-supplier"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /data-supplier (Tambah)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "nama_supplier",
+                      "value": "PT Kimia Farma",
+                      "description": "required|string|max:100",
+                      "type": "text"
+                    },
+                    {
+                      "key": "alamat_supplier",
+                      "value": "Jl. Industri No.10",
+                      "description": "required|string|max:200",
+                      "type": "text"
+                    },
+                    {
+                      "key": "no_telp",
+                      "value": "021-5551234",
+                      "description": "required|string|max:15",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-supplier",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-supplier"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "PUT /data-supplier/{id_supplier} (Update)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "nama_supplier",
+                      "value": "PT Kimia Farma Updated",
+                      "type": "text"
+                    },
+                    {
+                      "key": "alamat_supplier",
+                      "value": "Jl. Industri No.11",
+                      "type": "text"
+                    },
+                    {
+                      "key": "no_telp",
+                      "value": "021-5559999",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_method",
+                      "value": "PUT",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-supplier/{{id_supplier}}",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-supplier",
+                    "{{id_supplier}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "DELETE /data-supplier/{id_supplier} (Hapus)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "_method",
+                      "value": "DELETE",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-supplier/{{id_supplier}}",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-supplier",
+                    "{{id_supplier}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "POST /data-supplier-tambah (Legacy)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "nama_supplier",
+                      "value": "PT Indo Farma",
+                      "type": "text"
+                    },
+                    {
+                      "key": "alamat_supplier",
+                      "value": "Jl. Raya No.20",
+                      "type": "text"
+                    },
+                    {
+                      "key": "no_telp",
+                      "value": "022-777888",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-supplier-tambah",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-supplier-tambah"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "PUT /data-supplier-edit/{id_supplier} (Legacy)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "nama_supplier",
+                      "value": "PT Indo Farma Updated",
+                      "type": "text"
+                    },
+                    {
+                      "key": "alamat_supplier",
+                      "value": "Jl. Raya No.21",
+                      "type": "text"
+                    },
+                    {
+                      "key": "no_telp",
+                      "value": "022-777999",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_method",
+                      "value": "PUT",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-supplier-edit/{{id_supplier}}",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-supplier-edit",
+                    "{{id_supplier}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "DELETE /data-supplier-hapus/{id_supplier} (Legacy)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "_method",
+                      "value": "DELETE",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/data-supplier-hapus/{{id_supplier}}",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "data-supplier-hapus",
+                    "{{id_supplier}}"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ],
+      "description": "Kelola master data: Obat, Satuan, Kategori, Cabang, Supplier. Role: admin."
+    },
+    {
+      "name": "Admin - Kelola Akun",
+      "item": [
+        {
+          "name": "GET /kelola-akun (List)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/kelola-akun?page=1",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "kelola-akun"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Pagination, default 1"
+                }
+              ]
+            },
+            "description": "Daftar user (25/halaman)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /kelola-akun (Tambah Akun)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "apoteker1",
+                  "description": "required|string|max:255|unique:users",
+                  "type": "text"
+                },
+                {
+                  "key": "email",
+                  "value": "apoteker1@example.com",
+                  "description": "required|email|unique:users",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "password123",
+                  "description": "required|string|min:8",
+                  "type": "text"
+                },
+                {
+                  "key": "role",
+                  "value": "apoteker",
+                  "description": "required|in:admin,apoteker,manajer",
+                  "type": "text"
+                },
+                {
+                  "key": "status",
+                  "value": "Aktif",
+                  "description": "required|in:Aktif,Nonaktif",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/kelola-akun",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "kelola-akun"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /kelola-akun/{id} (Update Akun)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "apoteker1_updated",
+                  "type": "text"
+                },
+                {
+                  "key": "email",
+                  "value": "apoteker1_updated@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "role",
+                  "value": "apoteker",
+                  "type": "text"
+                },
+                {
+                  "key": "status",
+                  "value": "Aktif",
+                  "type": "text"
+                },
+                {
+                  "key": "_method",
+                  "value": "PUT",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/kelola-akun/{{id_user}}",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "kelola-akun",
+                "{{id_user}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /kelola-akun/{id} (Hapus Akun)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "_method",
+                  "value": "DELETE",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/kelola-akun/{{id_user}}",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "kelola-akun",
+                "{{id_user}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /kelola-akun/{id}/reset-password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "password",
+                  "value": "newpassword123",
+                  "description": "required|string|min:8",
+                  "type": "text"
+                },
+                {
+                  "key": "_method",
+                  "value": "PUT",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/kelola-akun/{{id_user}}/reset-password",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "kelola-akun",
+                "{{id_user}}",
+                "reset-password"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Manajemen user/akun. Role: admin."
+    },
+    {
+      "name": "Operasional - Obat Masuk",
+      "item": [
+        {
+          "name": "GET /obat-masuk (List)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/obat-masuk",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "obat-masuk"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /obat-masuk (Tambah)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "kode_batch",
+                  "value": "BAC050826SF001",
+                  "description": "required|string",
+                  "type": "text"
+                },
+                {
+                  "key": "tanggal_masuk",
+                  "value": "2026-08-05",
+                  "description": "required|date",
+                  "type": "text"
+                },
+                {
+                  "key": "tanggal_kedaluwarsa",
+                  "value": "2027-08-05",
+                  "description": "required|date|after:tanggal_masuk",
+                  "type": "text"
+                },
+                {
+                  "key": "stok_masuk",
+                  "value": "100",
+                  "description": "required|integer|min:1",
+                  "type": "text"
+                },
+                {
+                  "key": "id_obat",
+                  "value": "1",
+                  "description": "required|exists:tb_obat,id_obat",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/obat-masuk",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "obat-masuk"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /obat-masuk/{id_obat_masuk} (Update)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "kode_batch",
+                  "value": "BAC050826SF001",
+                  "type": "text"
+                },
+                {
+                  "key": "tanggal_masuk",
+                  "value": "2026-08-05",
+                  "type": "text"
+                },
+                {
+                  "key": "tanggal_kedaluwarsa",
+                  "value": "2027-08-05",
+                  "type": "text"
+                },
+                {
+                  "key": "stok_masuk",
+                  "value": "120",
+                  "type": "text"
+                },
+                {
+                  "key": "id_obat",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "_method",
+                  "value": "PUT",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/obat-masuk/{{id_obat_masuk}}",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "obat-masuk",
+                "{{id_obat_masuk}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /obat-masuk/{id_obat_masuk} (Hapus)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "_method",
+                  "value": "DELETE",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/obat-masuk/{{id_obat_masuk}}",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "obat-masuk",
+                "{{id_obat_masuk}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /obat-masuk-tambah (Legacy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "kode_batch",
+                  "value": "BAC050826SF002",
+                  "type": "text"
+                },
+                {
+                  "key": "tanggal_masuk",
+                  "value": "2026-08-05",
+                  "type": "text"
+                },
+                {
+                  "key": "tanggal_kedaluwarsa",
+                  "value": "2028-08-05",
+                  "type": "text"
+                },
+                {
+                  "key": "stok_masuk",
+                  "value": "50",
+                  "type": "text"
+                },
+                {
+                  "key": "id_obat",
+                  "value": "2",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/obat-masuk-tambah",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "obat-masuk-tambah"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /obat-masuk-edit/{id_obat_masuk} (Legacy)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "kode_batch",
+                  "value": "BAC050826SF002",
+                  "type": "text"
+                },
+                {
+                  "key": "tanggal_masuk",
+                  "value": "2026-08-05",
+                  "type": "text"
+                },
+                {
+                  "key": "tanggal_kedaluwarsa",
+                  "value": "2028-08-05",
+                  "type": "text"
+                },
+                {
+                  "key": "stok_masuk",
+                  "value": "60",
+                  "type": "text"
+                },
+                {
+                  "key": "id_obat",
+                  "value": "2",
+                  "type": "text"
+                },
+                {
+                  "key": "_method",
+                  "value": "PUT",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/obat-masuk-edit/{{id_obat_masuk}}",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "obat-masuk-edit",
+                "{{id_obat_masuk}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /obat-masuk-hapus/{id_obat_masuk} (Legacy)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "_method",
+                  "value": "DELETE",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/obat-masuk-hapus/{{id_obat_masuk}}",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "obat-masuk-hapus",
+                "{{id_obat_masuk}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Transaksi obat masuk (penerimaan). Role: admin, apoteker."
+    },
+    {
+      "name": "Operasional - Obat Keluar",
+      "item": [
+        {
+          "name": "GET /obat-keluar (List)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/obat-keluar",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "obat-keluar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /obat-keluar (Tambah)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "id_stok_batch",
+                  "value": "1",
+                  "description": "required|exists:tb_stok_batch,id_stok_batch",
+                  "type": "text"
+                },
+                {
+                  "key": "id_cabang",
+                  "value": "1",
+                  "description": "required|exists:tb_cabang,id_cabang",
+                  "type": "text"
+                },
+                {
+                  "key": "tanggal_keluar",
+                  "value": "2026-08-05",
+                  "description": "required|date",
+                  "type": "text"
+                },
+                {
+                  "key": "stok_keluar",
+                  "value": "10",
+                  "description": "required|integer|min:1",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/obat-keluar",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "obat-keluar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /obat-keluar/{id_obat_keluar} (Update)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "id_stok_batch",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "id_cabang",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "stok_keluar",
+                  "value": "5",
+                  "type": "text"
+                },
+                {
+                  "key": "tanggal_keluar",
+                  "value": "2026-08-05",
+                  "type": "text"
+                },
+                {
+                  "key": "_method",
+                  "value": "PUT",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/obat-keluar/{{id_obat_keluar}}",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "obat-keluar",
+                "{{id_obat_keluar}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /obat-keluar/{id_obat_keluar} (Hapus)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "_method",
+                  "value": "DELETE",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/obat-keluar/{{id_obat_keluar}}",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "obat-keluar",
+                "{{id_obat_keluar}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/search/batch (Select2 AJAX)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/api/search/batch?q=paracetamol&id_cabang=1",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "api",
+                "search",
+                "batch"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "paracetamol",
+                  "description": "Keyword pencarian kode batch / nama obat"
+                },
+                {
+                  "key": "id_cabang",
+                  "value": "1",
+                  "description": "Filter cabang (opsional)"
+                }
+              ]
+            },
+            "description": "AJAX search batch (Select2). Response JSON { results: [{ id, text, exp, stok }] }."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /obat-keluar-tambah (Legacy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "id_stok_batch",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "id_cabang",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "tanggal_keluar",
+                  "value": "2026-08-05",
+                  "type": "text"
+                },
+                {
+                  "key": "stok_keluar",
+                  "value": "5",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/obat-keluar-tambah",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "obat-keluar-tambah"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /obat-keluar-edit/{id_obat_keluar} (Legacy)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "id_stok_batch",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "id_cabang",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "stok_keluar",
+                  "value": "7",
+                  "type": "text"
+                },
+                {
+                  "key": "tanggal_keluar",
+                  "value": "2026-08-05",
+                  "type": "text"
+                },
+                {
+                  "key": "_method",
+                  "value": "PUT",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/obat-keluar-edit/{{id_obat_keluar}}",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "obat-keluar-edit",
+                "{{id_obat_keluar}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /obat-keluar-hapus/{id_obat_keluar} (Legacy)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "_method",
+                  "value": "DELETE",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/obat-keluar-hapus/{{id_obat_keluar}}",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "obat-keluar-hapus",
+                "{{id_obat_keluar}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Transaksi obat keluar (penjualan/distribusi). Role: admin, apoteker."
+    },
+    {
+      "name": "Operasional - Mutasi Stok",
+      "item": [
+        {
+          "name": "GET /mutasi-stok (List)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/mutasi-stok",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "mutasi-stok"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /mutasi-stok-tambah",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "id_stok_batch",
+                  "value": "1",
+                  "description": "nullable|exists:tb_stok_batch,id_stok_batch (kosongkan utk FEFO auto)",
+                  "type": "text"
+                },
+                {
+                  "key": "id_cabang_asal",
+                  "value": "1",
+                  "description": "nullable|exists:tb_cabang,id_cabang (default cabang pertama)",
+                  "type": "text"
+                },
+                {
+                  "key": "id_cabang_tujuan",
+                  "value": "2",
+                  "description": "required|exists:tb_cabang,id_cabang",
+                  "type": "text"
+                },
+                {
+                  "key": "tanggal_mutasi",
+                  "value": "2026-08-05",
+                  "description": "required|date",
+                  "type": "text"
+                },
+                {
+                  "key": "jumlah_mutasi",
+                  "value": "10",
+                  "description": "required|integer|min:1",
+                  "type": "text"
+                },
+                {
+                  "key": "keterangan",
+                  "value": "Distribusi rutin",
+                  "description": "nullable|string",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/mutasi-stok-tambah",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "mutasi-stok-tambah"
+              ]
+            },
+            "description": "Tambah mutasi stok. Catatan: id_stok_batch & id_cabang_asal boleh kosong (auto FEFO dari cabang pertama)."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /mutasi-stok-edit/{id_mutasi}",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "id_stok_batch",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "id_cabang_asal",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "id_cabang_tujuan",
+                  "value": "2",
+                  "type": "text"
+                },
+                {
+                  "key": "tanggal_mutasi",
+                  "value": "2026-08-05",
+                  "type": "text"
+                },
+                {
+                  "key": "jumlah_mutasi",
+                  "value": "15",
+                  "type": "text"
+                },
+                {
+                  "key": "keterangan",
+                  "value": "Distribusi tambahan",
+                  "type": "text"
+                },
+                {
+                  "key": "_method",
+                  "value": "PUT",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/mutasi-stok-edit/{{id_mutasi}}",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "mutasi-stok-edit",
+                "{{id_mutasi}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /mutasi-stok-hapus/{id_mutasi}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "_method",
+                  "value": "DELETE",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/mutasi-stok-hapus/{{id_mutasi}}",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "mutasi-stok-hapus",
+                "{{id_mutasi}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Mutasi stok antar cabang. Role: admin, apoteker."
+    },
+    {
+      "name": "Operasional - Stok Opname",
+      "item": [
+        {
+          "name": "GET /stok-opname (List)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/stok-opname?page=1&id_cabang=&id_obat=",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "stok-opname"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "id_cabang",
+                  "value": "",
+                  "description": "Filter cabang (opsional)"
+                },
+                {
+                  "key": "id_obat",
+                  "value": "",
+                  "description": "Filter obat (opsional)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /stok-opname-tambah",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "id_stok_batch",
+                  "value": "1",
+                  "description": "required|exists:tb_stok_batch,id_stok_batch",
+                  "type": "text"
+                },
+                {
+                  "key": "tanggal_opname",
+                  "value": "2026-08-05",
+                  "description": "required|date",
+                  "type": "text"
+                },
+                {
+                  "key": "stok_fisik",
+                  "value": "95",
+                  "description": "required|integer|min:0",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/stok-opname-tambah",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "stok-opname-tambah"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /stok-opname-edit/{id_stok_opname} (audit trail - tidak bisa)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "_method",
+                  "value": "PUT",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/stok-opname-edit/{{id_stok_opname}}",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "stok-opname-edit",
+                "{{id_stok_opname}}"
+              ]
+            },
+            "description": "Histori opname adalah audit trail, tidak dapat diubah. Response: redirect dengan pesan error."
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /stok-opname-hapus/{id_stok_opname} (audit trail - tidak bisa)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "_method",
+                  "value": "DELETE",
+                  "type": "text"
+                },
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/stok-opname-hapus/{{id_stok_opname}}",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "stok-opname-hapus",
+                "{{id_stok_opname}}"
+              ]
+            },
+            "description": "Histori opname adalah audit trail, tidak dapat dihapus."
+          },
+          "response": []
+        }
+      ],
+      "description": "Penyesuaian stok fisik. Role: admin, apoteker."
+    },
+    {
+      "name": "Monitoring Stok",
+      "item": [
+        {
+          "name": "Stok Cabang",
+          "item": [
+            {
+              "name": "GET /stok-cabang",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{skripsi-apotek}}/stok-cabang?page=1&id_cabang=",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "stok-cabang"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "id_cabang",
+                      "value": "",
+                      "description": "Filter cabang (opsional, kosong = semua)"
+                    }
+                  ]
+                },
+                "description": "Monitoring stok per obat per cabang."
+              },
+              "response": []
+            },
+            {
+              "name": "PUT /stok-cabang/{id_stok_batch} (toggle - tidak diizinkan)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "_method",
+                      "value": "PUT",
+                      "type": "text"
+                    },
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/stok-cabang/{{id_stok_batch}}",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "stok-cabang",
+                    "{{id_stok_batch}}"
+                  ]
+                },
+                "description": "Tidak diizinkan dari menu ini — gunakan Stok Opname."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Batch & Kedaluwarsa",
+          "item": [
+            {
+              "name": "GET /stok-batch-kedaluwarsa",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{skripsi-apotek}}/stok-batch-kedaluwarsa?id_cabang=&id_obat=&status_expiry=",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "stok-batch-kedaluwarsa"
+                  ],
+                  "query": [
+                    {
+                      "key": "id_cabang",
+                      "value": "",
+                      "description": "Filter cabang (opsional)"
+                    },
+                    {
+                      "key": "id_obat",
+                      "value": "",
+                      "description": "Filter obat (opsional)"
+                    },
+                    {
+                      "key": "status_expiry",
+                      "value": "",
+                      "description": "expired | near | safe (opsional)"
+                    }
+                  ]
+                },
+                "description": "Detail stok per batch (FEFO view) + indikator kedaluwarsa."
+              },
+              "response": []
+            },
+            {
+              "name": "POST /stok-batch-kedaluwarsa-tambah (tidak diizinkan)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "key": "X-CSRF-TOKEN",
+                    "value": "{{csrf_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "_token",
+                      "value": "{{csrf_token}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{skripsi-apotek}}/stok-batch-kedaluwarsa-tambah",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "stok-batch-kedaluwarsa-tambah"
+                  ]
+                },
+                "description": "Monitoring only — tidak bisa tambah data."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Obat Kedaluwarsa",
+          "item": [
+            {
+              "name": "GET /obat-kedaluwarsa",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{skripsi-apotek}}/obat-kedaluwarsa",
+                  "host": [
+                    "{{skripsi-apotek}}"
+                  ],
+                  "path": [
+                    "obat-kedaluwarsa"
+                  ]
+                },
+                "description": "Laporan obat kadaluarsa / mendekati kadaluarsa (3 bulan)."
+              },
+              "response": []
+            }
+          ]
+        }
+      ],
+      "description": "Monitoring stok cabang, batch kedaluwarsa. Role: admin, apoteker, manajer (view)."
+    },
+    {
+      "name": "Analytics - Prediksi",
+      "item": [
+        {
+          "name": "GET /prediksi (Dashboard Prediksi)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/prediksi",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "prediksi"
+              ]
+            },
+            "description": "Halaman prediksi stok obat (statistik + rekomendasi)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /prediksi/generate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrf_token}}"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "_token",
+                  "value": "{{csrf_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{skripsi-apotek}}/prediksi/generate",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "prediksi",
+                "generate"
+              ]
+            },
+            "description": "Hapus cache & regenerate prediksi dari riwayat transaksi 3 bulan terakhir."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /prediksi/drug/{id_obat} (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/prediksi/drug/{{id_obat}}",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "prediksi",
+                "drug",
+                "{{id_obat}}"
+              ]
+            },
+            "description": "Ajax: prediksi detail obat. Response JSON { success, data }."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /prediksi/summary/{id_obat} (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/prediksi/summary/{{id_obat}}",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "prediksi",
+                "summary",
+                "{{id_obat}}"
+              ]
+            },
+            "description": "Ajax: ringkasan penjualan bulan lalu. Response JSON { success, data }."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /prediksi/export-excel",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/prediksi/export-excel",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "prediksi",
+                "export-excel"
+              ]
+            },
+            "description": "Download laporan prediksi (.xlsx)."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /prediksi/export-pdf",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/prediksi/export-pdf",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "prediksi",
+                "export-pdf"
+              ]
+            },
+            "description": "Preview laporan prediksi PDF (browser)."
+          },
+          "response": []
+        }
+      ],
+      "description": "Prediksi stok obat dengan ML. Role: admin, manajer."
+    },
+    {
+      "name": "Analytics - Laporan",
+      "item": [
+        {
+          "name": "GET /laporan (Index)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/laporan",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "laporan"
+              ]
+            },
+            "description": "Halaman laporan (obat, obat masuk/keluar, mutasi, opname)."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /laporan-penjualan (Alias)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/laporan-penjualan",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "laporan-penjualan"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /laporan-prediksi (Alias)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/laporan-prediksi",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "laporan-prediksi"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /laporan/export-obat",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/laporan/export-obat",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "laporan",
+                "export-obat"
+              ]
+            },
+            "description": "Export data obat (.xlsx)."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /laporan/export-obat-masuk",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/laporan/export-obat-masuk",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "laporan",
+                "export-obat-masuk"
+              ]
+            },
+            "description": "Export laporan obat masuk (.xlsx)."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /laporan/export-obat-keluar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/laporan/export-obat-keluar",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "laporan",
+                "export-obat-keluar"
+              ]
+            },
+            "description": "Export laporan obat keluar (.xlsx)."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /laporan/export-mutasi-stok",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/laporan/export-mutasi-stok",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "laporan",
+                "export-mutasi-stok"
+              ]
+            },
+            "description": "Export laporan mutasi stok (.xlsx)."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /laporan/export-stok-opname",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/laporan/export-stok-opname",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "laporan",
+                "export-stok-opname"
+              ]
+            },
+            "description": "Export laporan stok opname (.xlsx)."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /laporan/export-full (dengan filter tanggal)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{skripsi-apotek}}/laporan/export-full?start_date=2026-01-01&end_date=2026-12-31",
+              "host": [
+                "{{skripsi-apotek}}"
+              ],
+              "path": [
+                "laporan",
+                "export-full"
+              ],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2026-01-01",
+                  "description": "Tanggal mulai (opsional)"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2026-12-31",
+                  "description": "Tanggal akhir (opsional)"
+                }
+              ]
+            },
+            "description": "Export full report gabungan per sheet (.xlsx)."
+          },
+          "response": []
+        }
+      ],
+      "description": "Laporan & export Excel. Role: admin, manajer."
+    }
+  ]
+}
