@@ -41,6 +41,11 @@ Thumbs.db
 .agents/
 skills-lock.json
 
-# guard root
+# Guard Testing Reult
 Authentication.jmx
 fix_jmx_udv.py
+TESTING.md
+Thread Group.jmx
+skripsi-test.jmx
+fix_jmx.py
+start-grafana.bat
